@@ -1,0 +1,8 @@
+{
+    "name": "flex-marketplace",
+    "private": true,
+    "workspaces": ["packages/*"],
+    "scripts": {
+        "build": "yarn workspaces run build"
+    }
+  }
