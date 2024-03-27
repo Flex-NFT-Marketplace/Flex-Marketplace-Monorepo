@@ -26,11 +26,11 @@
       "@app/shared/*": [
         "shared/*"
       ],
-      "@app/web3": [
-        "web3/src/"
+      "@app/web3-service": [
+        "web3-service/src/"
       ],
-      "@app/web3/*": [
-        "web3/src/*"
+      "@app/web3-service/*": [
+        "web3-service/src/*"
       ]
     }
   },
