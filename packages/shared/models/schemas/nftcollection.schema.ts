@@ -43,7 +43,7 @@ export class NftCollections extends BaseSchema {
   @Prop({ type: SchemaTypes.String, enum: NftCollectionStandard })
   standard: NftCollectionStandard;
 
-  @Prop({ type: SchemaTypes.DocumentArray, ref: 'PaymentTokens' })
+  @Prop({ type: [SchemaTypes.ObjectId], ref: 'PaymentTokens' })
   paymentTokens: PaymentTokenDocument[];
 
   @Prop({
@@ -59,7 +59,7 @@ export class NftCollections extends BaseSchema {
   @Prop()
   royaltyRate?: number;
 
-  @Prop({ type: SchemaTypes.DocumentArray, ref: 'Users' })
+  @Prop({ type: [SchemaTypes.ObjectId], ref: 'Users' })
   collaboratories: UserDocument[];
 }
 

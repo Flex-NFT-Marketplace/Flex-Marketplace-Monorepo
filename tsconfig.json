@@ -27,10 +27,10 @@
         "shared/*"
       ],
       "@app/web3-service": [
-        "web3-service/src/"
+        "web3-service/"
       ],
       "@app/web3-service/*": [
-        "web3-service/src/*"
+        "web3-service/*"
       ]
     }
   },

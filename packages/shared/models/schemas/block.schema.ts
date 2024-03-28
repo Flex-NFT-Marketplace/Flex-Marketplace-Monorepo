@@ -1,6 +1,9 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import { Document } from 'mongoose';
 
-export enum BlockStatus {
+export type BlockDocument = Blocks & Document;
+
+export enum BlockWorkerStatus {
   PENDING = 0,
   SUCCESS = 1,
   FAILED = 2,
@@ -22,8 +25,8 @@ export class Blocks {
   @Prop()
   transactions: BLockTx[];
 
-  @Prop({ enum: BlockStatus })
-  status: BlockStatus;
+  @Prop({ enum: BlockWorkerStatus })
+  status: BlockWorkerStatus;
 
   @Prop()
   timestamp: number;

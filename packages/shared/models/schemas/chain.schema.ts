@@ -18,6 +18,9 @@ export class Chains extends BaseSchema {
   explorer: string;
 
   @Prop()
+  deployerContract: string;
+
+  @Prop()
   marketplaceContract: string;
 
   @Prop()
