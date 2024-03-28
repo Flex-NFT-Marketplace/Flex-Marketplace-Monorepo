@@ -1,6 +1,6 @@
-# Lottery Game Backend Mono Repo
+# Flex Marketplace Backend Mono Repo
 
-This repository contains the backend code for the Lottery Game project. It is organized as a monorepo using Yarn workspaces, with separate packages for different services and shared code.
+This repository contains the backend code for the Flex Marketplace project. It is organized as a monorepo using Yarn workspaces, with separate packages for different services and shared code.
 
 ## Packages
 
