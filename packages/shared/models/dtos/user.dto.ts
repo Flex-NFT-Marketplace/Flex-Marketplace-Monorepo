@@ -11,15 +11,18 @@ import {
   Length,
 } from 'class-validator';
 import { Transform } from 'class-transformer';
+import { ApiProperty } from '@nestjs/swagger';
 
 export class UserDto {
   @IsString()
   @Transform(({ value }) => String(value).trim())
   username: string;
 
+  @ApiProperty()
   @IsEmail()
   email?: string;
 
+  @ApiProperty()
   @IsUrl()
   avatar?: string;
 
