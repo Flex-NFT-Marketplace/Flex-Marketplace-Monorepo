@@ -55,6 +55,9 @@ export class Offers extends BaseSchema {
 
   @Prop({ type: SchemaTypes.String, enum: OfferStatus })
   status: OfferStatus;
+
+  @Prop()
+  blockTime: number;
 }
 
 export const OfferSchema = SchemaFactory.createForClass(Offers);

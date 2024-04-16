@@ -5,6 +5,7 @@ import { NftCollectionDocument } from './nftcollection.schema';
 import { PaymentTokenDocument } from './paymenttoken.schema';
 import { MarketStatus } from '../types';
 import { Document, SchemaTypes } from 'mongoose';
+import { UserDocument } from './user.schema';
 
 export type SaleDocument = Sales & Document;
 
@@ -12,6 +13,9 @@ export type SaleDocument = Sales & Document;
 export class Sales extends BaseSchema {
   @Prop({ type: SchemaTypes.ObjectId, ref: 'Nfts' })
   nft: NftDocument;
+
+  @Prop({ type: SchemaTypes.ObjectId, ref: 'Users' })
+  signer: UserDocument;
 
   @Prop()
   tokenId: number;
@@ -48,8 +52,12 @@ export class Sales extends BaseSchema {
 
   @Prop({ type: SchemaTypes.String, enum: MarketStatus })
   status: MarketStatus;
+
+  @Prop()
+  blockTime: number;
 }
 
 export const SaleSchema = SchemaFactory.createForClass(Sales);
 SaleSchema.index({ nftContract: 1, tokenId: 1 });
 SaleSchema.index({ nftContract: 1, tokenId: 1, saltNonce: 1 });
+SaleSchema.index({ seller: 1, saltNonce: 1 });

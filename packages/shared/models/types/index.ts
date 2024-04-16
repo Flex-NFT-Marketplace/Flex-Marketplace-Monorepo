@@ -20,6 +20,7 @@ export enum NotificationStatus {
 
 export enum HistoryType {
   Mint = 'mint',
+  FlexDropMint = 'flexDropMint',
   Transfer = 'transfer',
   CancelSale = 'cancelSale',
   CancelOffer = 'cancelOffer',
@@ -82,3 +83,5 @@ export type Attribute = {
   value: any;
   display_type?: string;
 };
+
+export const BURN_ADDRESS = '0x0';

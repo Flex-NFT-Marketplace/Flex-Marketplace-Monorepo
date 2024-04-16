@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document } from 'mongoose';
+import { Document, SchemaTypes } from 'mongoose';
 import { BaseSchema } from './base.schema';
 
 export type UserDocument = Users & Document;
@@ -38,6 +38,9 @@ export class Users extends BaseSchema {
   address: string;
 
   @Prop()
+  privateKey?: string;
+
+  @Prop()
   nonce: number;
 
   @Prop()
@@ -45,6 +48,12 @@ export class Users extends BaseSchema {
 
   @Prop({ default: false })
   isVerified?: boolean;
+
+  @Prop({ default: false })
+  isCreatorPayer?: boolean;
+
+  @Prop({ type: SchemaTypes.ObjectId, ref: 'Users' })
+  mappingAddress?: UserDocument;
 
   @Prop()
   roles: string[];

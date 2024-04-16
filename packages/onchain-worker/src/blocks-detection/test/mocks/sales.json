@@ -1,0 +1,26 @@
+[
+    {
+  "tokenId": 1,
+  "signedSignature": ["0x1e1ad7d8e342fd99f20e7c9a5ec4a082abadf5f48304fa4e531eec9455cfcc1",
+  "0x398655e43886b0408fd78786f2da83df06a9715d502e891e8cfeccfe592cd5b"],
+  "saltNonce": 30000,
+  "startTime": 0,
+  "endTime": 9999999999,
+  "price": 0.1,
+  "amount": 5,
+  "remainingAmount": 5,
+  "blockTime": 0
+    },
+    {
+      "tokenId": 1,
+      "signedSignature": ["0x1e1ad7d8e342fd99f20e7c9a5ec4a082abadf5f48304fa4e531eec9455cfcc1",
+      "0x398655e43886b0408fd78786f2da83df06a9715d502e891e8cfeccfe592cd5b"],
+      "saltNonce": 31000,
+      "startTime": 0,
+      "endTime": 9999999999,
+      "price": 0.1,
+      "amount": 5,
+      "remainingAmount": 5,
+      "blockTime": 0
+        }
+]

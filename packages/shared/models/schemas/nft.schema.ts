@@ -24,25 +24,28 @@ export class Nfts extends BaseSchema {
   chain: ChainDocument;
 
   @Prop()
+  blockTime: number;
+
+  @Prop()
   royaltyRate: number;
 
   @Prop()
   name?: string;
 
   @Prop()
-  image: string;
+  image?: string;
 
   @Prop()
-  originalImage: string;
+  originalImage?: string;
 
   @Prop()
-  animationUrl: string;
+  animationUrl?: string;
 
   @Prop()
-  description: string;
+  description?: string;
 
   @Prop()
-  tokenUri: string;
+  tokenUri?: string;
 
   @Prop({ type: SchemaTypes.ObjectId, ref: 'Users' })
   creator: UserDocument;
@@ -54,7 +57,7 @@ export class Nfts extends BaseSchema {
   amount: number;
 
   @Prop({ type: SchemaTypes.Array })
-  attributes: Attribute[];
+  attributes?: Attribute[];
 
   @Prop({ type: SchemaTypes.String, enum: MarketType })
   marketType: MarketType;
@@ -66,7 +69,7 @@ export class Nfts extends BaseSchema {
   burnedAt?: number;
 
   @Prop({ type: SchemaTypes.ObjectId, ref: 'Sales' })
-  sales?: SaleDocument;
+  sale?: SaleDocument;
 }
 
 export const NftSchema = SchemaFactory.createForClass(Nfts);

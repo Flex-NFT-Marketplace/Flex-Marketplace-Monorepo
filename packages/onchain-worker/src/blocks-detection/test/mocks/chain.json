@@ -1,11 +1,11 @@
 {
     "name": "SN_MAIN",
-    "rpc": "https://starknet-mainnet.public.blastapi.io/rpc/v0_7",
+    "rpc": "https://starknet-sepolia.public.blastapi.io/rpc/v0_7",
     "delayBlock": 1,
     "explore": "https://starkscan.co/",
   "deployerContract": "0x041a78e741e5af2fec34b695679bc6891742439f7afb8484ecd7766661ad02bf",
 
-  "marketplaceContract": "0x05aba25ccb954ed4de95213bc2c16ce0756eee0b5776b358e1afd66a363ab7b9",
+  "marketplaceContract": "0x079bab835e6e8b3645447dfd11426fa904a03974a0ce3fac907f8a2f30d876d1",
 
   "royaltyManagerContract": "0x05f69256b6ac950d3cd2297be5e6a798993f9ea6d39c7935a0ad65d2d54fec55",
 
@@ -28,6 +28,8 @@
   "FlexStorefrontNFT": "0x02e6c908da3d1ced80d81085ed9374b7c5048f86799e1f35e54daca4d70832d7",
 
   "FlexEvoContract": "0x04546729db564bb29a9e1e215463f41bc53116ac75eeb8e029b8a87fee7d85fd",
+
+  "flexDropContract": "0x035ad04f665eab91b6ee05994f6203d72d0c2ceba21a8c1f0335d848ac66eb5c",
 
   "strategyForAnyItemFromCollectionFixedPrice": "string",
 
