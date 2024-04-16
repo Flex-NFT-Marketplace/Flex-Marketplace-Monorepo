@@ -112,7 +112,7 @@ export class BlockDetectionService extends OnchainWorker {
         await Promise.all(
           txs.map(async (tx) => {
             await retryUntil(
-              async () => this.processTx(tx, block.timestamp),
+              async () => this.processTx(tx, block.timestamp * 1e3),
               () => true,
               maxRetry,
             );
@@ -153,9 +153,16 @@ export class BlockDetectionService extends OnchainWorker {
       (ev) => ev.eventType === EventType.TAKER_BID,
     );
 
-    // skip transfer event if it is sale or accept offer -> prevent duplicate event
+    const flexDropMintedEv = eventWithType.filter(
+      (ev) => ev.eventType === EventType.FLEX_DROP_MINTED,
+    );
+
+    // skip transfer event if it is sale or accept offer or flexdrop minted -> prevent duplicate event
     const eventlogs = eventWithType.filter((ev) => {
-      if (ev.eventType === EventType.TRANSFER) {
+      if (
+        ev.eventType === EventType.TRANSFER_721 ||
+        ev.eventType === EventType.TRANSFER_1155
+      ) {
         return (
           !matchTakerAskEv.find(
             (e) => e.transaction_hash === ev.transaction_hash,
@@ -165,12 +172,33 @@ export class BlockDetectionService extends OnchainWorker {
           )
         );
       }
+
+      if (ev.eventType === EventType.FLEX_DROP_MINTED) {
+        return false;
+      }
+
       return true;
     });
 
+    for (const ev of flexDropMintedEv) {
+      eventlogs.map((log) => {
+        if (
+          (log.eventType === EventType.MINT_1155 ||
+            log.eventType === EventType.MINT_721) &&
+          log.returnValues.nftAddress === ev.returnValues.nftAddress
+        ) {
+          log.returnValues.isFlexDropMinted = true;
+          log.returnValues.price =
+            ev.returnValues.totalMintPrice / ev.returnValues.quantityMinted;
+        }
+      });
+    }
+
     //process event
+    let index = 0;
     for (const event of eventlogs) {
-      await this.nftItemService.processEvent(event, this.chain);
+      await this.nftItemService.processEvent(event, this.chain, index);
+      index++;
     }
     return trasactionReceipt;
   }

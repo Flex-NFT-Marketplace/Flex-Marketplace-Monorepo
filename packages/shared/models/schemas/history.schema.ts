@@ -8,6 +8,7 @@ import { SaleDocument } from './sale.schema';
 import { PaymentTokenDocument } from './paymenttoken.schema';
 import { ChainDocument } from './chain.schema';
 import { HistoryType } from '../types';
+import { OfferDocument } from './offer.schema';
 
 export type HistoryDocument = Histories & Document;
 
@@ -29,7 +30,10 @@ export class Histories extends BaseSchema {
   from: UserDocument;
 
   @Prop({ type: SchemaTypes.ObjectId, ref: 'Users' })
-  to: UserDocument;
+  to?: UserDocument;
+
+  @Prop()
+  amount: number;
 
   @Prop()
   price: number;
@@ -38,7 +42,10 @@ export class Histories extends BaseSchema {
   priceInUsd: number;
 
   @Prop()
-  block: number;
+  txHash: string;
+
+  @Prop()
+  index: number; // index of event in a transaction
 
   @Prop()
   timestamp: number;
@@ -51,6 +58,9 @@ export class Histories extends BaseSchema {
 
   @Prop({ type: SchemaTypes.ObjectId, ref: 'Sales' })
   sale?: SaleDocument;
+
+  @Prop({ type: SchemaTypes.ObjectId, ref: 'Offers' })
+  offer?: OfferDocument;
 
   @Prop({ type: SchemaTypes.ObjectId, ref: 'PaymentTokens' })
   paymentToken?: PaymentTokenDocument;
