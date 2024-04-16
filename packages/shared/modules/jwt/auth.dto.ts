@@ -13,8 +13,16 @@ export class iInfoToken extends JwtPayload {
 
 // Response Nonce Data
 export class GetNonceRspDto {
-  @ApiProperty()
-  nonce: number;
+  // @ApiProperty()
+  // nonce: number;
   @ApiProperty()
   signMessage: string;
+}
+
+// Request Token DTO
+export class GetTokenDto {
+  @ApiProperty({ required: true })
+  address: string;
+  @ApiProperty({ required: true })
+  signature: string;
 }
