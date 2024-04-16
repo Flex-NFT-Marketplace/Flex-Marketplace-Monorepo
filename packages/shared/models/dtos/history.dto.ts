@@ -41,8 +41,8 @@ export class HistoryDto {
   @IsNumber()
   priceInUsd: number;
 
-  @IsNumber()
-  block: number;
+  @IsHexadecimal()
+  txHash: string;
 
   @IsNumber()
   timestamp: number;

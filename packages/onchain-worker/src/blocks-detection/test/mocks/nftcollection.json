@@ -1,0 +1,22 @@
+[
+    {
+        "name": null,
+        "symbol": null,
+        "key": "0x05b948be5c00199f8f024741257b9c4ea99105e0b43cd5083549de0929c3f174",
+        "nftContract": "0x05b948be5c00199f8f024741257b9c4ea99105e0b43cd5083549de0929c3f174",
+        "owner": null,
+        "verified": false,
+        "collaboratories": [],
+        "standard": "ERC-1155"
+      },
+      {
+        "name": null,
+        "symbol": null,
+        "key": "0x042b7a05fbd3a8bab52ae25a814813da7f5937584cf3e3fa248e69701188cf1d",
+        "nftContract": "0x042b7a05fbd3a8bab52ae25a814813da7f5937584cf3e3fa248e69701188cf1d",
+        "owner": null,
+        "verified": false,
+        "collaboratories": [],
+        "standard": "ERC-721"
+      }
+]

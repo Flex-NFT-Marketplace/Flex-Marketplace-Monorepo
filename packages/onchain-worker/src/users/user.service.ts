@@ -1,8 +1,6 @@
-import { UserDto } from '@app/shared/models/dtos';
 import { UserDocument, Users } from '@app/shared/models/schemas';
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { plainToInstance } from 'class-transformer';
 import { Model } from 'mongoose';
 
 @Injectable()
@@ -23,7 +21,7 @@ export class UserService {
         roles: [],
       };
 
-      user = await this.userModel.create(plainToInstance(UserDto, newUser));
+      user = await this.userModel.create(newUser);
     }
     return user;
   }
