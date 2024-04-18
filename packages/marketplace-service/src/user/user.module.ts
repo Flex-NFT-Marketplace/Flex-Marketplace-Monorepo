@@ -3,23 +3,15 @@ import { Module } from '@nestjs/common';
 import { UsersController } from './user.controller';
 import { UserService } from './user.service';
 import { UserSchema, Users } from '@app/shared/models';
-
-import { JwtModule } from '@nestjs/jwt';
-import configuration from '@app/shared/configuration';
+import { PassportModule } from '@nestjs/passport';
+import { JwtStrategy } from '@app/shared/modules';
 @Module({
   imports: [
     MongooseModule.forFeature([{ name: Users.name, schema: UserSchema }]),
-    JwtModule.registerAsync({
-      useFactory: async () => ({
-        secret: configuration().jwt_secret,
-        signOptions: {
-          expiresIn: '1h',
-        },
-      }),
-    }),
+    PassportModule.register({ defaultStrategy: 'jwt' }),
   ],
   controllers: [UsersController],
-  providers: [UserService],
+  providers: [UserService, JwtStrategy],
   exports: [UserService],
 })
 export class UsersModule {}
