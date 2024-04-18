@@ -9,7 +9,6 @@ export class UserService {
     let user = await this.userModel.findOne({
       address: userAddress,
     });
-
     if (!user) {
       const newUser: Users = {
         address: userAddress,
@@ -22,5 +21,8 @@ export class UserService {
       user = await this.userModel.create(newUser);
     }
     return user;
+  }
+  async getUser(userAddress: string): Promise<UserDocument> {
+    return await this.userModel.findOne({ address: userAddress });
   }
 }

@@ -20,18 +20,10 @@
     "esModuleInterop": true,
     "resolveJsonModule": true,
     "paths": {
-      "@app/shared": [
-        "shared/"
-      ],
-      "@app/shared/*": [
-        "shared/*"
-      ],
-      "@app/web3-service": [
-        "web3-service/"
-      ],
-      "@app/web3-service/*": [
-        "web3-service/*"
-      ]
+      "@app/shared": ["shared/"],
+      "@app/shared/*": ["shared/*"],
+      "@app/web3-service": ["web3-service/"],
+      "@app/web3-service/*": ["web3-service/*"]
     }
-  },
+  }
 }
