@@ -1,9 +1,10 @@
 import { Body, Controller, Get, Post, Query } from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiTags, ApiOkResponse } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import {
   GetNonceDto,
   GetNonceRspDto,
+  GetSignatureTestDto,
   GetTokenDto,
   GetTokenRspDto,
 } from '@app/shared/modules/jwt/auth.dto';
@@ -44,8 +45,42 @@ export class AuthController {
     };
   }
   @Post('/test-sign')
-  async testSign() {
-    const data = await this.authService.testSignMessage();
-    return { data };
+  @ApiOkResponse({
+    schema: {
+      allOf: [
+        {
+          // $ref: getSchemaPath(BaseResult),
+        },
+        {
+          properties: {
+            data: {
+              type: 'object',
+              properties: {
+                address: {
+                  type: 'string',
+                },
+                publicKey: { type: 'string' },
+                signature: { type: 'string' },
+              },
+            },
+          },
+        },
+      ],
+    },
+  })
+  async testSign(
+    @Body() testSignDto: GetSignatureTestDto,
+  ): Promise<BaseResult<any>> {
+    try {
+      const data = await this.authService.testSignMessage(testSignDto);
+      return { success: true, data: data };
+    } catch (error) {
+      return {
+        success: false,
+        data: {
+          error: error.message,
+        },
+      };
+    }
   }
 }

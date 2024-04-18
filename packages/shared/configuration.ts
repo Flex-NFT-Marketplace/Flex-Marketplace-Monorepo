@@ -2,7 +2,7 @@ import { config } from 'dotenv';
 
 config();
 config({ path: '../../.env' });
-
+// Configuration Path
 export default () => ({
   db_path: String(process.env.DB_PATH),
   onchain_worker_port: Number(process.env.ONCHAIN_WORKER_PORT) || 3001,
