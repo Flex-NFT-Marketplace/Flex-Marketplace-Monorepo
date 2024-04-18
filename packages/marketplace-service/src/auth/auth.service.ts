@@ -88,11 +88,6 @@ export class AuthService {
     });
     return token;
   }
-  async verifyToken(token: string) {
-    return await this.jwtService.verifyAsync(token, {
-      secret: configuration().jwt_secret,
-    });
-  }
 
   // Test Function
   async testSignMessage({ address, privateKey }: GetSignatureTestDto) {

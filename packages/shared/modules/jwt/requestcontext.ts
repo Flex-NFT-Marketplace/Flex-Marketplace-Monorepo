@@ -25,6 +25,7 @@ export class RequestContext {
     }
     return null;
   }
+
   getToken(request: Request): string {
     if (request.headers.authorization) {
       const [, token] = request.headers.authorization.split(' ');
