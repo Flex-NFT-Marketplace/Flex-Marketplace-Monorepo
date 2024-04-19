@@ -4,6 +4,7 @@
   "sourceRoot": "src",
   "entryFile": "./marketplace-service/src/main.js",
   "compilerOptions": {
-    "deleteOutDir": true
+    "deleteOutDir": true,
+    "plugins": ["@nestjs/swagger/plugin"]
   }
 }
