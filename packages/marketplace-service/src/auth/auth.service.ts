@@ -80,6 +80,7 @@ export class AuthService {
 
       console.log('Result ', HexToText(num.toHex(result)));
       // return result1;
+      return HexToText(num.toHex(result));
     } catch (error) {
       console.log('verification failed:', error);
       return false;
@@ -108,7 +109,11 @@ export class AuthService {
   }
 
   // Test Function
-  async testSignMessage({ address, privateKey }: GetSignatureTestDto) {
+  async testSignMessage({
+    address,
+    privateKey,
+    nonce,
+  }: GetSignatureTestDto & { nonce: number }) {
     address = formattedContractAddress(address);
     console.log('Current Address', address);
 
@@ -117,13 +122,8 @@ export class AuthService {
 
     const account = new Account(provider, address, privateKey);
 
-    const user = await this.userService.getUser(address);
-    if (!user) {
-      throw new Error('User not found');
-    }
-
     //Get SignMessage
-    const message = await this.getSignMessage(address, user.nonce);
+    const message = await this.getSignMessage(address, nonce);
 
     const signature = (await account.signMessage(
       message,

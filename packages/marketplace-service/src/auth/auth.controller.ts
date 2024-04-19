@@ -52,7 +52,7 @@ export class AuthController {
       ],
     },
   })
-  async getSignMessage(
+  async getNonce(
     @Query() query: GetNonceDto,
   ): Promise<BaseResult<GetNonceRspDto>> {
     const address = formattedContractAddress(query.address);
@@ -124,7 +124,6 @@ export class AuthController {
                 address: {
                   type: 'string',
                 },
-                publicKey: { type: 'string' },
                 signature: { type: 'string' },
               },
             },
@@ -137,7 +136,15 @@ export class AuthController {
     @Body() testSignDto: GetSignatureTestDto,
   ): Promise<BaseResult<any>> {
     try {
-      const data = await this.authService.testSignMessage(testSignDto);
+      const user = await this.userService.getUser(testSignDto.address);
+      if (!user) {
+        throw new Error('User not found');
+      }
+      const data = await this.authService.testSignMessage({
+        address: testSignDto.address,
+        privateKey: testSignDto.privateKey,
+        nonce: user.nonce,
+      });
       return { success: true, data: data };
     } catch (error) {
       return {
