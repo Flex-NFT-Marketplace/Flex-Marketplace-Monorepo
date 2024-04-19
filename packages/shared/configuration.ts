@@ -9,4 +9,5 @@ export default () => ({
   api_port: Number(process.env.API_PORT) || 5001,
   begin_block: Number(process.env.BEGIN_BLOCK) || 0,
   jwt_secret: String(process.env.JWT_SECRET),
+  jwt_expire: String(process.env.JWT_EXPIRE) || '1d',
 });

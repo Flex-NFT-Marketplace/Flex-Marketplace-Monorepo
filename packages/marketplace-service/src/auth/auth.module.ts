@@ -15,7 +15,7 @@ import configuration from '@app/shared/configuration';
       useFactory: async () => ({
         secret: configuration().jwt_secret,
         signOptions: {
-          expiresIn: '1h',
+          expiresIn: configuration().jwt_expire,
         },
       }),
     }),

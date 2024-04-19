@@ -1,5 +1,12 @@
+import { formattedContractAddress } from './../../../shared/utils/formatContractAddress';
 import { Body, Controller, Get, Post, Query } from '@nestjs/common';
-import { ApiTags, ApiOkResponse } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOkResponse,
+  ApiExtraModels,
+  ApiInternalServerErrorResponse,
+  getSchemaPath,
+} from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import {
   GetNonceDto,
@@ -11,6 +18,7 @@ import {
 import { BaseResult } from '@app/shared/types/base.result';
 import { UserService } from '../user/user.service';
 @ApiTags('Authentication')
+@ApiExtraModels(GetNonceRspDto, BaseResult, GetTokenRspDto)
 @Controller('authentication')
 export class AuthController {
   constructor(
@@ -19,10 +27,35 @@ export class AuthController {
   ) {}
 
   @Get('/getNonce')
+  @ApiOkResponse({
+    schema: {
+      allOf: [
+        {
+          properties: {
+            success: { type: 'boolean' },
+            data: { type: 'object', $ref: getSchemaPath(GetNonceRspDto) },
+          },
+        },
+      ],
+    },
+  })
+  @ApiInternalServerErrorResponse({
+    description: '<b>Internal server error</b>',
+    schema: {
+      allOf: [
+        {
+          properties: {
+            error: { type: 'boolean' },
+            data: { type: 'object' },
+          },
+        },
+      ],
+    },
+  })
   async getSignMessage(
     @Query() query: GetNonceDto,
   ): Promise<BaseResult<GetNonceRspDto>> {
-    const address = query.address;
+    const address = formattedContractAddress(query.address);
     const user = await this.userService.getOrCreateUser(address);
     const message = await this.authService.getSignMessage(address, user.nonce);
     return {
@@ -35,21 +68,53 @@ export class AuthController {
   }
 
   @Post('/token')
+  @ApiOkResponse({
+    schema: {
+      allOf: [
+        {
+          properties: {
+            success: { type: 'boolean' },
+            data: { type: 'object', $ref: getSchemaPath(GetTokenRspDto) },
+          },
+        },
+      ],
+    },
+  })
+  @ApiInternalServerErrorResponse({
+    description: '<b>Internal server error</b>',
+    schema: {
+      allOf: [
+        {
+          properties: {
+            error: { type: 'boolean' },
+            data: { type: 'object' },
+          },
+        },
+      ],
+    },
+  })
   async connectWallet(
     @Body() tokenDto: GetTokenDto,
   ): Promise<BaseResult<GetTokenRspDto>> {
-    const data = await this.authService.login(tokenDto);
-    return {
-      success: true,
-      data: data,
-    };
+    try {
+      const data = await this.authService.login(tokenDto);
+      return {
+        success: true,
+        data: data,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        data: error.message,
+      };
+    }
   }
   @Post('/test-sign')
   @ApiOkResponse({
     schema: {
       allOf: [
         {
-          // $ref: getSchemaPath(BaseResult),
+          // $ref: getSchemaPath(GetTokenRspDto),
         },
         {
           properties: {

@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { IsArray, IsHexadecimal, IsNumber, IsUrl } from 'class-validator';
 import { TypedData } from 'starknet';
 
 export class JwtPayload {
@@ -7,8 +8,11 @@ export class JwtPayload {
 }
 export class iInfoToken extends JwtPayload {
   @ApiProperty()
+  @IsNumber()
   iat: number;
+
   @ApiProperty()
+  @IsNumber()
   exp: number;
 }
 // Request Nonce Data
@@ -17,10 +21,15 @@ export class GetNonceDto {
   address: string;
 }
 // Response Nonce Data
+// Response Nonce Data
 export class GetNonceRspDto {
   @ApiProperty()
+  @IsNumber()
   nonce: number;
-  @ApiProperty()
+
+  @ApiProperty({
+    description: 'The sign message from server',
+  })
   signMessage: TypedData;
 }
 
@@ -28,18 +37,18 @@ export class GetNonceRspDto {
 export class GetTokenDto {
   @ApiProperty({
     required: true,
-    example:
-      '0x05a2F4c3BcbE542D6a655Fb31EcA2914F884dd8a1c23EA0B1b210746C28cfA3a',
   })
+  @IsHexadecimal()
   address: string;
+  @ApiProperty({ required: true })
+  @IsArray()
+  signature: string[];
   @ApiProperty({
     required: true,
-    example:
-      '0x040459a52325f0ee1401ec9c65ae886490dee312c9f30f5d97a045af20ab3de2790096b18aa6904077e2dba445f363a828cf874ea70ca6c14a6f343a778026dca9',
+    example: 'https://starknet-sepolia.public.blastapi.io',
   })
-  publicKey: string;
-  @ApiProperty({ required: true })
-  signature: string;
+  @IsUrl()
+  rpc: string;
 }
 
 export class GetTokenRspDto {

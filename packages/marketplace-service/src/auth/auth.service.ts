@@ -2,6 +2,7 @@ import { JwtService } from '@nestjs/jwt';
 import { Injectable } from '@nestjs/common';
 import { UserService } from '../user/user.service';
 import configuration from '@app/shared/configuration';
+
 import {
   GetSignatureTestDto,
   GetTokenDto,
@@ -14,16 +15,22 @@ import {
   Provider,
   Account,
   typedData,
-  ec,
-  encode,
+  stark,
+  num,
 } from 'starknet';
+import { Web3Service } from '@app/web3-service/web3.service';
+import { HexToText, formattedContractAddress } from '@app/shared/utils';
+import { ABIS } from '@app/web3-service/types';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly jwtService: JwtService,
     private readonly userService: UserService,
-  ) {}
+  ) {
+    this.web3Service = new Web3Service();
+  }
+  private readonly web3Service: Web3Service;
   async getSignMessage(address: string, nonce: number) {
     const typedDataValidate: TypedData = {
       types: {
@@ -52,27 +59,38 @@ export class AuthService {
     };
     return typedDataValidate;
   }
-  async verifySignature(address: string, signature: string, publicKey: string) {
+  async verifySignature(address: string, signature: string[], rpc: string) {
     const user = await this.userService.getUser(address);
     const message = await this.getSignMessage(address, user.nonce);
     try {
       const msgHash = typedData.getMessageHash(message, address);
 
-      const result1 = ec.starkCurve.verify(signature, msgHash, publicKey);
+      const accountContract = this.web3Service.getContractInstance(
+        ABIS.AccountABI,
+        address,
+        rpc,
+      );
 
-      console.log('Result (boolean) =', result1);
-      return result1;
+      const result = await accountContract.is_valid_signature(
+        msgHash,
+        signature,
+      );
+
+      // const result1 = ec.starkCurve.verify(signature, msgHash, publicKey);
+
+      console.log('Result ', HexToText(num.toHex(result)));
+      // return result1;
     } catch (error) {
       console.log('verification failed:', error);
       return false;
     }
   }
-  async login({ address, signature, publicKey }: GetTokenDto) {
+  async login({ address, signature, rpc }: GetTokenDto) {
     const accessPayload = {
       sub: address,
       role: [],
     };
-    const data = await this.verifySignature(address, signature, publicKey);
+    const data = await this.verifySignature(address, signature, rpc);
     if (!data) {
       throw new Error('Signature is not valid');
     }
@@ -91,30 +109,31 @@ export class AuthService {
 
   // Test Function
   async testSignMessage({ address, privateKey }: GetSignatureTestDto) {
+    address = formattedContractAddress(address);
+    console.log('Current Address', address);
+
     const rpc = 'https://starknet-sepolia.public.blastapi.io';
     const provider = new Provider({ nodeUrl: rpc });
-    // const address =
-    //   '0x05a2F4c3BcbE542D6a655Fb31EcA2914F884dd8a1c23EA0B1b210746C28cfA3a';
-    // const privateKey =
-    //   '0x959810447aef763d4f14e951f5ddc3e7e3c237c47e30035c901e1b85758b0c';
+
     const account = new Account(provider, address, privateKey);
 
     const user = await this.userService.getUser(address);
     if (!user) {
       throw new Error('User not found');
     }
+
+    //Get SignMessage
     const message = await this.getSignMessage(address, user.nonce);
-    const fullPublicKey = encode.addHexPrefix(
-      encode.buf2hex(ec.starkCurve.getPublicKey(privateKey, false)),
-    );
+
     const signature = (await account.signMessage(
       message,
     )) as WeierstrassSignatureType;
 
+    const formatSignature = stark.formatSignature(signature);
+
     return {
       address: address,
-      publicKey: fullPublicKey,
-      signature: signature.toCompactHex(),
+      signature: formatSignature,
     };
   }
 }

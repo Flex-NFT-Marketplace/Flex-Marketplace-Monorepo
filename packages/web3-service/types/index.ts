@@ -3,6 +3,7 @@ import contractDeployerABI from '../abis/contract-deployer.abi.json';
 import erc721Abi from '../abis/erc721.abi.json';
 import erc1155Abi from '../abis/erc1155.abi.json';
 import marketplaceAbi from '../abis/marketplace.abi.json';
+import accountAbi from '../abis/account.abi.json';
 import flexDrop from '../abis/flexdrop.abit.json';
 
 export enum EventTopic {
@@ -56,4 +57,5 @@ export const ABIS = {
   Erc721ABI: erc721Abi,
   Erc1155ABI: erc1155Abi,
   FlexDropABI: flexDrop,
+  AccountABI: accountAbi,
 };
