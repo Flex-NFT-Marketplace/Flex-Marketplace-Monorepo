@@ -1,10 +1,6 @@
 export const formattedContractAddress = (contractAddress: string) => {
-  if (contractAddress.length == 65) {
-    return contractAddress.replace('0x', '0x0').toLowerCase().trim();
-  }
-
-  if (contractAddress.length == 64) {
-    return contractAddress.replace('0x', '0x00').toLowerCase().trim();
+  while (contractAddress.length < 66) {
+    contractAddress = contractAddress.replace('0x', '0x0');
   }
 
   return contractAddress.toLowerCase().trim();
