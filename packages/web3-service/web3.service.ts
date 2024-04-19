@@ -43,6 +43,16 @@ export class Web3Service {
     return provider;
   }
 
+  getContractInstance(
+    abi: any,
+    contractAddress: string,
+    rpc: string,
+  ): Contract {
+    const provider = this.getProvider(rpc);
+    const contractInstance = new Contract(abi, contractAddress, provider);
+    return contractInstance;
+  }
+
   async getBlockTime(rpc: string) {
     const provider = this.getProvider(rpc);
     const block = await provider.getBlock('latest');
