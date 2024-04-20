@@ -1,0 +1,24 @@
+[
+    {
+        "tokenId": 1,
+        "nftContract": "0x05b948be5c00199f8f024741257b9c4ea99105e0b43cd5083549de0929c3f174",
+        "blockTime": 1711095915000,
+        "royaltyRate": 0,
+        "creator": null,
+        "amount": 1,
+        "attributes": [],
+        "isBurned": false,
+        "sale":null
+      },
+      {
+        "tokenId": 1,
+        "nftContract": "0x042b7a05fbd3a8bab52ae25a814813da7f5937584cf3e3fa248e69701188cf1d",
+        "blockTime": 1711095915,
+        "royaltyRate": 0,
+        "creator": null,
+        "amount": 1,
+        "attributes": [],
+        "isBurned": false,
+        "sale": null
+      }
+]

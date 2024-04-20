@@ -1,0 +1,61 @@
+import { SuccessfulTransactionReceiptResponse } from 'starknet';
+import contractDeployerABI from '../abis/contract-deployer.abi.json';
+import erc721Abi from '../abis/erc721.abi.json';
+import erc1155Abi from '../abis/erc1155.abi.json';
+import marketplaceAbi from '../abis/marketplace.abi.json';
+import accountAbi from '../abis/account.abi.json';
+import flexDrop from '../abis/flexdrop.abit.json';
+
+export enum EventTopic {
+  CONTRACT_DEPLOYED = '0x26b160f10156dea0639bec90696772c640b9706a47f5b8c52ea1abe5858b34d',
+  TRANSFER = '0x99cd8bde557814842a3121e8ddfd433a539b8c9f14bf31ebf108d12e6196e9',
+  TRANSFER_SINGLE = '0x182d859c0807ba9db63baf8b9d9fdbfeb885d820be6e206b9dab626d995c433', // transfer ERC-1155
+  TRANSFER_BATCH = '0x2563683c757f3abe19c4b7237e2285d8993417ddffe0b54a19eb212ea574b08',
+  CANCEL_ALL_ORDERS = '0x2f599d908a8c01c05b6e33acc96b798a72faf80e18281ca5ca6c94ce731ff59',
+  CANCEL_OFFER = '0xb792a85dbf71e2d3655418ca28e9946996c536760c97837abc48e81d429f79',
+  TAKER_BID = '0x37fb5822d8beb7f626792d8080acbee2e1b8776c0eac7628ee8fdb0bb2fcdcf',
+  TAKER_ASK = '0x2a0e6bb76d0d6b53d99a2ca5173c4c8bc0e1bce64817a9a9b15ef0b254bd92a',
+  PHASE_DROP_UPDATED = '0x2047efdab90661b07d0183dda95130911f3145be46b75991d35ec3005ee22ff',
+  FLEX_DROP_MINTED = '0x2e85c3cdcfa0ab436a9b3d9fe53b1d1fde30b9696afe98c4587dc5099ea5bb9',
+  CREATOR_PAYOUT_UPDATED = '0x3110384dee490385b1868cfc2b61dfe6867622bd1471235785d10eca82a0766',
+  PAYER_UPDATED = '0x2c70140017209d30aaefd4a4c857d4c1fee5d63fea01c590069ca032cc1d11',
+}
+
+export enum InterfaceId {
+  ERC721 = '0x33eb2f84c309543403fd69f0d0f363781ef06ef6faeb0131ff16ea3175bd943',
+  OLD_ERC721 = '0x80ac58cd',
+  ERC1155 = '0x6114a8f75559e1b39fcba08ce02961a1aa082d9256a158dd3e64964e4b1b52',
+  OLD_ERC1155 = '0xd9b67a26',
+  NON_FUNGIBLE_FLEX_DROP_TOKEN = '0x3e8437a5f69da6b8bd474c863221741d75466a9500cfe343ac93d0e38135c16',
+}
+
+export enum EventType {
+  DEPLOY_CONTRACT = 'DEPLOY_CONTRACT',
+  MINT_721 = 'MINT_721',
+  BURN_721 = 'BURN_721',
+  MINT_1155 = 'MINT_1155',
+  BURN_1155 = 'BURN_1155',
+  TRANSFER_721 = 'TRANSFER_721',
+  TRANSFER_1155 = 'TRANSFER_1155',
+  TAKER_BID = 'TAKER_BID',
+  TAKER_ASK = 'TAKER_ASK',
+  CANCEL_ALL_ORDERS = 'CANCEL_ALL_ORDERS',
+  CANCEL_OFFER = 'CANCEL_OFFER',
+  PHASE_DROP_UPDATED = 'PHASE_DROP_UPDATED',
+  FLEX_DROP_MINTED = 'FLEX_DROP_MINTED',
+  CREATOR_PAYOUT_UPDATED = 'CREATOR_PAYOUT_UPDATED',
+  PAYER_UPDATED = 'PAYER_UPDATED',
+}
+export type LogsReturnValues = SuccessfulTransactionReceiptResponse & {
+  returnValues: any;
+  eventType: EventType;
+};
+
+export const ABIS = {
+  MarketplaceABI: marketplaceAbi,
+  ContractDeployerABI: contractDeployerABI,
+  Erc721ABI: erc721Abi,
+  Erc1155ABI: erc1155Abi,
+  FlexDropABI: flexDrop,
+  AccountABI: accountAbi,
+};
