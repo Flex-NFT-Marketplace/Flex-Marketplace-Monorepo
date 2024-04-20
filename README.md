@@ -67,4 +67,4 @@ As this is a private repository, contributions are not accepted at this time.
 
 ## License
 
-This project is a private repository and does not have a publicly available license. All rights reserved.
+Apache License Version 2.0, January 2004
