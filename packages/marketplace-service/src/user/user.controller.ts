@@ -2,7 +2,7 @@ import { ApiTags } from '@nestjs/swagger';
 import { Controller, Get, Req } from '@nestjs/common';
 import { UserService } from './user.service';
 import { JWT, User } from '@app/shared/modules';
-import { iInfoToken } from '@app/shared/modules/jwt/auth.dto';
+import { iInfoToken } from '@app/shared/modules/dtos-query/auth.dto';
 import { BaseResult } from '@app/shared/types/base.result';
 import { UserDto } from '@app/shared/models';
 

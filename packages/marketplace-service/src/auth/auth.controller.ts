@@ -1,5 +1,5 @@
 import { formattedContractAddress } from './../../../shared/utils/formatContractAddress';
-import { Body, Controller, Get, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, Post, Query, HttpCode } from '@nestjs/common';
 import {
   ApiTags,
   ApiOkResponse,
@@ -14,7 +14,7 @@ import {
   GetSignatureTestDto,
   GetTokenDto,
   GetTokenRspDto,
-} from '@app/shared/modules/jwt/auth.dto';
+} from '@app/shared/modules/dtos-query/auth.dto';
 import { BaseResult } from '@app/shared/types/base.result';
 import { UserService } from '../user/user.service';
 @ApiTags('Authentication')
@@ -69,6 +69,7 @@ export class AuthController {
   }
 
   @Post('/token')
+  @HttpCode(200)
   @ApiOkResponse({
     description: 'API Get Token ',
     schema: {
@@ -115,7 +116,7 @@ export class AuthController {
     }
   }
 
-  @Post('/test-sign')
+  @Post('/testSign')
   @ApiOkResponse({
     schema: {
       allOf: [

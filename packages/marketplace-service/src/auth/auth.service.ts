@@ -7,7 +7,7 @@ import {
   GetSignatureTestDto,
   GetTokenDto,
   JwtPayload,
-} from '@app/shared/modules/jwt/auth.dto';
+} from '@app/shared/modules/dtos-query/auth.dto';
 import {
   WeierstrassSignatureType,
   shortString,
