@@ -2,6 +2,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { UserDocument, Users } from '@app/shared/models';
 import { Injectable } from '@nestjs/common';
 import { Model } from 'mongoose';
+import { UpdateInfoReqDTO } from '@app/shared/modules/dtos-query/user.dto';
 @Injectable()
 export class UserService {
   constructor(@InjectModel(Users.name) private userModel: Model<Users>) {}
@@ -36,5 +37,11 @@ export class UserService {
 
   async getUser(userAddress: string): Promise<UserDocument> {
     return await this.userModel.findOne({ address: userAddress });
+  }
+  async updateUserInformation(query: UpdateInfoReqDTO) {
+    const update: any = {};
+    if (query.avatar) {
+      update['.avatar'] = query.avatar;
+    }
   }
 }

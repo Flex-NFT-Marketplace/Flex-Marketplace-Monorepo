@@ -21,10 +21,7 @@ export class PaginationDto<T> {
 
   @ApiProperty()
   public items: T[];
-  /**
-   *
-   * @param args 0: items, 1: total, 2: page, 3: size
-   */
+
   public constructor(...args: any[]) {
     if (args.length === 3) {
       this.total = args[0];

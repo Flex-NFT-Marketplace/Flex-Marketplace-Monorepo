@@ -7,7 +7,11 @@ import {
   NftCollections,
   NftSchema,
   Nfts,
+  UserSchema,
+  Users,
 } from '@app/shared/models';
+
+import { UsersModule } from '../user/user.module';
 
 @Module({
   imports: [
@@ -17,7 +21,12 @@ import {
         name: NftCollections.name,
         schema: NftCollectionSchema,
       },
+      {
+        name: Users.name,
+        schema: UserSchema,
+      },
     ]),
+    UsersModule,
   ],
   controllers: [NftController],
   providers: [NftService],

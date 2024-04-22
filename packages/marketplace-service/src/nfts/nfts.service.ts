@@ -4,19 +4,27 @@ import { NftFilterQueryParams } from '@app/shared/modules/dtos-query';
 import { PaginationDto } from '@app/shared/types/pagination.dto';
 import { Injectable } from '@nestjs/common';
 import { Model } from 'mongoose';
+import { UserService } from '../user/user.service';
+import { isValidObjectId } from '@app/shared/utils';
 @Injectable()
 export class NftService {
   constructor(
     @InjectModel(Nfts.name)
     private readonly nftModel: Model<NftDocument>,
+    private readonly userService: UserService,
   ) {}
 
-  async getNftsByOwner(
-    query: NftFilterQueryParams,
-  ): Promise<PaginationDto<NftDto>> {
+  async getNfts(query: NftFilterQueryParams): Promise<PaginationDto<NftDto>> {
     const filter: any = {};
     if (query.owner) {
-      filter.owner = query.owner;
+      if (isValidObjectId(query.owner)) {
+        filter.owner = query.owner;
+      } else {
+        const user = this.userService.getUser(query.owner);
+        if (user) {
+          filter.owner = (await user)._id;
+        }
+      }
     }
     if (query.nftContract) {
       filter.nftContract = query.nftContract;
@@ -26,7 +34,6 @@ export class NftService {
     }
 
     const count = await this.nftModel.countDocuments(filter);
-    console.log('Current Count', count);
     const items = await this.nftModel
       .find(filter)
       .sort(query.sort)

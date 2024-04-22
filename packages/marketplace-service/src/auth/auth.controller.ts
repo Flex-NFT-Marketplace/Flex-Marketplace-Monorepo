@@ -6,13 +6,14 @@ import {
   ApiExtraModels,
   ApiInternalServerErrorResponse,
   getSchemaPath,
+  ApiOperation,
 } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import {
-  GetNonceDto,
+  GetNonceReqDto,
   GetNonceRspDto,
   GetSignatureTestDto,
-  GetTokenDto,
+  GetTokenReqDto,
   GetTokenRspDto,
 } from '@app/shared/modules/dtos-query/auth.dto';
 import { BaseResult } from '@app/shared/types/base.result';
@@ -26,7 +27,12 @@ export class AuthController {
     private readonly userService: UserService,
   ) {}
 
-  @Get('/getNonce')
+  @Get('/get-nonce')
+  @ApiOperation({
+    summary: 'Get SignMessage API',
+    description: 'Use this API to get the sign message for the user.',
+  })
+  @HttpCode(200)
   @ApiOkResponse({
     schema: {
       allOf: [
@@ -53,11 +59,11 @@ export class AuthController {
     },
   })
   async getNonce(
-    @Query() query: GetNonceDto,
+    @Query() query: GetNonceReqDto,
   ): Promise<BaseResult<GetNonceRspDto>> {
     const address = formattedContractAddress(query.address);
     const user = await this.userService.getOrCreateUser(address);
-    console.log('Now User', user);
+
     const message = await this.authService.getSignMessage(address, user.nonce);
     return {
       success: true,
@@ -69,6 +75,11 @@ export class AuthController {
   }
 
   @Post('/token')
+  @ApiOperation({
+    summary: 'Login To Get Access Token API',
+    description:
+      'After User Sign the message, use this API to get the access token.',
+  })
   @HttpCode(200)
   @ApiOkResponse({
     schema: {
@@ -99,7 +110,7 @@ export class AuthController {
     },
   })
   async connectWallet(
-    @Body() tokenDto: GetTokenDto,
+    @Body() tokenDto: GetTokenReqDto,
   ): Promise<BaseResult<GetTokenRspDto>> {
     try {
       const data = await this.authService.login(tokenDto);
@@ -115,7 +126,8 @@ export class AuthController {
     }
   }
 
-  @Post('/testSign')
+  @Post('/test-sign')
+  @ApiOperation({ summary: 'It just for testing purpose.' })
   @ApiOkResponse({
     schema: {
       allOf: [

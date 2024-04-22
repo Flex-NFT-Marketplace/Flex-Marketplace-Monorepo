@@ -5,7 +5,7 @@ import configuration from '@app/shared/configuration';
 
 import {
   GetSignatureTestDto,
-  GetTokenDto,
+  GetTokenReqDto,
   JwtPayload,
 } from '@app/shared/modules/dtos-query/auth.dto';
 import {
@@ -87,7 +87,7 @@ export class AuthService {
     }
   }
 
-  async login({ address, signature, rpc }: GetTokenDto) {
+  async login({ address, signature, rpc }: GetTokenReqDto) {
     const accessPayload = {
       sub: address,
       role: [],
