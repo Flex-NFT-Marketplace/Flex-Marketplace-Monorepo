@@ -22,6 +22,18 @@ export class UserService {
     }
     return user;
   }
+  async updateNonce(address: string): Promise<UserDocument> {
+    const user = await this.userModel
+      .findOneAndUpdate(
+        { address: address },
+        { nonce: Math.floor(Math.random() * 1000000) },
+        { new: true },
+      )
+      .exec();
+
+    return user;
+  }
+
   async getUser(userAddress: string): Promise<UserDocument> {
     return await this.userModel.findOne({ address: userAddress });
   }

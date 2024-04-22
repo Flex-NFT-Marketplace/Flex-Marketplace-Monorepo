@@ -78,11 +78,11 @@ export class AuthService {
 
       // const result1 = ec.starkCurve.verify(signature, msgHash, publicKey);
 
+      console.log('Why Result', result);
       console.log('Result ', HexToText(num.toHex(result)));
       // return result1;
       return HexToText(num.toHex(result));
     } catch (error) {
-      console.log('verification failed:', error);
       return false;
     }
   }
@@ -115,7 +115,6 @@ export class AuthService {
     nonce,
   }: GetSignatureTestDto & { nonce: number }) {
     address = formattedContractAddress(address);
-    console.log('Current Address', address);
 
     const rpc = 'https://starknet-sepolia.public.blastapi.io';
     const provider = new Provider({ nodeUrl: rpc });

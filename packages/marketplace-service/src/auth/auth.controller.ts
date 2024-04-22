@@ -57,6 +57,7 @@ export class AuthController {
   ): Promise<BaseResult<GetNonceRspDto>> {
     const address = formattedContractAddress(query.address);
     const user = await this.userService.getOrCreateUser(address);
+    console.log('Now User', user);
     const message = await this.authService.getSignMessage(address, user.nonce);
     return {
       success: true,
@@ -69,8 +70,12 @@ export class AuthController {
 
   @Post('/token')
   @ApiOkResponse({
+    description: 'API Get Token ',
     schema: {
       allOf: [
+        {
+          $ref: getSchemaPath(BaseResult),
+        },
         {
           properties: {
             success: { type: 'boolean' },
@@ -109,13 +114,11 @@ export class AuthController {
       };
     }
   }
+
   @Post('/test-sign')
   @ApiOkResponse({
     schema: {
       allOf: [
-        {
-          // $ref: getSchemaPath(GetTokenRspDto),
-        },
         {
           properties: {
             data: {
@@ -132,27 +135,41 @@ export class AuthController {
       ],
     },
   })
+  @ApiInternalServerErrorResponse({
+    description: '<b>Internal server error</b>',
+    schema: {
+      allOf: [
+        {
+          properties: {
+            error: { type: 'boolean' },
+            data: { type: 'object' },
+          },
+        },
+      ],
+    },
+  })
   async testSign(
     @Body() testSignDto: GetSignatureTestDto,
   ): Promise<BaseResult<any>> {
     try {
-      const user = await this.userService.getUser(testSignDto.address);
+      const address = formattedContractAddress(testSignDto.address);
+      const user = await this.userService.getUser(address);
       if (!user) {
         throw new Error('User not found');
       }
       const data = await this.authService.testSignMessage({
-        address: testSignDto.address,
+        address: address,
         privateKey: testSignDto.privateKey,
         nonce: user.nonce,
       });
-      return { success: true, data: data };
+      return new BaseResult({ success: true, data: data });
     } catch (error) {
-      return {
+      return new BaseResult({
         success: false,
         data: {
           error: error.message,
         },
-      };
+      });
     }
   }
 }
