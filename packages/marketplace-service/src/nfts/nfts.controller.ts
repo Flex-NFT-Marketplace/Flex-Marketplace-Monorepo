@@ -11,7 +11,6 @@ import { PaginationDto } from '@app/shared/types/pagination.dto';
 
 import { NftFilterQueryParams } from '@app/shared/modules/dtos-query';
 import { BaseResultPagination } from '@app/shared/types/base.result.pagination';
-import { NftDto } from '@app/shared/models';
 
 @ApiTags('NFTs')
 @Controller('nfts')
@@ -21,17 +20,10 @@ export class NftController {
   @Post('/getNftsByOwner')
   @HttpCode(200)
   @ApiOkResponse({
-    description: 'API Get Token ',
     schema: {
       allOf: [
         {
           $ref: getSchemaPath(BaseResultPagination),
-        },
-        {
-          properties: {
-            success: { type: 'boolean' },
-            data: { type: 'object', $ref: getSchemaPath(NftDto) },
-          },
         },
       ],
     },

@@ -86,6 +86,7 @@ export class AuthService {
       return false;
     }
   }
+
   async login({ address, signature, rpc }: GetTokenDto) {
     const accessPayload = {
       sub: address,
@@ -96,6 +97,7 @@ export class AuthService {
       throw new Error('Signature is not valid');
     }
     const token = await this.generateToken(accessPayload);
+    await this.userService.updateRandomNonce(address);
     return {
       token: token,
     };

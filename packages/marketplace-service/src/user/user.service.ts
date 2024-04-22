@@ -22,7 +22,7 @@ export class UserService {
     }
     return user;
   }
-  async updateNonce(address: string): Promise<UserDocument> {
+  async updateRandomNonce(address: string): Promise<UserDocument> {
     const user = await this.userModel
       .findOneAndUpdate(
         { address: address },

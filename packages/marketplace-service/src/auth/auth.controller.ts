@@ -71,7 +71,6 @@ export class AuthController {
   @Post('/token')
   @HttpCode(200)
   @ApiOkResponse({
-    description: 'API Get Token ',
     schema: {
       allOf: [
         {
