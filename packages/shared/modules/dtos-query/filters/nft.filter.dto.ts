@@ -1,5 +1,6 @@
 import { BaseQueryParams } from '@app/shared/types/base.queryparams';
 import { ApiProperty } from '@nestjs/swagger';
+import { IsNumber } from 'class-validator';
 
 export class NftFilterQueryParams extends BaseQueryParams {
   @ApiProperty({})
@@ -9,5 +10,6 @@ export class NftFilterQueryParams extends BaseQueryParams {
   nftContract?: string;
 
   @ApiProperty()
-  tokenId?: string;
+  @IsNumber()
+  tokenId?: number;
 }
