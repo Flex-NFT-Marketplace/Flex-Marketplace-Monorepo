@@ -4,6 +4,8 @@ import { NftCollectionsService } from './nft-collections.service';
 import {
   NftCollectionSchema,
   NftCollections,
+  NftSchema,
+  Nfts,
   PaymentTokenSchema,
   PaymentTokens,
 } from '@app/shared/models';
@@ -19,6 +21,10 @@ import { NftCollectionsController } from './nft-collections.controller';
       {
         name: PaymentTokens.name,
         schema: PaymentTokenSchema,
+      },
+      {
+        name: Nfts.name,
+        schema: NftSchema,
       },
     ]),
   ],

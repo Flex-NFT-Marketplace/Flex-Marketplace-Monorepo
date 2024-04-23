@@ -34,6 +34,7 @@ export class NftCollectionsService {
     const data = (
       await this.nftCollectionModel.findOne({ nftContract })
     ).populate(['paymentTokens']);
+
     return data;
   }
 }

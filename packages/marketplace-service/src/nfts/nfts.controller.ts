@@ -16,7 +16,7 @@ import { NftDto } from '@app/shared/models';
 import { BaseResult } from '@app/shared/types/base.result';
 
 @ApiTags('NFTs')
-@Controller('nfts')
+@Controller('nft')
 @ApiExtraModels(NftFilterQueryParams, PaginationDto, NftDto)
 export class NftController {
   constructor(private readonly nftsService: NftService) {}
@@ -63,13 +63,10 @@ export class NftController {
       allOf: [
         {
           $ref: getSchemaPath(BaseResult),
-        },
-        {
           properties: {
             errors: {
               example: 'Error Message',
             },
-
             success: {
               example: false,
             },
@@ -80,7 +77,7 @@ export class NftController {
   })
   async getNfts(@Body() query: NftFilterQueryParams) {
     try {
-      const data = await this.nftsService.getNfts(query);
+      const data = await this.nftsService.getNftsByQuery(query);
       return new BaseResult({
         success: true,
         data: data,

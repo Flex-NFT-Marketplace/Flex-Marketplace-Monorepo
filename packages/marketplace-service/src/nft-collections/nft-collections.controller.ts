@@ -13,11 +13,11 @@ import { BaseResult } from '@app/shared/types/base.result';
 import { NftCollectionDto } from '@app/shared/models';
 
 @ApiTags('NFT Collections')
-@Controller('nft-collections')
+@Controller('nft-collection')
 @ApiExtraModels(NftCollectionQueryParams, NftCollectionDto)
 export class NftCollectionsController {
   constructor(private readonly nftCollectionService: NftCollectionsService) {}
-  @Post('/list')
+  @Post('/get-collections')
   @ApiOperation({
     summary: 'Get List NFT Collections',
     description:
@@ -50,13 +50,10 @@ export class NftCollectionsController {
       allOf: [
         {
           $ref: getSchemaPath(BaseResult),
-        },
-        {
           properties: {
-            errors: {
+            error: {
               example: 'Error Message',
             },
-
             success: {
               example: false,
             },
@@ -79,9 +76,47 @@ export class NftCollectionsController {
       });
     }
   }
-  @Get('/detail/:nftContract')
+  @Get('/:nftContract')
   @ApiOperation({
     summary: 'Get  NFT Detail Collections',
+  })
+  @ApiOkResponse({
+    schema: {
+      allOf: [
+        {
+          $ref: getSchemaPath(BaseResult),
+        },
+        {
+          properties: {
+            data: {
+              allOf: [
+                {
+                  $ref: getSchemaPath(NftCollectionDto),
+                },
+              ],
+            },
+          },
+        },
+      ],
+    },
+  })
+  @ApiInternalServerErrorResponse({
+    description: '<b>Internal server error</b>',
+    schema: {
+      allOf: [
+        {
+          $ref: getSchemaPath(BaseResult),
+          properties: {
+            errors: {
+              example: 'Error Message',
+            },
+            success: {
+              example: false,
+            },
+          },
+        },
+      ],
+    },
   })
   async getNFTCollectionDetail(
     @Param('nftContract') nftContract: string,

@@ -16,10 +16,12 @@ import {
   Account,
   typedData,
   stark,
-  num,
 } from 'starknet';
 import { Web3Service } from '@app/web3-service/web3.service';
-import { HexToText, formattedContractAddress } from '@app/shared/utils';
+import {
+  BigNumberishToText,
+  formattedContractAddress,
+} from '@app/shared/utils';
 import { ABIS } from '@app/web3-service/types';
 
 @Injectable()
@@ -65,8 +67,8 @@ export class AuthService {
     try {
       const msgHash = typedData.getMessageHash(message, address);
 
-      const accountContract = this.web3Service.getContractInstance(
-        ABIS.AccountABI,
+      const accountContract = await this.web3Service.getContractInstance(
+        address,
         address,
         rpc,
       );
@@ -78,10 +80,10 @@ export class AuthService {
 
       // const result1 = ec.starkCurve.verify(signature, msgHash, publicKey);
 
-      console.log('Why Result', result);
-      console.log('Result ', HexToText(num.toHex(result)));
+      // console.log('Why Result', result);
+      // console.log('Result ', BigNumberishToText(result));
       // return result1;
-      return HexToText(num.toHex(result));
+      return BigNumberishToText(result);
     } catch (error) {
       return false;
     }

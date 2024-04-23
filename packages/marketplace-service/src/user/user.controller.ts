@@ -7,7 +7,7 @@ import { BaseResult } from '@app/shared/types/base.result';
 import { UserDto } from '@app/shared/models';
 
 @ApiTags('Users')
-@Controller('users')
+@Controller('user')
 export class UsersController {
   constructor(private readonly userService: UserService) {}
 

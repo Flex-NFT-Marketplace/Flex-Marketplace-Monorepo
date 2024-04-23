@@ -14,7 +14,9 @@ export class NftService {
     private readonly userService: UserService,
   ) {}
 
-  async getNfts(query: NftFilterQueryParams): Promise<PaginationDto<NftDto>> {
+  async getNftsByQuery(
+    query: NftFilterQueryParams,
+  ): Promise<PaginationDto<NftDto>> {
     const filter: any = {};
     if (query.owner) {
       if (isValidObjectId(query.owner)) {
