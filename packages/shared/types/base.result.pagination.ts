@@ -8,4 +8,8 @@ export class BaseResultPagination<T> {
   data: PaginationDto<T>;
   @ApiProperty()
   success = true;
+  constructor(data: PaginationDto<T>) {
+    this.data = data;
+    this.success = true;
+  }
 }

@@ -101,9 +101,17 @@ export class AuthController {
     schema: {
       allOf: [
         {
+          $ref: getSchemaPath(BaseResult),
+        },
+        {
           properties: {
-            error: { type: 'boolean' },
-            data: { type: 'object' },
+            errors: {
+              example: 'Error Message',
+            },
+            data: {},
+            success: {
+              example: false,
+            },
           },
         },
       ],
@@ -121,7 +129,7 @@ export class AuthController {
     } catch (error) {
       return {
         success: false,
-        data: error.message,
+        error: error.message,
       };
     }
   }

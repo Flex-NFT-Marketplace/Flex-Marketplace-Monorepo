@@ -11,11 +11,13 @@ import { NftService } from './nfts.service';
 import { PaginationDto } from '@app/shared/types/pagination.dto';
 
 import { NftFilterQueryParams } from '@app/shared/modules/dtos-query';
-import { BaseResultPagination } from '@app/shared/types/base.result.pagination';
+
+import { NftDto } from '@app/shared/models';
+import { BaseResult } from '@app/shared/types/base.result';
 
 @ApiTags('NFTs')
 @Controller('nfts')
-@ApiExtraModels(NftFilterQueryParams, PaginationDto, BaseResultPagination)
+@ApiExtraModels(NftFilterQueryParams, PaginationDto, NftDto)
 export class NftController {
   constructor(private readonly nftsService: NftService) {}
   @Post('/get-nfts')
@@ -29,7 +31,28 @@ export class NftController {
     schema: {
       allOf: [
         {
-          $ref: getSchemaPath(BaseResultPagination),
+          $ref: getSchemaPath(BaseResult),
+        },
+        {
+          properties: {
+            data: {
+              allOf: [
+                {
+                  $ref: getSchemaPath(PaginationDto),
+                },
+                {
+                  properties: {
+                    items: {
+                      type: 'array',
+                      items: {
+                        $ref: getSchemaPath(NftDto),
+                      },
+                    },
+                  },
+                },
+              ],
+            },
+          },
         },
       ],
     },
@@ -39,15 +62,34 @@ export class NftController {
     schema: {
       allOf: [
         {
+          $ref: getSchemaPath(BaseResult),
+        },
+        {
           properties: {
-            error: { type: 'boolean' },
-            data: { type: 'object' },
+            errors: {
+              example: 'Error Message',
+            },
+
+            success: {
+              example: false,
+            },
           },
         },
       ],
     },
   })
   async getNfts(@Body() query: NftFilterQueryParams) {
-    return await this.nftsService.getNfts(query);
+    try {
+      const data = await this.nftsService.getNfts(query);
+      return new BaseResult({
+        success: true,
+        data: data,
+      });
+    } catch (error) {
+      return new BaseResult({
+        success: false,
+        error: error.message,
+      });
+    }
   }
 }
