@@ -3,20 +3,30 @@ import { UserDocument, Users } from '@app/shared/models';
 import { Injectable } from '@nestjs/common';
 import { Model } from 'mongoose';
 import { UpdateInfoReqDTO } from '@app/shared/modules/dtos-query/user.dto';
+import { Web3Service } from '@app/web3-service/web3.service';
 @Injectable()
 export class UserService {
-  constructor(@InjectModel(Users.name) private userModel: Model<Users>) {}
-  async getOrCreateUser(userAddress: string): Promise<UserDocument> {
+  constructor(
+    @InjectModel(Users.name) private userModel: Model<Users>,
+    private readonly web3Service: Web3Service,
+  ) {}
+  async getOrCreateUser(
+    userAddress: string,
+    rpc: string,
+  ): Promise<UserDocument> {
     let user = await this.userModel.findOne({
       address: userAddress,
     });
     if (!user) {
+      const provider = this.web3Service.getProvider(rpc);
+      const classHash = await provider.getClassHashAt(userAddress);
       const newUser: Users = {
         address: userAddress,
         username: userAddress,
         nonce: Math.floor(Math.random() * 1000000),
         isVerified: false,
         roles: [],
+        classHash,
       };
 
       user = await this.userModel.create(newUser);

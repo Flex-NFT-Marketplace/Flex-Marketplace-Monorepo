@@ -27,6 +27,13 @@ export class GetNonceReqDto {
   @IsHexadecimal({ message: 'Address must be a hex string' })
   @Length(60, 66, { message: 'Address must be valid characters long' })
   address: string;
+
+  @ApiProperty({
+    required: true,
+    example: 'https://starknet-sepolia.public.blastapi.io',
+  })
+  @IsUrl()
+  rpc: string;
 }
 // Response Nonce Data
 // Response Nonce Data

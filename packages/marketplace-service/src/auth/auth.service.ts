@@ -22,7 +22,6 @@ import {
   BigNumberishToText,
   formattedContractAddress,
 } from '@app/shared/utils';
-import { ABIS } from '@app/web3-service/types';
 
 @Injectable()
 export class AuthService {
