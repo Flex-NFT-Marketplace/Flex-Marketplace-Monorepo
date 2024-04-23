@@ -28,7 +28,7 @@ export class BlockDetectionController {
   async init() {
     const chains = await this.chainModel.find();
     this.listeners = chains
-      .filter(chain => chain.marketplaceContract)
+      .filter(chain => chain.currentMarketplaceContract)
       .map(
         chain =>
           new BlockDetectionService(

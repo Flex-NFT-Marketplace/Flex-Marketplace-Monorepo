@@ -783,7 +783,6 @@ export class NftItemService {
 
     const updateNfts = [];
     const newNfts: Nfts[] = [];
-    const updateSales = [];
     if (fromBalance) {
       const newFromAmount = fromBalance.amount - value;
 
@@ -879,10 +878,6 @@ export class NftItemService {
 
     if (updateNfts.length > 0) {
       await this.nftModel.bulkWrite(updateNfts);
-    }
-
-    if (updateSales.length > 0) {
-      await this.saleModel.bulkWrite(updateSales);
     }
   }
 
@@ -1180,13 +1175,18 @@ export class NftItemService {
     const sellerNft = await this.nftModel.findOne({
       tokenId,
       nftContract: collection,
-      owner: seller,
+      owner: sellerUser,
     });
 
     const sale = await this.saleModel.findOne({
-      signer: seller,
+      signer: sellerUser,
       saltNonce: orderNonce,
     });
+
+    await this.offerModel.updateMany(
+      { seller: sellerUser, status: OfferStatus.pending },
+      { $set: { status: OfferStatus.cancelled } },
+    );
 
     const history: Histories = {
       nft: sellerNft,
@@ -1242,17 +1242,19 @@ export class NftItemService {
         },
       });
 
-      updateSale.push({
-        updateOne: {
-          filter: {
-            _id: sale._id,
+      if (sale) {
+        updateSale.push({
+          updateOne: {
+            filter: {
+              _id: sale._id,
+            },
+            update: {
+              remainingAmount: 0,
+              status: MarketStatus.Sold,
+            },
           },
-          update: {
-            remainingAmount: 0,
-            status: MarketStatus.Sold,
-          },
-        },
-      });
+        });
+      }
     } else {
       const counterSignatureUsage =
         await this.web3Service.getCounterUsageSignature(
@@ -1317,24 +1319,26 @@ export class NftItemService {
         updateNftItems.push({ insertOne: newBuyerNft });
       }
 
-      updateSale.push({
-        updateOne: {
-          filter: {
-            _id: sale._id,
+      if (sale) {
+        updateSale.push({
+          updateOne: {
+            filter: {
+              _id: sale._id,
+            },
+            update: {
+              $set:
+                remainingUsage == 0
+                  ? {
+                      remainingAmount: remainingUsage,
+                      status: MarketStatus.Sold,
+                    }
+                  : {
+                      remainingAmount: remainingUsage,
+                    },
+            },
           },
-          update: {
-            $set:
-              remainingUsage == 0
-                ? {
-                    remainingAmount: remainingUsage,
-                    status: MarketStatus.Sold,
-                  }
-                : {
-                    remainingAmount: remainingUsage,
-                  },
-          },
-        },
-      });
+        });
+      }
     }
 
     if (updateNftItems.length > 0) {
@@ -1408,7 +1412,7 @@ export class NftItemService {
     const sellerNft = await this.nftModel.findOne({
       tokenId,
       nftContract: collection,
-      owner: seller,
+      owner: sellerUser,
     });
 
     const offer = await this.offerModel.findOne({
@@ -1469,17 +1473,29 @@ export class NftItemService {
         },
       });
 
-      updateOffer.push({
-        updateOne: {
-          filter: {
-            _id: offer._id,
+      if (offer) {
+        updateOffer.push({
+          updateOne: {
+            filter: {
+              _id: offer._id,
+            },
+            update: {
+              remainingAmount: 0,
+              status: OfferStatus.accepted,
+            },
           },
-          update: {
-            remainingAmount: 0,
-            status: OfferStatus.accepted,
-          },
-        },
-      });
+        });
+      }
+
+      await this.saleModel.findOneAndUpdate(
+        { nft: sellerNft._id, status: MarketStatus.OnSale },
+        { $set: { status: MarketStatus.Cancelled } },
+
+        await this.offerModel.updateMany(
+          { _id: { $ne: offer._id }, status: OfferStatus.pending },
+          { $set: { status: OfferStatus.cancelled } },
+        ),
+      );
     } else {
       const counterSignatureUsage =
         await this.web3Service.getCounterUsageSignature(
@@ -1559,24 +1575,35 @@ export class NftItemService {
         updateNftItems.push({ insertOne: newBuyerNft });
       }
 
-      updateOffer.push({
-        updateOne: {
-          filter: {
-            _id: offer._id,
+      if (offer) {
+        updateOffer.push({
+          updateOne: {
+            filter: {
+              _id: offer._id,
+            },
+            update: {
+              $set:
+                remainingUsage == 0
+                  ? {
+                      remainingAmount: remainingUsage,
+                      status: OfferStatus.accepted,
+                    }
+                  : {
+                      remainingAmount: remainingUsage,
+                    },
+            },
           },
-          update: {
-            $set:
-              remainingUsage == 0
-                ? {
-                    remainingAmount: remainingUsage,
-                    status: OfferStatus.accepted,
-                  }
-                : {
-                    remainingAmount: remainingUsage,
-                  },
-          },
+        });
+      }
+
+      await this.offerModel.updateMany(
+        {
+          _id: { $ne: offer._id },
+          remainingAmount: { $gt: sellerNft.amount },
+          status: OfferStatus.pending,
         },
-      });
+        { $set: { status: OfferStatus.cancelled } },
+      );
     }
 
     if (updateNftItems.length > 0) {

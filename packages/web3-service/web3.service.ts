@@ -276,8 +276,9 @@ export class Web3Service {
           }
         } else if (
           event.keys.includes(EventTopic.CANCEL_OFFER) &&
-          formattedContractAddress(event.from_address) ==
-            chain.marketplaceContract
+          chain.marketplaceContract.includes(
+            formattedContractAddress(event.from_address),
+          )
         ) {
           eventWithTypes.push({
             ...txReceiptFilter,
@@ -290,8 +291,9 @@ export class Web3Service {
           });
         } else if (
           event.keys.includes(EventTopic.CANCEL_ALL_ORDERS) &&
-          formattedContractAddress(event.from_address) ==
-            chain.marketplaceContract
+          chain.marketplaceContract.includes(
+            formattedContractAddress(event.from_address),
+          )
         ) {
           eventWithTypes.push({
             ...txReceiptFilter,
@@ -304,8 +306,9 @@ export class Web3Service {
           });
         } else if (
           event.keys.includes(EventTopic.TAKER_BID) &&
-          formattedContractAddress(event.from_address) ==
-            chain.marketplaceContract
+          chain.marketplaceContract.includes(
+            formattedContractAddress(event.from_address),
+          )
         ) {
           eventWithTypes.push({
             ...txReceiptFilter,
@@ -314,8 +317,9 @@ export class Web3Service {
           });
         } else if (
           event.keys.includes(EventTopic.TAKER_ASK) &&
-          formattedContractAddress(event.from_address) ==
-            chain.marketplaceContract
+          chain.marketplaceContract.includes(
+            formattedContractAddress(event.from_address),
+          )
         ) {
           eventWithTypes.push({
             ...txReceiptFilter,
@@ -381,7 +385,7 @@ export class Web3Service {
     const provider = this.getProvider(chain.rpc);
     const contractInstance = new Contract(
       ABIS.MarketplaceABI,
-      chain.marketplaceContract,
+      chain.currentMarketplaceContract,
       provider,
     );
 
