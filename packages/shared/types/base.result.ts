@@ -2,7 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export class BaseResult<T> {
   @ApiProperty()
-  errors?: object;
+  error?: string;
   @ApiProperty()
   data?: T;
   @ApiProperty()

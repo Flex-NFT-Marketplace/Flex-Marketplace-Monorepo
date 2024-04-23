@@ -11,3 +11,4 @@ export const typeOfVal = (val: any): AttributesMapType => {
   if (Number(val) === val) return AttributesMapType.Number;
   return AttributesMapType.String;
 };
+export * from './validateFormat';

@@ -1,5 +1,5 @@
 export async function delay(sec: number): Promise<void> {
-  return new Promise((resolve) => {
+  return new Promise(resolve => {
     setTimeout(resolve, sec * 1000);
   });
 }
@@ -25,9 +25,9 @@ export async function promiseLimit(
   for (let i = 0; i < items.length; i++) {
     promise.push(items[i]);
     if (i % max === 0) {
-      await Promise.all(promise.map((item) => callback(item)));
+      await Promise.all(promise.map(item => callback(item)));
       promise = [];
     }
   }
-  await Promise.all(promise.map((item) => callback(item)));
+  await Promise.all(promise.map(item => callback(item)));
 }

@@ -5,9 +5,9 @@ import configuration from '@app/shared/configuration';
 
 import {
   GetSignatureTestDto,
-  GetTokenDto,
+  GetTokenReqDto,
   JwtPayload,
-} from '@app/shared/modules/jwt/auth.dto';
+} from '@app/shared/modules/dtos-query/auth.dto';
 import {
   WeierstrassSignatureType,
   shortString,
@@ -16,11 +16,12 @@ import {
   Account,
   typedData,
   stark,
-  num,
 } from 'starknet';
 import { Web3Service } from '@app/web3-service/web3.service';
-import { HexToText, formattedContractAddress } from '@app/shared/utils';
-import { ABIS } from '@app/web3-service/types';
+import {
+  BigNumberishToText,
+  formattedContractAddress,
+} from '@app/shared/utils';
 
 @Injectable()
 export class AuthService {
@@ -65,8 +66,8 @@ export class AuthService {
     try {
       const msgHash = typedData.getMessageHash(message, address);
 
-      const accountContract = this.web3Service.getContractInstance(
-        ABIS.AccountABI,
+      const accountContract = await this.web3Service.getContractInstance(
+        address,
         address,
         rpc,
       );
@@ -78,15 +79,16 @@ export class AuthService {
 
       // const result1 = ec.starkCurve.verify(signature, msgHash, publicKey);
 
-      console.log('Result ', HexToText(num.toHex(result)));
+      // console.log('Why Result', result);
+      // console.log('Result ', BigNumberishToText(result));
       // return result1;
-      return HexToText(num.toHex(result));
+      return BigNumberishToText(result);
     } catch (error) {
-      console.log('verification failed:', error);
       return false;
     }
   }
-  async login({ address, signature, rpc }: GetTokenDto) {
+
+  async login({ address, signature, rpc }: GetTokenReqDto) {
     const accessPayload = {
       sub: address,
       role: [],
@@ -96,6 +98,7 @@ export class AuthService {
       throw new Error('Signature is not valid');
     }
     const token = await this.generateToken(accessPayload);
+    await this.userService.updateRandomNonce(address);
     return {
       token: token,
     };
@@ -115,7 +118,6 @@ export class AuthService {
     nonce,
   }: GetSignatureTestDto & { nonce: number }) {
     address = formattedContractAddress(address);
-    console.log('Current Address', address);
 
     const rpc = 'https://starknet-sepolia.public.blastapi.io';
     const provider = new Provider({ nodeUrl: rpc });
