@@ -79,9 +79,26 @@ export enum BlacklistType {
 export const MAX_END_TIME_MS = 2592000000;
 
 export type Attribute = {
-  key: string;
+  trait_type: string;
   value: any;
   display_type?: string;
 };
 
-export const BURN_ADDRESS = '0x0';
+export type AttributeMap = {
+  label: string;
+  trait_type: string;
+  type: AttributesMapType;
+  min?: number;
+  max?: number;
+  options?: string[];
+};
+
+export enum AttributesMapType {
+  String = 'string',
+  Number = 'number',
+  Boolean = 'boolean',
+  Object = 'object',
+}
+
+export const BURN_ADDRESS =
+  '0x0000000000000000000000000000000000000000000000000000000000000000';
