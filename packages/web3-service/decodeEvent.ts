@@ -5,6 +5,7 @@ import { ABIS } from './types';
 export type ContractDeployedReturnValue = {
   address: string;
   deployer: string;
+  classHash: string;
 };
 
 export const decodeContractDeployed = (
@@ -24,6 +25,29 @@ export const decodeContractDeployed = (
     ),
     deployer: formattedContractAddress(
       num.toHex(parsedEvent.ContractDeployed.deployer as BigNumberish),
+    ),
+    classHash: formattedContractAddress(
+      num.toHex(parsedEvent.ContractDeployed.classHash as BigNumberish),
+    ),
+  };
+
+  return returnValue;
+};
+
+export type UpgradedContractReturnValue = {
+  nftAddress: string;
+  implementation: string;
+};
+
+export const decodeUpgradedContract = (txReceipt: any, provider: Provider) => {
+  const nftAddress = formattedContractAddress(txReceipt.events[0].from_address);
+  const contractInstance = new Contract(ABIS.ProxyABI, nftAddress, provider);
+
+  const parsedEvent = contractInstance.parseEvents(txReceipt)[0];
+  const returnValue: UpgradedContractReturnValue = {
+    nftAddress,
+    implementation: formattedContractAddress(
+      num.toHex(parsedEvent.Upgraded.implementation as BigNumberish),
     ),
   };
 

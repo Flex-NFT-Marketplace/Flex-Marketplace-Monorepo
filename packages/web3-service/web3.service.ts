@@ -30,9 +30,13 @@ import {
   decodePhaseDropUpdated,
   decodeTakerAsk,
   decodeTakerBid,
+  decodeUpgradedContract,
 } from './decodeEvent';
 import { BURN_ADDRESS, NftCollectionStandard } from '@app/shared/models';
-import { HexToText, formattedContractAddress } from '@app/shared/utils';
+import {
+  convertDataIntoString,
+  formattedContractAddress,
+} from '@app/shared/utils';
 
 @Injectable()
 export class Web3Service {
@@ -43,15 +47,33 @@ export class Web3Service {
     return provider;
   }
 
-  getContractInstance(
-    abi: any,
+  async getContractInstance(
+    classHash: string,
     contractAddress: string,
     rpc: string,
-  ): Contract {
+  ): Promise<Contract> {
     const provider = this.getProvider(rpc);
+    const { abi } = await provider.getClassByHash(classHash);
     const contractInstance = new Contract(abi, contractAddress, provider);
     return contractInstance;
   }
+
+  // async getImplementClassABI(
+  //   contractAddress: string,
+  //   rpc: string,
+  // ): Promise<any> {
+  //   const provider = this.getProvider(rpc);
+  //   const { abi } = await provider.getClassAt(contractAddress);
+
+  //   // try to get implementation class if given contract is proxy contract
+  //   const getImplemetationFunc = abi.find(
+  //     fn => fn.name === 'getImplementation',
+  //   );
+
+  //   if(getImplemetationFunc) {
+  //     const implClassHash = await abi.
+  //   }
+  // }
 
   async getBlockTime(rpc: string) {
     const provider = this.getProvider(rpc);
@@ -98,7 +120,7 @@ export class Web3Service {
           );
           const events = nftContract.parseEvents(txReceipt);
           const transferOwnershipEv = events.find(
-            (ev) => ev.OwnershipTransferred,
+            ev => ev.OwnershipTransferred,
           );
           owner = num.toHex(
             transferOwnershipEv.OwnershipTransferred.new_owner as BigNumberish,
@@ -147,7 +169,7 @@ export class Web3Service {
       for (const event of txReceipt.events) {
         const txReceiptFilter = {
           ...txReceipt,
-          events: txReceipt.events.filter((ev) => ev == event),
+          events: txReceipt.events.filter(ev => ev == event),
         };
         if (event.keys.includes(EventTopic.CONTRACT_DEPLOYED)) {
           let returnValues = null;
@@ -159,6 +181,19 @@ export class Web3Service {
             eventWithTypes.push({
               ...txReceiptFilter,
               eventType: EventType.DEPLOY_CONTRACT,
+              returnValues,
+            });
+          }
+        } else if (event.keys.includes(EventTopic.UPGRADED)) {
+          let returnValues = null;
+          try {
+            returnValues = decodeUpgradedContract(txReceiptFilter, provider);
+          } catch (error) {}
+
+          if (returnValues) {
+            eventWithTypes.push({
+              ...txReceiptFilter,
+              eventType: EventType.UPGRADE_CONTRACT,
               returnValues,
             });
           }
@@ -361,9 +396,11 @@ export class Web3Service {
   async getNFTCollectionDetail(
     address: string,
     rpc: string,
+    classHash?: string,
   ): Promise<{
     standard: NftCollectionStandard;
     isNonFungibleFlexDropToken: boolean;
+    classHash: string;
     name?: string;
     symbol?: string;
     baseUri?: string;
@@ -378,10 +415,6 @@ export class Web3Service {
     let isNonFungibleFlexDropToken = false;
     try {
       if (await contractInstance.supports_interface(InterfaceId.ERC721)) {
-        standard = NftCollectionStandard.ERC721;
-      } else if (
-        await contractInstance.supports_interface(InterfaceId.OLD_ERC721)
-      ) {
         standard = NftCollectionStandard.ERC721;
       } else if (
         await contractInstance.supports_interface(InterfaceId.ERC1155)
@@ -403,10 +436,6 @@ export class Web3Service {
     } catch (error) {
       try {
         if (await contractInstance.supportsInterface(InterfaceId.ERC721)) {
-          standard = NftCollectionStandard.ERC721;
-        } else if (
-          await contractInstance.supportsInterface(InterfaceId.OLD_ERC721)
-        ) {
           standard = NftCollectionStandard.ERC721;
         } else if (
           await contractInstance.supportsInterface(InterfaceId.ERC1155)
@@ -445,16 +474,22 @@ export class Web3Service {
       contractUri = await contractInstance.get_contract_uri();
     }
 
+    let implClashHash = classHash;
+    if (!classHash) {
+      implClashHash = await provider.getClassHashAt(address);
+    }
+
     if (standard == NftCollectionStandard.ERC721) {
       const name = await contractInstance.name();
       const symbol = await contractInstance.symbol();
       return {
-        name: HexToText(num.toHex(name)),
-        symbol: HexToText(num.toHex(symbol)),
+        name: convertDataIntoString(name),
+        symbol: convertDataIntoString(symbol),
         isNonFungibleFlexDropToken,
         standard,
-        baseUri: baseUri ? HexToText(num.toHex(baseUri)) : null,
-        contractUri: contractUri ? HexToText(num.toHex(contractUri)) : null,
+        baseUri: baseUri ? convertDataIntoString(baseUri) : null,
+        contractUri: contractUri ? convertDataIntoString(contractUri) : null,
+        classHash: formattedContractAddress(implClashHash),
       };
     } else {
       return {
@@ -462,8 +497,9 @@ export class Web3Service {
         symbol: null,
         standard,
         isNonFungibleFlexDropToken,
-        baseUri: baseUri ? HexToText(num.toHex(baseUri)) : null,
-        contractUri: contractUri ? HexToText(num.toHex(contractUri)) : null,
+        baseUri: baseUri ? convertDataIntoString(baseUri) : null,
+        contractUri: contractUri ? convertDataIntoString(contractUri) : null,
+        classHash: implClashHash,
       };
     }
   }

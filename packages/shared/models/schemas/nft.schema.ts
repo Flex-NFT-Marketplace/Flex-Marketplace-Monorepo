@@ -42,6 +42,12 @@ export class Nfts extends BaseSchema {
   animationUrl?: string;
 
   @Prop()
+  animationPlayType?: string;
+
+  @Prop()
+  externalUrl?: string;
+
+  @Prop()
   description?: string;
 
   @Prop()
