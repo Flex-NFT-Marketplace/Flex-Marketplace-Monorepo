@@ -56,7 +56,7 @@ export class BlockDetectionService extends OnchainWorker {
     blocks: number[],
   ): Promise<{ [k: number]: Block }> => {
     const dataBlocks = await Promise.all(
-      blocks.map(async (b) => this.provider.getBlock(b)),
+      blocks.map(async b => this.provider.getBlock(b)),
     );
 
     const groupByBlock: { [k: number]: Block } = dataBlocks.reduce(
@@ -108,9 +108,9 @@ export class BlockDetectionService extends OnchainWorker {
     //batch process 10 txs, max retry 10 times
     await arraySliceProcess(
       block.transactions,
-      async (txs) => {
+      async txs => {
         await Promise.all(
-          txs.map(async (tx) => {
+          txs.map(async tx => {
             await retryUntil(
               async () => this.processTx(tx, block.timestamp * 1e3),
               () => true,
@@ -146,30 +146,32 @@ export class BlockDetectionService extends OnchainWorker {
     );
 
     const matchTakerAskEv = eventWithType.filter(
-      (ev) => ev.eventType === EventType.TAKER_ASK,
+      ev => ev.eventType === EventType.TAKER_ASK,
     );
 
     const matchTakerBidEv = eventWithType.filter(
-      (ev) => ev.eventType === EventType.TAKER_BID,
+      ev => ev.eventType === EventType.TAKER_BID,
     );
 
     const flexDropMintedEv = eventWithType.filter(
-      (ev) => ev.eventType === EventType.FLEX_DROP_MINTED,
+      ev => ev.eventType === EventType.FLEX_DROP_MINTED,
+    );
+
+    const upgradeContractEv = eventWithType.filter(
+      ev => ev.eventType === EventType.UPGRADE_CONTRACT,
     );
 
     // skip transfer event if it is sale or accept offer or flexdrop minted -> prevent duplicate event
-    const eventlogs = eventWithType.filter((ev) => {
+    let eventlogs = eventWithType.filter(ev => {
       if (
         ev.eventType === EventType.TRANSFER_721 ||
         ev.eventType === EventType.TRANSFER_1155
       ) {
         return (
           !matchTakerAskEv.find(
-            (e) => e.transaction_hash === ev.transaction_hash,
+            e => e.transaction_hash === ev.transaction_hash,
           ) &&
-          !matchTakerBidEv.find(
-            (e) => e.transaction_hash === ev.transaction_hash,
-          )
+          !matchTakerBidEv.find(e => e.transaction_hash === ev.transaction_hash)
         );
       }
 
@@ -181,7 +183,7 @@ export class BlockDetectionService extends OnchainWorker {
     });
 
     for (const ev of flexDropMintedEv) {
-      eventlogs.map((log) => {
+      eventlogs.map(log => {
         if (
           (log.eventType === EventType.MINT_1155 ||
             log.eventType === EventType.MINT_721) &&
@@ -191,6 +193,29 @@ export class BlockDetectionService extends OnchainWorker {
           log.returnValues.price =
             ev.returnValues.totalMintPrice / ev.returnValues.quantityMinted;
         }
+      });
+    }
+
+    let isDuplicate = false;
+    for (const ev of upgradeContractEv) {
+      eventlogs.map(log => {
+        if (
+          log.eventType === EventType.DEPLOY_CONTRACT &&
+          log.returnValues.address === ev.returnValues.nftAddress
+        ) {
+          log.returnValues.classHash = ev.returnValues.implementation;
+          isDuplicate = true;
+        }
+      });
+    }
+
+    if (isDuplicate) {
+      eventlogs = eventlogs.filter(ev => {
+        if (ev.eventType === EventType.UPGRADE_CONTRACT) {
+          return false;
+        }
+
+        return true;
       });
     }
 

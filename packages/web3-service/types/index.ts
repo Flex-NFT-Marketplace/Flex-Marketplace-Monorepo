@@ -1,12 +1,16 @@
 import { SuccessfulTransactionReceiptResponse } from 'starknet';
 import contractDeployerABI from '../abis/contract-deployer.abi.json';
 import erc721Abi from '../abis/erc721.abi.json';
+import oldErc721Abi from '../abis/erc721old.abi.json';
 import erc1155Abi from '../abis/erc1155.abi.json';
 import marketplaceAbi from '../abis/marketplace.abi.json';
+import accountAbi from '../abis/account.abi.json';
 import flexDrop from '../abis/flexdrop.abit.json';
+import proxyAbi from '../abis/proxy.abi.json';
 
 export enum EventTopic {
   CONTRACT_DEPLOYED = '0x26b160f10156dea0639bec90696772c640b9706a47f5b8c52ea1abe5858b34d',
+  UPGRADED = '0x2db340e6c609371026731f47050d3976552c89b4fbb012941663841c59d1af3',
   TRANSFER = '0x99cd8bde557814842a3121e8ddfd433a539b8c9f14bf31ebf108d12e6196e9',
   TRANSFER_SINGLE = '0x182d859c0807ba9db63baf8b9d9fdbfeb885d820be6e206b9dab626d995c433', // transfer ERC-1155
   TRANSFER_BATCH = '0x2563683c757f3abe19c4b7237e2285d8993417ddffe0b54a19eb212ea574b08',
@@ -30,6 +34,7 @@ export enum InterfaceId {
 
 export enum EventType {
   DEPLOY_CONTRACT = 'DEPLOY_CONTRACT',
+  UPGRADE_CONTRACT = 'UPGRADE_CONTRACT',
   MINT_721 = 'MINT_721',
   BURN_721 = 'BURN_721',
   MINT_1155 = 'MINT_1155',
@@ -54,6 +59,9 @@ export const ABIS = {
   MarketplaceABI: marketplaceAbi,
   ContractDeployerABI: contractDeployerABI,
   Erc721ABI: erc721Abi,
+  OldErc721ABI: oldErc721Abi,
   Erc1155ABI: erc1155Abi,
   FlexDropABI: flexDrop,
+  AccountABI: accountAbi,
+  ProxyABI: proxyAbi,
 };

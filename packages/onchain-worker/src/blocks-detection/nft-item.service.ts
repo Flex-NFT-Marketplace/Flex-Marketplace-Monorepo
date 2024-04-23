@@ -33,6 +33,7 @@ import {
   PayerUpdatedReturnValue,
   PhaseDropUpdatedReturnValue,
   SaleReturnValue,
+  UpgradedContractReturnValue,
 } from '@app/web3-service/decodeEvent';
 import { EventType, LogsReturnValues } from '@app/web3-service/types';
 import { Web3Service } from '@app/web3-service/web3.service';
@@ -42,6 +43,7 @@ import { Model } from 'mongoose';
 import { UserService } from '../users/user.service';
 import template from '../notifications/template';
 import { formattedContractAddress } from '@app/shared/utils';
+import { MetadataQueueService } from './queue/metadata.queue';
 
 @Injectable()
 export class NftItemService {
@@ -64,6 +66,7 @@ export class NftItemService {
     private readonly dropPhaseModel: Model<DropPhaseDocument>,
     private readonly web3Service: Web3Service,
     private readonly userService: UserService,
+    private readonly fetchMetadataQueue: MetadataQueueService,
   ) {}
 
   logger = new Logger(NftItemService.name);
@@ -75,6 +78,7 @@ export class NftItemService {
   ) {
     const process: any = {};
     process[EventType.DEPLOY_CONTRACT] = this.processContractDeployed;
+    process[EventType.UPGRADE_CONTRACT] = this.processUpgradedContract;
     process[EventType.MINT_721] = this.processNft721Minted;
     process[EventType.BURN_721] = this.processNft721Burned;
     process[EventType.TRANSFER_721] = this.processNft721Transfered;
@@ -120,6 +124,7 @@ export class NftItemService {
       isNonFungibleFlexDropToken,
       baseUri,
       contractUri,
+      classHash,
     } = collectionInfo;
     const paymentTokens = await this.paymentTokenModel.find({
       isNative: true,
@@ -145,6 +150,8 @@ export class NftItemService {
       baseUri,
       contractUri,
       dropPhases: [],
+      attributesMap: [],
+      classHash,
     };
 
     const nftCollectionDocument =
@@ -159,7 +166,7 @@ export class NftItemService {
   }
 
   async processContractDeployed(log: LogsReturnValues, chain: ChainDocument) {
-    const { address, deployer } =
+    const { address, deployer, classHash } =
       log.returnValues as ContractDeployedReturnValue;
     const nftInfo = await this.web3Service.getNFTCollectionDetail(
       address,
@@ -197,6 +204,8 @@ export class NftItemService {
         baseUri,
         contractUri,
         dropPhases: [],
+        attributesMap: [],
+        classHash,
       };
 
       const nftCollection = await this.nftCollectionModel.findOneAndUpdate(
@@ -214,6 +223,62 @@ export class NftItemService {
       );
 
       this.logger.debug(`create collection ${nftCollection._id}`);
+    }
+  }
+
+  async processUpgradedContract(log: LogsReturnValues, chain: ChainDocument) {
+    const { nftAddress, implementation } =
+      log.returnValues as UpgradedContractReturnValue;
+    const nftInfo = await this.web3Service.getNFTCollectionDetail(
+      nftAddress,
+      chain.rpc,
+      implementation,
+    );
+
+    if (nftInfo) {
+      const {
+        name,
+        symbol,
+        standard,
+        isNonFungibleFlexDropToken,
+        baseUri,
+        contractUri,
+        classHash,
+      } = nftInfo;
+
+      const paymentTokens = await this.paymentTokenModel.find({
+        chain: chain,
+        isNative: true,
+      });
+
+      const nftCollectionEntity: NftCollections = {
+        name,
+        symbol,
+        nftContract: nftAddress,
+        chain,
+        standard,
+        paymentTokens: paymentTokens,
+        isNonFungibleFlexDropToken,
+        baseUri,
+        contractUri,
+        classHash,
+      };
+
+      const nftCollection = await this.nftCollectionModel.findOneAndUpdate(
+        {
+          chain,
+          nftContract: nftAddress,
+        },
+        {
+          $set: nftCollectionEntity,
+        },
+        {
+          new: true,
+          upsert: true,
+        },
+      );
+
+      this.logger.debug(`update collection ${nftCollection._id}`);
     }
   }
 
@@ -296,6 +361,8 @@ export class NftItemService {
       { $set: history },
       { upsert: true, new: true },
     );
+
+    await this.fetchMetadataQueue.add(nftDocument._id);
   }
 
   async processNft721Burned(
@@ -572,6 +639,8 @@ export class NftItemService {
       { $set: history },
       { upsert: true, new: true },
     );
+
+    await this.fetchMetadataQueue.add(nftDocument._id);
   }
 
   async processNft1155Burned(
@@ -1610,7 +1679,7 @@ export class NftItemService {
     } else {
       if (oldPayers.length > 0) {
         nftCollection.payers = oldPayers.filter(
-          (payerUser) => payerUser.address != payer,
+          payerUser => payerUser.address != payer,
         );
       }
     }

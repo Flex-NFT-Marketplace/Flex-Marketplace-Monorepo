@@ -1,5 +1,6 @@
 export * from './configuration';
 export * as models from './models';
+export * from './config';
 
 export async function retryUntil<T>(
   operation: () => Promise<T>,

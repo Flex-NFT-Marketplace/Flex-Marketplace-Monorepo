@@ -4,6 +4,8 @@ import { AppService } from './app.service';
 import { BullModule } from '@nestjs/bull';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import configuration from '@app/shared/configuration';
+import { MetadataModule } from './metadata/metadata.module';
+import { MongooseModule } from '@nestjs/mongoose';
 
 @Module({
   imports: [
@@ -11,6 +13,7 @@ import configuration from '@app/shared/configuration';
       isGlobal: true,
       load: [configuration],
     }),
+    MongooseModule.forRoot(configuration().db_path),
     BullModule.forRootAsync({
       useFactory: async (config: ConfigService) => ({
         imports: [ConfigModule],
@@ -21,6 +24,7 @@ import configuration from '@app/shared/configuration';
       }),
       inject: [ConfigService],
     }),
+    MetadataModule,
   ],
   controllers: [AppController],
   providers: [AppService],
