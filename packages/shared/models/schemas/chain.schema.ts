@@ -21,7 +21,10 @@ export class Chains extends BaseSchema {
   deployerContract: string;
 
   @Prop()
-  marketplaceContract: string;
+  marketplaceContract: string[];
+
+  @Prop()
+  currentMarketplaceContract: string;
 
   @Prop()
   royaltyManagerContract: string;
