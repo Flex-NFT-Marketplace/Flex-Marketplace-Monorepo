@@ -1,6 +1,6 @@
 import { Model } from 'mongoose';
 import configuration from '@app/shared/configuration';
-import { OnchainWorker } from '../OnchainWorker';
+import { OnchainWorker } from '../onchainWorker';
 import {
   BlockDocument,
   BlockWorkerStatus,
