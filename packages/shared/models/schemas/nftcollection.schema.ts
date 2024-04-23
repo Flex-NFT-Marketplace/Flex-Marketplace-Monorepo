@@ -3,7 +3,11 @@ import { BaseSchema } from './base.schema';
 import { UserDocument } from './user.schema';
 import { ChainDocument } from './chain.schema';
 import { PaymentTokenDocument } from './paymenttoken.schema';
-import { NftCollectionStandard, NftCollectionStatus } from '../types';
+import {
+  AttributeMap,
+  NftCollectionStandard,
+  NftCollectionStatus,
+} from '../types';
 import { Document, SchemaTypes } from 'mongoose';
 import { DropPhaseDocument } from './dropphase.schema';
 
@@ -18,10 +22,13 @@ export class NftCollections extends BaseSchema {
   symbol: string;
 
   @Prop()
-  key: string;
+  key?: string;
 
   @Prop()
   nftContract: string;
+
+  @Prop()
+  classHash: string;
 
   @Prop()
   cover?: string;
@@ -41,8 +48,11 @@ export class NftCollections extends BaseSchema {
   @Prop()
   contractUri?: string;
 
+  @Prop()
+  attributesMap?: AttributeMap[];
+
   @Prop({ type: SchemaTypes.ObjectId, ref: 'Users' })
-  owner: UserDocument;
+  owner?: UserDocument;
 
   @Prop({ type: SchemaTypes.ObjectId, ref: 'Chains' })
   chain: ChainDocument;
@@ -76,10 +86,10 @@ export class NftCollections extends BaseSchema {
   royaltyRate?: number;
 
   @Prop({ type: [SchemaTypes.ObjectId], ref: 'Users' })
-  collaboratories: UserDocument[];
+  collaboratories?: UserDocument[];
 
   @Prop({ type: [SchemaTypes.ObjectId], ref: 'DropPhases' })
-  dropPhases: DropPhaseDocument[];
+  dropPhases?: DropPhaseDocument[];
 }
 
 export const NftCollectionSchema = SchemaFactory.createForClass(NftCollections);

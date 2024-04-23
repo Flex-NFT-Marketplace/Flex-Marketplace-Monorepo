@@ -33,6 +33,7 @@ import {
   PayerUpdatedReturnValue,
   PhaseDropUpdatedReturnValue,
   SaleReturnValue,
+  UpgradedContractReturnValue,
 } from '@app/web3-service/decodeEvent';
 import { EventType, LogsReturnValues } from '@app/web3-service/types';
 import { Web3Service } from '@app/web3-service/web3.service';
@@ -42,6 +43,7 @@ import { Model } from 'mongoose';
 import { UserService } from '../users/user.service';
 import template from '../notifications/template';
 import { formattedContractAddress } from '@app/shared/utils';
+import { MetadataQueueService } from './queue/metadata.queue';
 
 @Injectable()
 export class NftItemService {
@@ -64,6 +66,7 @@ export class NftItemService {
     private readonly dropPhaseModel: Model<DropPhaseDocument>,
     private readonly web3Service: Web3Service,
     private readonly userService: UserService,
+    private readonly fetchMetadataQueue: MetadataQueueService,
   ) {}
 
   logger = new Logger(NftItemService.name);
@@ -75,6 +78,7 @@ export class NftItemService {
   ) {
     const process: any = {};
     process[EventType.DEPLOY_CONTRACT] = this.processContractDeployed;
+    process[EventType.UPGRADE_CONTRACT] = this.processUpgradedContract;
     process[EventType.MINT_721] = this.processNft721Minted;
     process[EventType.BURN_721] = this.processNft721Burned;
     process[EventType.TRANSFER_721] = this.processNft721Transfered;
@@ -120,6 +124,7 @@ export class NftItemService {
       isNonFungibleFlexDropToken,
       baseUri,
       contractUri,
+      classHash,
     } = collectionInfo;
     const paymentTokens = await this.paymentTokenModel.find({
       isNative: true,
@@ -129,7 +134,10 @@ export class NftItemService {
       chain,
     );
     const ownerDocument = owner
-      ? await this.userService.getOrCreateUser(formattedContractAddress(owner))
+      ? await this.userService.getOrCreateUser(
+          formattedContractAddress(owner),
+          chain.rpc,
+        )
       : null;
     const nftCollectionEntity: NftCollections = {
       name,
@@ -145,6 +153,8 @@ export class NftItemService {
       baseUri,
       contractUri,
       dropPhases: [],
+      attributesMap: [],
+      classHash,
     };
 
     const nftCollectionDocument =
@@ -159,7 +169,7 @@ export class NftItemService {
   }
 
   async processContractDeployed(log: LogsReturnValues, chain: ChainDocument) {
-    const { address, deployer } =
+    const { address, deployer, classHash } =
       log.returnValues as ContractDeployedReturnValue;
     const nftInfo = await this.web3Service.getNFTCollectionDetail(
       address,
@@ -181,7 +191,10 @@ export class NftItemService {
         isNative: true,
       });
 
-      const ownerDocument = await this.userService.getOrCreateUser(deployer);
+      const ownerDocument = await this.userService.getOrCreateUser(
+        deployer,
+        chain.rpc,
+      );
 
       const nftCollectionEntity: NftCollections = {
         name,
@@ -197,6 +210,8 @@ export class NftItemService {
         baseUri,
         contractUri,
         dropPhases: [],
+        attributesMap: [],
+        classHash,
       };
 
       const nftCollection = await this.nftCollectionModel.findOneAndUpdate(
@@ -214,6 +229,62 @@ export class NftItemService {
       );
 
       this.logger.debug(`create collection ${nftCollection._id}`);
+    }
+  }
+
+  async processUpgradedContract(log: LogsReturnValues, chain: ChainDocument) {
+    const { nftAddress, implementation } =
+      log.returnValues as UpgradedContractReturnValue;
+    const nftInfo = await this.web3Service.getNFTCollectionDetail(
+      nftAddress,
+      chain.rpc,
+      implementation,
+    );
+
+    if (nftInfo) {
+      const {
+        name,
+        symbol,
+        standard,
+        isNonFungibleFlexDropToken,
+        baseUri,
+        contractUri,
+        classHash,
+      } = nftInfo;
+
+      const paymentTokens = await this.paymentTokenModel.find({
+        chain: chain,
+        isNative: true,
+      });
+
+      const nftCollectionEntity: NftCollections = {
+        name,
+        symbol,
+        nftContract: nftAddress,
+        chain,
+        standard,
+        paymentTokens: paymentTokens,
+        isNonFungibleFlexDropToken,
+        baseUri,
+        contractUri,
+        classHash,
+      };
+
+      const nftCollection = await this.nftCollectionModel.findOneAndUpdate(
+        {
+          chain,
+          nftContract: nftAddress,
+        },
+        {
+          $set: nftCollectionEntity,
+        },
+        {
+          new: true,
+          upsert: true,
+        },
+      );
+
+      this.logger.debug(`update collection ${nftCollection._id}`);
     }
   }
 
@@ -243,8 +314,8 @@ export class NftItemService {
 
     if (!nftCollection) return;
 
-    const fromUser = await this.userService.getOrCreateUser(from);
-    const toUser = await this.userService.getOrCreateUser(to);
+    const fromUser = await this.userService.getOrCreateUser(from, chain.rpc);
+    const toUser = await this.userService.getOrCreateUser(to, chain.rpc);
 
     const newNftEntity: Nfts = {
       tokenId,
@@ -296,6 +367,8 @@ export class NftItemService {
       { $set: history },
       { upsert: true, new: true },
     );
+
+    await this.fetchMetadataQueue.add(nftDocument._id);
   }
 
   async processNft721Burned(
@@ -346,8 +419,8 @@ export class NftItemService {
       );
     }
 
-    const fromUser = await this.userService.getOrCreateUser(from);
-    const toUser = await this.userService.getOrCreateUser(to);
+    const fromUser = await this.userService.getOrCreateUser(from, chain.rpc);
+    const toUser = await this.userService.getOrCreateUser(to, chain.rpc);
 
     const history: Histories = {
       nft,
@@ -402,8 +475,8 @@ export class NftItemService {
       tokenId,
     });
 
-    const fromUser = await this.userService.getOrCreateUser(from);
-    const toUser = await this.userService.getOrCreateUser(to);
+    const fromUser = await this.userService.getOrCreateUser(from, chain.rpc);
+    const toUser = await this.userService.getOrCreateUser(to, chain.rpc);
 
     const updateNfts = [];
     const newNfts: Nfts[] = [];
@@ -507,8 +580,8 @@ export class NftItemService {
 
     if (!nftCollection) return;
 
-    const fromUser = await this.userService.getOrCreateUser(from);
-    const toUser = await this.userService.getOrCreateUser(to);
+    const fromUser = await this.userService.getOrCreateUser(from, chain.rpc);
+    const toUser = await this.userService.getOrCreateUser(to, chain.rpc);
 
     const existedNft = await this.nftModel.findOne({
       tokenId,
@@ -572,6 +645,8 @@ export class NftItemService {
       { $set: history },
       { upsert: true, new: true },
     );
+
+    await this.fetchMetadataQueue.add(nftDocument._id);
   }
 
   async processNft1155Burned(
@@ -594,8 +669,8 @@ export class NftItemService {
 
     if (!nftCollection) return;
 
-    const fromUser = await this.userService.getOrCreateUser(from);
-    const toUser = await this.userService.getOrCreateUser(to);
+    const fromUser = await this.userService.getOrCreateUser(from, chain.rpc);
+    const toUser = await this.userService.getOrCreateUser(to, chain.rpc);
 
     const existedNft = await this.nftModel.findOne({
       tokenId,
@@ -685,8 +760,8 @@ export class NftItemService {
 
     if (!nftCollection) return;
 
-    const fromUser = await this.userService.getOrCreateUser(from);
-    const toUser = await this.userService.getOrCreateUser(to);
+    const fromUser = await this.userService.getOrCreateUser(from, chain.rpc);
+    const toUser = await this.userService.getOrCreateUser(to, chain.rpc);
 
     const fromBalance = await this.nftModel
       .findOne({
@@ -848,7 +923,10 @@ export class NftItemService {
     const { user, orderNonce, timestamp } =
       log.returnValues as CancelOrderReturnValue;
 
-    const userDocument = await this.userService.getOrCreateUser(user);
+    const userDocument = await this.userService.getOrCreateUser(
+      user,
+      chain.rpc,
+    );
     const availableSale = await this.saleModel.findOne({
       signer: userDocument,
       saltNonce: orderNonce,
@@ -929,7 +1007,10 @@ export class NftItemService {
     const { user, newMinNonce, timestamp } =
       log.returnValues as CancelAllOrdersReturnValue;
 
-    const userDocument = await this.userService.getOrCreateUser(user);
+    const userDocument = await this.userService.getOrCreateUser(
+      user,
+      chain.rpc,
+    );
     const availableSales = await this.saleModel.find({
       signer: userDocument,
       saltNonce: { $lt: newMinNonce },
@@ -1090,8 +1171,11 @@ export class NftItemService {
     const paymentToken = await this.paymentTokenModel.findOne({
       contractAddress: currency,
     });
-    const sellerUser = await this.userService.getOrCreateUser(seller);
-    const buyerUser = await this.userService.getOrCreateUser(buyer);
+    const sellerUser = await this.userService.getOrCreateUser(
+      seller,
+      chain.rpc,
+    );
+    const buyerUser = await this.userService.getOrCreateUser(buyer, chain.rpc);
 
     const sellerNft = await this.nftModel.findOne({
       tokenId,
@@ -1315,8 +1399,11 @@ export class NftItemService {
     const paymentToken = await this.paymentTokenModel.findOne({
       contractAddress: currency,
     });
-    const sellerUser = await this.userService.getOrCreateUser(seller);
-    const buyerUser = await this.userService.getOrCreateUser(buyer);
+    const sellerUser = await this.userService.getOrCreateUser(
+      seller,
+      chain.rpc,
+    );
+    const buyerUser = await this.userService.getOrCreateUser(buyer, chain.rpc);
 
     const sellerNft = await this.nftModel.findOne({
       tokenId,
@@ -1589,7 +1676,10 @@ export class NftItemService {
       chain,
     );
 
-    const payoutUser = await this.userService.getOrCreateUser(newPayoutAddress);
+    const payoutUser = await this.userService.getOrCreateUser(
+      newPayoutAddress,
+      chain.rpc,
+    );
     nftCollection.creatorPayout = payoutUser;
     await nftCollection.save();
   }
@@ -1603,14 +1693,14 @@ export class NftItemService {
       chain,
     );
 
-    const payerUser = await this.userService.getOrCreateUser(payer);
+    const payerUser = await this.userService.getOrCreateUser(payer, chain.rpc);
     const oldPayers = nftCollection.payers;
     if (allowed) {
       nftCollection.payers.push(payerUser);
     } else {
       if (oldPayers.length > 0) {
         nftCollection.payers = oldPayers.filter(
-          (payerUser) => payerUser.address != payer,
+          payerUser => payerUser.address != payer,
         );
       }
     }

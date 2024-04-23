@@ -28,6 +28,9 @@ import {
   UserSchema,
   Users,
 } from '@app/shared/models';
+import { MetadataQueueService } from './queue/metadata.queue';
+import { BullModule } from '@nestjs/bull';
+import { MQ_JOB_DEFAULT_CONFIG, QUEUE_METADATA } from '@app/shared/types';
 
 @Module({
   imports: [
@@ -44,8 +47,12 @@ import {
       { name: Histories.name, schema: HistorySchema },
       { name: DropPhases.name, schema: DropPhaseSchema },
     ]),
+    BullModule.registerQueue({
+      name: QUEUE_METADATA,
+      defaultJobOptions: MQ_JOB_DEFAULT_CONFIG,
+    }),
   ],
-  providers: [NftItemService, Web3Service, UserService],
+  providers: [NftItemService, Web3Service, UserService, MetadataQueueService],
   controllers: [BlockDetectionController],
 })
 export class BlockDetectionModule {}

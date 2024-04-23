@@ -1,5 +1,11 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsArray, IsHexadecimal, IsNumber, IsUrl } from 'class-validator';
+import {
+  IsArray,
+  IsHexadecimal,
+  IsNumber,
+  IsUrl,
+  Length,
+} from 'class-validator';
 import { TypedData } from 'starknet';
 
 export class JwtPayload {
@@ -16,9 +22,18 @@ export class iInfoToken extends JwtPayload {
   exp: number;
 }
 // Request Nonce Data
-export class GetNonceDto {
+export class GetNonceReqDto {
   @ApiProperty({ required: true })
+  @IsHexadecimal({ message: 'Address must be a hex string' })
+  @Length(60, 66, { message: 'Address must be valid characters long' })
   address: string;
+
+  @ApiProperty({
+    required: true,
+    example: 'https://starknet-sepolia.public.blastapi.io',
+  })
+  @IsUrl()
+  rpc: string;
 }
 // Response Nonce Data
 // Response Nonce Data
@@ -34,7 +49,7 @@ export class GetNonceRspDto {
 }
 
 // Request Token DTO
-export class GetTokenDto {
+export class GetTokenReqDto {
   @ApiProperty({
     required: true,
   })
