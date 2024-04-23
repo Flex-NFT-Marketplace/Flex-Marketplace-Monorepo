@@ -1,0 +1,28 @@
+---
+version: '3.7'
+
+volumes:
+  node_modules: {}
+  mongo_data: {}
+  mongo_log: {}
+
+networks:
+  app-network:
+    driver: bridge
+
+services:
+  mongo:
+    build:
+      context: ./mongo-replica-set
+      dockerfile: Dockerfile
+    networks:
+      - app-network
+    restart: always
+    environment:
+      - HOST=mongo
+    volumes:
+      - mongo_data:/data/db
+      - mongo_log:/data/log
+    ports:
+      - 127.0.0.1:27018:27017
+      - 127.0.0.1:27019:27018
