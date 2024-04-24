@@ -1,5 +1,15 @@
 [
-    
+  {
+    "data": [
+      {
+        "name": "implementation",
+        "type": "felt"
+      }
+    ],
+    "keys": [],
+    "name": "Upgraded",
+    "type": "event"
+  },
     {
       "name": "__default__",
       "type": "function",
