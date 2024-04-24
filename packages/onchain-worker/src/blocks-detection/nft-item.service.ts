@@ -174,6 +174,7 @@ export class NftItemService {
     const nftInfo = await this.web3Service.getNFTCollectionDetail(
       address,
       chain.rpc,
+      classHash,
     );
 
     if (nftInfo) {
@@ -237,6 +238,7 @@ export class NftItemService {
   async processUpgradedContract(log: LogsReturnValues, chain: ChainDocument) {
     const { nftAddress, implementation } =
       log.returnValues as UpgradedContractReturnValue;
+
     const nftInfo = await this.web3Service.getNFTCollectionDetail(
       nftAddress,
       chain.rpc,
