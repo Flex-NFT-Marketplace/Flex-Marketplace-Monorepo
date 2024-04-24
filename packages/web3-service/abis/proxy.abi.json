@@ -1,45 +1,5 @@
 [
-    {
-      "data": [
-        {
-          "name": "implementation",
-          "type": "felt"
-        }
-      ],
-      "keys": [],
-      "name": "Upgraded",
-      "type": "event"
-    },
-    {
-      "data": [
-        {
-          "name": "previousAdmin",
-          "type": "felt"
-        },
-        {
-          "name": "newAdmin",
-          "type": "felt"
-        }
-      ],
-      "keys": [],
-      "name": "AdminChanged",
-      "type": "event"
-    },
-    {
-      "name": "constructor",
-      "type": "constructor",
-      "inputs": [
-        {
-          "name": "admin",
-          "type": "felt"
-        },
-        {
-          "name": "implentation_hash",
-          "type": "felt"
-        }
-      ],
-      "outputs": []
-    },
+    
     {
       "name": "__default__",
       "type": "function",

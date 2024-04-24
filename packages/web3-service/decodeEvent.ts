@@ -6,6 +6,7 @@ export type ContractDeployedReturnValue = {
   address: string;
   deployer: string;
   classHash: string;
+  calldata: string[];
 };
 
 export const decodeContractDeployed = (
@@ -28,6 +29,9 @@ export const decodeContractDeployed = (
     ),
     classHash: formattedContractAddress(
       num.toHex(parsedEvent.ContractDeployed.classHash as BigNumberish),
+    ),
+    calldata: (parsedEvent.ContractDeployed.calldata as bigint[]).map(value =>
+      num.toHex(value),
     ),
   };
 
