@@ -7,6 +7,7 @@ import marketplaceAbi from '../abis/marketplace.abi.json';
 import accountAbi from '../abis/account.abi.json';
 import flexDrop from '../abis/flexdrop.abit.json';
 import proxyAbi from '../abis/proxy.abi.json';
+import src5Abi from '../abis/src5.abi.json';
 
 export enum EventTopic {
   CONTRACT_DEPLOYED = '0x26b160f10156dea0639bec90696772c640b9706a47f5b8c52ea1abe5858b34d',
@@ -64,4 +65,5 @@ export const ABIS = {
   FlexDropABI: flexDrop,
   AccountABI: accountAbi,
   ProxyABI: proxyAbi,
+  Src5ABI: src5Abi,
 };

@@ -705,6 +705,17 @@
         "state_mutability": "view"
       },
       {
+        "name": "getContractURI",
+        "type": "function",
+        "inputs": [],
+        "outputs": [
+          {
+            "type": "core::array::Array::<core::felt252>"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
         "name": "get_max_supply",
         "type": "function",
         "inputs": [],

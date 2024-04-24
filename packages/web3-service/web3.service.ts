@@ -58,23 +58,6 @@ export class Web3Service {
     return contractInstance;
   }
 
-  // async getImplementClassABI(
-  //   contractAddress: string,
-  //   rpc: string,
-  // ): Promise<any> {
-  //   const provider = this.getProvider(rpc);
-  //   const { abi } = await provider.getClassAt(contractAddress);
-
-  //   // try to get implementation class if given contract is proxy contract
-  //   const getImplemetationFunc = abi.find(
-  //     fn => fn.name === 'getImplementation',
-  //   );
-
-  //   if(getImplemetationFunc) {
-  //     const implClassHash = await abi.
-  //   }
-  // }
-
   async getBlockTime(rpc: string) {
     const provider = this.getProvider(rpc);
     const block = await provider.getBlock('latest');
@@ -410,28 +393,28 @@ export class Web3Service {
     baseUri?: string;
     contractUri?: string;
   } | null> {
-    console.log(`Smart contract deployed at address: ${address}`);
-
     const provider = this.getProvider(rpc);
-    const contractInstance = new Contract(ABIS.Erc721ABI, address, provider);
+    const src5Instance = new Contract(ABIS.Src5ABI, address, provider);
 
     let standard: NftCollectionStandard | null = null;
     let isNonFungibleFlexDropToken = false;
     try {
-      if (await contractInstance.supports_interface(InterfaceId.ERC721)) {
+      if (await src5Instance.supports_interface(InterfaceId.ERC721)) {
         standard = NftCollectionStandard.ERC721;
       } else if (
-        await contractInstance.supports_interface(InterfaceId.ERC1155)
+        await src5Instance.supports_interface(InterfaceId.OLD_ERC721)
       ) {
+        standard = NftCollectionStandard.ERC721;
+      } else if (await src5Instance.supports_interface(InterfaceId.ERC1155)) {
         standard = NftCollectionStandard.ERC1155;
       } else if (
-        await contractInstance.supports_interface(InterfaceId.OLD_ERC1155)
+        await src5Instance.supports_interface(InterfaceId.OLD_ERC1155)
       ) {
         standard = NftCollectionStandard.ERC1155;
       }
 
       if (
-        await contractInstance.supports_interface(
+        await src5Instance.supports_interface(
           InterfaceId.NON_FUNGIBLE_FLEX_DROP_TOKEN,
         )
       ) {
@@ -439,20 +422,22 @@ export class Web3Service {
       }
     } catch (error) {
       try {
-        if (await contractInstance.supportsInterface(InterfaceId.ERC721)) {
+        if (await src5Instance.supportsInterface(InterfaceId.ERC721)) {
           standard = NftCollectionStandard.ERC721;
         } else if (
-          await contractInstance.supportsInterface(InterfaceId.ERC1155)
+          await src5Instance.supportsInterface(InterfaceId.OLD_ERC721)
         ) {
+          standard = NftCollectionStandard.ERC721;
+        } else if (await src5Instance.supportsInterface(InterfaceId.ERC1155)) {
           standard = NftCollectionStandard.ERC1155;
         } else if (
-          await contractInstance.supportsInterface(InterfaceId.OLD_ERC1155)
+          await src5Instance.supportsInterface(InterfaceId.OLD_ERC1155)
         ) {
           standard = NftCollectionStandard.ERC1155;
         }
 
         if (
-          await contractInstance.supportsInterface(
+          await src5Instance.supportsInterface(
             InterfaceId.NON_FUNGIBLE_FLEX_DROP_TOKEN,
           )
         ) {
@@ -470,17 +455,30 @@ export class Web3Service {
     if (!standard) {
       return null;
     }
-
-    let baseUri: string = null;
-    let contractUri: string = null;
-    if (isNonFungibleFlexDropToken) {
-      baseUri = await contractInstance.get_base_uri();
-      contractUri = await contractInstance.get_contract_uri();
-    }
-
     let implClashHash = classHash;
     if (!classHash) {
       implClashHash = await provider.getClassHashAt(address);
+    }
+
+    const { abi } = await provider.getClassByHash(implClashHash);
+    const contractInstance = new Contract(abi, address, provider);
+
+    let baseUri: string = null;
+    let contractUri: string = null;
+    try {
+      contractUri = await contractInstance.get_contract_uri();
+    } catch (error) {
+      try {
+        contractUri = await contractInstance.getContractURI();
+      } catch (error) {}
+    }
+
+    try {
+      baseUri = await contractInstance.get_base_uri();
+    } catch (error) {
+      try {
+        baseUri = await contractInstance.getBaseURI();
+      } catch (error) {}
     }
 
     if (standard == NftCollectionStandard.ERC721) {
