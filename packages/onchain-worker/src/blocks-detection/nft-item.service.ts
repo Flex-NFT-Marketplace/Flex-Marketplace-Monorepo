@@ -35,7 +35,7 @@ import {
   SaleReturnValue,
   UpgradedContractReturnValue,
 } from '@app/web3-service/decodeEvent';
-import { EventType, LogsReturnValues } from '@app/web3-service/types';
+import { ABIS, EventType, LogsReturnValues } from '@app/web3-service/types';
 import { Web3Service } from '@app/web3-service/web3.service';
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
@@ -168,13 +168,53 @@ export class NftItemService {
     return nftCollectionDocument;
   }
 
+  async convertProxyClassToImplementationClass(
+    calldata: string[],
+    chain: ChainDocument,
+    classHash: string,
+  ): Promise<string> {
+    const provider = this.web3Service.getProvider(chain.rpc);
+    const { abi } = await provider.getClassByHash(classHash);
+
+    let isProxy = true;
+    ABIS.ProxyABI.map(i => {
+      const isIncluded = abi.some(item => {
+        return item.name == i.name && item.type == i.type;
+      });
+
+      if (!isIncluded) {
+        isProxy = false;
+        return;
+      }
+    });
+
+    if (!isProxy) return classHash;
+
+    const constructor = abi.find(i => i.name === 'constructor');
+    const index = constructor.inputs.findIndex(
+      (item: { name: string; type: string }) =>
+        item.name === 'implementation' || item.name === 'implementation_hash',
+    );
+
+    if (index == -1) throw new Error('Invalid proxy class hash');
+
+    const implementation = calldata[index];
+    return formattedContractAddress(implementation);
+  }
+
   async processContractDeployed(log: LogsReturnValues, chain: ChainDocument) {
-    const { address, deployer, classHash } =
+    const { address, deployer, classHash, calldata } =
       log.returnValues as ContractDeployedReturnValue;
+
+    const implClashHash = await this.convertProxyClassToImplementationClass(
+      calldata,
+      chain,
+      classHash,
+    );
     const nftInfo = await this.web3Service.getNFTCollectionDetail(
       address,
       chain.rpc,
-      classHash,
+      implClashHash,
     );
 
     if (nftInfo) {
@@ -214,7 +254,7 @@ export class NftItemService {
         contractUri,
         dropPhases: [],
         attributesMap: [],
-        classHash,
+        classHash: implClashHash,
       };
 
       const nftCollection = await this.nftCollectionModel.findOneAndUpdate(
