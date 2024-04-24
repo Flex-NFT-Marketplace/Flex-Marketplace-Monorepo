@@ -11,7 +11,13 @@ export const BigNumberishToText = (data: BigNumberish[]): string => {
 export const convertDataIntoString = (data: any): string => {
   if (typeof data === 'bigint') {
     return BigNumberishToText([data]);
-  } else if (typeof data === 'object') {
+  } else if (Array.isArray(data)) {
     return BigNumberishToText(data);
-  } else return data;
+  } else if (typeof data === 'string') {
+    return data;
+  } else if (typeof data === 'object' && Object.keys(data).length === 1) {
+    return BigNumberishToText(Object.values(data));
+  }
+
+  return null;
 };

@@ -177,6 +177,8 @@ export class NftItemService {
     );
 
     if (nftInfo) {
+      this.logger.log(`New NFT Collection found at address: ${address}`);
+
       const {
         name,
         symbol,
@@ -242,6 +244,7 @@ export class NftItemService {
     );
 
     if (nftInfo) {
+      this.logger.log(`New NFT Collection found at address: ${nftAddress}`);
       const {
         name,
         symbol,

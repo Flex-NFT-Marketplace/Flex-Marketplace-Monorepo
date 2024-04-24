@@ -1,0 +1,40 @@
+[
+    {
+        "name": "SRC5Impl",
+        "type": "interface",
+        "items": [
+          {
+            "name": "supports_interface",
+            "type": "function",
+            "inputs": [
+              {
+                "name": "interface_id",
+                "type": "core::felt252"
+              }
+            ],
+            "outputs": [
+              {
+                "type": "core::bool"
+              }
+            ],
+            "state_mutability": "view"
+          },
+          {
+            "name": "supportsInterface",
+            "type": "function",
+            "inputs": [
+              {
+                "name": "interfaceId",
+                "type": "core::felt252"
+              }
+            ],
+            "outputs": [
+              {
+                "type": "core::bool"
+              }
+            ],
+            "state_mutability": "view"
+          }
+        ]
+      }
+]
