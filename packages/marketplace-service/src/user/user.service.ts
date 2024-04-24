@@ -6,10 +6,10 @@ import { UpdateInfoReqDTO } from '@app/shared/modules/dtos-query/user.dto';
 import { Web3Service } from '@app/web3-service/web3.service';
 @Injectable()
 export class UserService {
-  constructor(
-    @InjectModel(Users.name) private userModel: Model<Users>,
-    private readonly web3Service: Web3Service,
-  ) {}
+  constructor(@InjectModel(Users.name) private userModel: Model<Users>) {
+    this.web3Service = new Web3Service();
+  }
+  web3Service: Web3Service;
   async getOrCreateUser(
     userAddress: string,
     rpc: string,
