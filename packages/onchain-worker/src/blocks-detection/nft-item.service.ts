@@ -178,13 +178,15 @@ export class NftItemService {
 
     let isProxy = true;
     ABIS.ProxyABI.map(i => {
-      const isIncluded = abi.some(item => {
-        return item.name == i.name && item.type == i.type;
-      });
+      if (i.type !== 'event') {
+        const isIncluded = abi.some(item => {
+          return item.name == i.name && item.type == i.type;
+        });
 
-      if (!isIncluded) {
-        isProxy = false;
-        return;
+        if (!isIncluded) {
+          isProxy = false;
+          return;
+        }
       }
     });
 
