@@ -28,9 +28,6 @@ export class NftCollections extends BaseSchema {
   nftContract: string;
 
   @Prop()
-  classHash: string;
-
-  @Prop()
   cover?: string;
 
   @Prop()
@@ -41,9 +38,6 @@ export class NftCollections extends BaseSchema {
 
   @Prop()
   description?: string;
-
-  @Prop()
-  baseUri?: string;
 
   @Prop()
   contractUri?: string;

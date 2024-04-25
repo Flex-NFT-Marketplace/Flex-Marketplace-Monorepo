@@ -34,6 +34,7 @@ import {
 } from './decodeEvent';
 import { BURN_ADDRESS, NftCollectionStandard } from '@app/shared/models';
 import {
+  attemptOperations,
   convertDataIntoString,
   formattedContractAddress,
 } from '@app/shared/utils';
@@ -48,12 +49,11 @@ export class Web3Service {
   }
 
   async getContractInstance(
-    classHash: string,
+    abi: any,
     contractAddress: string,
     rpc: string,
   ): Promise<Contract> {
     const provider = this.getProvider(rpc);
-    const { abi } = await provider.getClassByHash(classHash);
     const contractInstance = new Contract(abi, contractAddress, provider);
     return contractInstance;
   }
@@ -380,129 +380,136 @@ export class Web3Service {
     return Number((couter as bigint).toString());
   }
 
+  async checkInterfaceSupported(
+    address: string,
+    rpc: string,
+    interfaceId: string,
+  ): Promise<boolean | null> {
+    const provider = this.getProvider(rpc);
+    const src5Instance = new Contract(ABIS.Src5ABI, address, provider);
+    const supportInterfaceOperators = [
+      () => src5Instance.supports_interface(interfaceId),
+      () => src5Instance.supportsInterface(interfaceId),
+    ];
+    return await attemptOperations(supportInterfaceOperators);
+  }
+
+  async getNFTUri(
+    address: string,
+    tokenId: number,
+    standard: NftCollectionStandard,
+    rpc: string,
+  ): Promise<string> {
+    const provider = this.getProvider(rpc);
+
+    let abi = ABIS.Erc721ABI;
+    let oldVerAbi = ABIS.OldErc721ABI;
+    if (standard === NftCollectionStandard.ERC1155) {
+      abi = ABIS.Erc1155ABI;
+      oldVerAbi = ABIS.OldErc1155ABI;
+    }
+
+    const contractInstance = new Contract(abi, address, provider);
+    const oldVerContract = new Contract(oldVerAbi, address, provider);
+
+    const tokenUriOperations = [
+      () => contractInstance.token_uri(tokenId),
+      () => contractInstance.tokenURI(tokenId),
+      () => contractInstance.uri(tokenId),
+      () => oldVerContract.token_uri(tokenId),
+      () => oldVerContract.tokenURI(tokenId),
+      () => oldVerContract.uri(tokenId),
+    ];
+    const tokenUri = await attemptOperations(tokenUriOperations);
+    if (!tokenUri) return null;
+
+    return convertDataIntoString(tokenUri);
+  }
+
+  async getNFTCollectionStandard(
+    address: string,
+    rpc: string,
+  ): Promise<NftCollectionStandard | null> {
+    const isERC721 =
+      (await this.checkInterfaceSupported(address, rpc, InterfaceId.ERC721)) ||
+      (await this.checkInterfaceSupported(
+        address,
+        rpc,
+        InterfaceId.OLD_ERC721,
+      ));
+    if (isERC721 === true) {
+      return NftCollectionStandard.ERC721;
+    }
+
+    const isERC1155 =
+      (await this.checkInterfaceSupported(address, rpc, InterfaceId.ERC1155)) ||
+      (await this.checkInterfaceSupported(
+        address,
+        rpc,
+        InterfaceId.OLD_ERC1155,
+      ));
+    if (isERC1155 === true) {
+      return NftCollectionStandard.ERC1155;
+    }
+
+    return null;
+  }
+
   async getNFTCollectionDetail(
     address: string,
     rpc: string,
-    classHash?: string,
   ): Promise<{
     standard: NftCollectionStandard;
     isNonFungibleFlexDropToken: boolean;
-    classHash: string;
     name?: string;
     symbol?: string;
-    baseUri?: string;
     contractUri?: string;
   } | null> {
     const provider = this.getProvider(rpc);
-    const src5Instance = new Contract(ABIS.Src5ABI, address, provider);
-
-    let standard: NftCollectionStandard | null = null;
-    let isNonFungibleFlexDropToken = false;
-    try {
-      if (await src5Instance.supports_interface(InterfaceId.ERC721)) {
-        standard = NftCollectionStandard.ERC721;
-      } else if (
-        await src5Instance.supports_interface(InterfaceId.OLD_ERC721)
-      ) {
-        standard = NftCollectionStandard.ERC721;
-      } else if (await src5Instance.supports_interface(InterfaceId.ERC1155)) {
-        standard = NftCollectionStandard.ERC1155;
-      } else if (
-        await src5Instance.supports_interface(InterfaceId.OLD_ERC1155)
-      ) {
-        standard = NftCollectionStandard.ERC1155;
-      }
-
-      if (
-        await src5Instance.supports_interface(
-          InterfaceId.NON_FUNGIBLE_FLEX_DROP_TOKEN,
-        )
-      ) {
-        isNonFungibleFlexDropToken = true;
-      }
-    } catch (error) {
-      try {
-        if (await src5Instance.supportsInterface(InterfaceId.ERC721)) {
-          standard = NftCollectionStandard.ERC721;
-        } else if (
-          await src5Instance.supportsInterface(InterfaceId.OLD_ERC721)
-        ) {
-          standard = NftCollectionStandard.ERC721;
-        } else if (await src5Instance.supportsInterface(InterfaceId.ERC1155)) {
-          standard = NftCollectionStandard.ERC1155;
-        } else if (
-          await src5Instance.supportsInterface(InterfaceId.OLD_ERC1155)
-        ) {
-          standard = NftCollectionStandard.ERC1155;
-        }
-
-        if (
-          await src5Instance.supportsInterface(
-            InterfaceId.NON_FUNGIBLE_FLEX_DROP_TOKEN,
-          )
-        ) {
-          isNonFungibleFlexDropToken = true;
-        }
-      } catch (error) {
-        // This means the contract does not implement the function or reverted the call
-        this.logger.log(
-          `Contract does not implement supportsInterface or execution failed ${address}`,
-        );
-        return null;
-      }
-    }
+    const standard = await this.getNFTCollectionStandard(address, rpc);
+    const isNonFungibleFlexDropToken = await this.checkInterfaceSupported(
+      address,
+      rpc,
+      InterfaceId.NON_FUNGIBLE_FLEX_DROP_TOKEN,
+    );
 
     if (!standard) {
       return null;
     }
-    let implClashHash = classHash;
-    if (!classHash) {
-      implClashHash = await provider.getClassHashAt(address);
-    }
 
-    const { abi } = await provider.getClassByHash(implClashHash);
-    const contractInstance = new Contract(abi, address, provider);
+    const contractInstance = new Contract(ABIS.Erc721ABI, address, provider);
+    const oldVerContract = new Contract(ABIS.OldErc721ABI, address, provider);
 
-    let baseUri: string = null;
-    let contractUri: string = null;
-    try {
-      contractUri = await contractInstance.get_contract_uri();
-    } catch (error) {
-      try {
-        contractUri = await contractInstance.getContractURI();
-      } catch (error) {}
-    }
+    // List of possible operations to retrieve the contract URI
+    const contractUriOperations = [
+      () => contractInstance.get_contract_uri(),
+      () => contractInstance.getContractURI(),
+      () => oldVerContract.get_contract_uri(),
+      () => oldVerContract.getContractURI(),
+    ];
 
-    try {
-      baseUri = await contractInstance.get_base_uri();
-    } catch (error) {
-      try {
-        baseUri = await contractInstance.getBaseURI();
-      } catch (error) {}
-    }
+    // List of operations to retrieve the contract name
+    const nameOperations = [
+      () => contractInstance.name(),
+      () => oldVerContract.name(),
+    ];
 
-    if (standard == NftCollectionStandard.ERC721) {
-      const name = await contractInstance.name();
-      const symbol = await contractInstance.symbol();
-      return {
-        name: convertDataIntoString(name),
-        symbol: convertDataIntoString(symbol),
-        isNonFungibleFlexDropToken,
-        standard,
-        baseUri: baseUri ? convertDataIntoString(baseUri) : null,
-        contractUri: contractUri ? convertDataIntoString(contractUri) : null,
-        classHash: formattedContractAddress(implClashHash),
-      };
-    } else {
-      return {
-        name: null,
-        symbol: null,
-        standard,
-        isNonFungibleFlexDropToken,
-        baseUri: baseUri ? convertDataIntoString(baseUri) : null,
-        contractUri: contractUri ? convertDataIntoString(contractUri) : null,
-        classHash: implClashHash,
-      };
-    }
+    // List of operations to retrieve the contract symbol
+    const symbolOperations = [
+      () => contractInstance.symbol(),
+      () => oldVerContract.symbol(),
+    ];
+
+    const contractUri = await attemptOperations(contractUriOperations);
+    const name = await attemptOperations(nameOperations);
+    const symbol = await attemptOperations(symbolOperations);
+
+    return {
+      name: name ? convertDataIntoString(name) : null,
+      symbol: symbol ? convertDataIntoString(symbol) : null,
+      standard,
+      isNonFungibleFlexDropToken,
+      contractUri: contractUri ? convertDataIntoString(contractUri) : null,
+    };
   }
 }

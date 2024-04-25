@@ -157,12 +157,12 @@ export class BlockDetectionService extends OnchainWorker {
       ev => ev.eventType === EventType.FLEX_DROP_MINTED,
     );
 
-    const upgradeContractEv = eventWithType.filter(
-      ev => ev.eventType === EventType.UPGRADE_CONTRACT,
+    const deployContractEv = eventWithType.filter(
+      ev => ev.eventType === EventType.DEPLOY_CONTRACT,
     );
 
     // skip transfer event if it is sale or accept offer or flexdrop minted -> prevent duplicate event
-    let eventlogs = eventWithType.filter(ev => {
+    const eventlogs = eventWithType.filter(ev => {
       if (
         ev.eventType === EventType.TRANSFER_721 ||
         ev.eventType === EventType.TRANSFER_1155
@@ -179,6 +179,12 @@ export class BlockDetectionService extends OnchainWorker {
         return false;
       }
 
+      if (ev.eventType === EventType.UPGRADE_CONTRACT) {
+        return !deployContractEv.find(
+          e => e.transaction_hash === ev.transaction_hash,
+        );
+      }
+
       return true;
     });
 
@@ -193,29 +199,6 @@ export class BlockDetectionService extends OnchainWorker {
           log.returnValues.price =
             ev.returnValues.totalMintPrice / ev.returnValues.quantityMinted;
         }
-      });
-    }
-
-    let isDuplicate = false;
-    for (const ev of upgradeContractEv) {
-      eventlogs.map(log => {
-        if (
-          log.eventType === EventType.DEPLOY_CONTRACT &&
-          log.returnValues.address === ev.returnValues.nftAddress
-        ) {
-          log.returnValues.classHash = ev.returnValues.implementation;
-          isDuplicate = true;
-        }
-      });
-    }
-
-    if (isDuplicate) {
-      eventlogs = eventlogs.filter(ev => {
-        if (ev.eventType === EventType.UPGRADE_CONTRACT) {
-          return false;
-        }
-
-        return true;
       });
     }
 

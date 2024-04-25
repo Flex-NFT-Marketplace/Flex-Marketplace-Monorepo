@@ -1,8 +1,9 @@
 import { SuccessfulTransactionReceiptResponse } from 'starknet';
 import contractDeployerABI from '../abis/contract-deployer.abi.json';
 import erc721Abi from '../abis/erc721.abi.json';
-import oldErc721Abi from '../abis/erc721old.abi.json';
+import oldErc721Abi from '../abis/olderc721.abi.json';
 import erc1155Abi from '../abis/erc1155.abi.json';
+import oldErc1155Abi from '../abis/olderc1155.abi.json';
 import marketplaceAbi from '../abis/marketplace.abi.json';
 import accountAbi from '../abis/account.abi.json';
 import flexDrop from '../abis/flexdrop.abit.json';
@@ -62,6 +63,7 @@ export const ABIS = {
   Erc721ABI: erc721Abi,
   OldErc721ABI: oldErc721Abi,
   Erc1155ABI: erc1155Abi,
+  OldErc1155ABI: oldErc1155Abi,
   FlexDropABI: flexDrop,
   AccountABI: accountAbi,
   ProxyABI: proxyAbi,

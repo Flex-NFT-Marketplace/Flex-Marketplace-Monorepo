@@ -2,7 +2,6 @@ import {
   Attribute,
   AttributeMap,
   NftCollectionDocument,
-  NftCollectionStandard,
   NftCollections,
   NftDocument,
   Nfts,
@@ -12,8 +11,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import axios, { AxiosInstance } from 'axios';
 import { Web3Service } from '@app/web3-service/web3.service';
-import { uint256 } from 'starknet';
-import { BigNumberishToText, typeOfVal } from '@app/shared/utils';
+import { typeOfVal } from '@app/shared/utils';
 import configuration from '@app/shared/configuration';
 import { MetaDataDto } from './dtos/metadata.dto';
 import { isURL } from 'class-validator';
@@ -44,34 +42,14 @@ export class MetadataService {
       .populate(['nftCollection', 'chain']);
 
     const { nftContract, nftCollection, tokenId, chain } = nft;
-    const { standard, classHash } = nftCollection;
+    const { standard } = nftCollection;
 
-    const ercContract = await this.web3Service.getContractInstance(
-      classHash,
+    const tokenURI = await this.web3Service.getNFTUri(
       nftContract,
+      tokenId,
+      standard,
       chain.rpc,
     );
-
-    let tokenURI = null;
-
-    try {
-      if (standard === NftCollectionStandard.ERC721) {
-        const uri = await ercContract.tokenURI(uint256.bnToUint256(tokenId));
-
-        tokenURI = this.convertIntoTokenURI(uri);
-      } else {
-        const uri = await ercContract.uri(uint256.bnToUint256(tokenId));
-        tokenURI = this.convertIntoTokenURI(uri);
-      }
-    } catch (e) {
-      try {
-        if (standard === NftCollectionStandard.ERC721) {
-          const uri = await ercContract.token_uri(uint256.bnToUint256(tokenId));
-
-          tokenURI = this.convertIntoTokenURI(uri);
-        }
-      } catch (error) {}
-    }
 
     if (!tokenURI) return null;
 
@@ -190,14 +168,6 @@ export class MetadataService {
       },
       nftCollection,
     );
-  }
-
-  convertIntoTokenURI(data: any): string {
-    if (typeof data === 'bigint') {
-      return BigNumberishToText([data]);
-    } else if (typeof data === 'object') {
-      return BigNumberishToText(data);
-    } else return data;
   }
 
   parseJSON(data: string): any {
