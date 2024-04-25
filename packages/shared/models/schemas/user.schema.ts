@@ -38,9 +38,6 @@ export class Users extends BaseSchema {
   address: string;
 
   @Prop()
-  classHash: string;
-
-  @Prop()
   privateKey?: string;
 
   @Prop()
