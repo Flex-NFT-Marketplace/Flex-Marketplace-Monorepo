@@ -11,21 +11,15 @@ export class UserService {
     private readonly web3Service: Web3Service,
   ) {}
 
-  async getOrCreateUser(
-    userAddress: string,
-    rpc: string,
-  ): Promise<UserDocument> {
+  async getOrCreateUser(userAddress: string): Promise<UserDocument> {
     let user = await this.userModel.findOne({
       address: userAddress,
     });
 
     if (!user) {
-      const provider = this.web3Service.getProvider(rpc);
-      const classHash = await provider.getClassHashAt(userAddress);
       const newUser: Users = {
         address: userAddress,
         username: userAddress,
-        classHash,
         nonce: Math.floor(Math.random() * 1000000),
         isVerified: false,
         roles: [],

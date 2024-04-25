@@ -127,10 +127,7 @@ export class NftItemService {
       chain,
     );
     const ownerDocument = owner
-      ? await this.userService.getOrCreateUser(
-          formattedContractAddress(owner),
-          chain.rpc,
-        )
+      ? await this.userService.getOrCreateUser(formattedContractAddress(owner))
       : null;
     const nftCollectionEntity: NftCollections = {
       name,
@@ -184,10 +181,7 @@ export class NftItemService {
         isNative: true,
       });
 
-      const ownerDocument = await this.userService.getOrCreateUser(
-        deployer,
-        chain.rpc,
-      );
+      const ownerDocument = await this.userService.getOrCreateUser(deployer);
 
       const nftCollectionEntity: NftCollections = {
         name,
@@ -301,8 +295,8 @@ export class NftItemService {
 
     if (!nftCollection) return;
 
-    const fromUser = await this.userService.getOrCreateUser(from, chain.rpc);
-    const toUser = await this.userService.getOrCreateUser(to, chain.rpc);
+    const fromUser = await this.userService.getOrCreateUser(from);
+    const toUser = await this.userService.getOrCreateUser(to);
 
     const newNftEntity: Nfts = {
       tokenId,
@@ -406,8 +400,8 @@ export class NftItemService {
       );
     }
 
-    const fromUser = await this.userService.getOrCreateUser(from, chain.rpc);
-    const toUser = await this.userService.getOrCreateUser(to, chain.rpc);
+    const fromUser = await this.userService.getOrCreateUser(from);
+    const toUser = await this.userService.getOrCreateUser(to);
 
     const history: Histories = {
       nft,
@@ -462,8 +456,8 @@ export class NftItemService {
       tokenId,
     });
 
-    const fromUser = await this.userService.getOrCreateUser(from, chain.rpc);
-    const toUser = await this.userService.getOrCreateUser(to, chain.rpc);
+    const fromUser = await this.userService.getOrCreateUser(from);
+    const toUser = await this.userService.getOrCreateUser(to);
 
     const updateNfts = [];
     const newNfts: Nfts[] = [];
@@ -567,8 +561,8 @@ export class NftItemService {
 
     if (!nftCollection) return;
 
-    const fromUser = await this.userService.getOrCreateUser(from, chain.rpc);
-    const toUser = await this.userService.getOrCreateUser(to, chain.rpc);
+    const fromUser = await this.userService.getOrCreateUser(from);
+    const toUser = await this.userService.getOrCreateUser(to);
 
     const existedNft = await this.nftModel.findOne({
       tokenId,
@@ -656,8 +650,8 @@ export class NftItemService {
 
     if (!nftCollection) return;
 
-    const fromUser = await this.userService.getOrCreateUser(from, chain.rpc);
-    const toUser = await this.userService.getOrCreateUser(to, chain.rpc);
+    const fromUser = await this.userService.getOrCreateUser(from);
+    const toUser = await this.userService.getOrCreateUser(to);
 
     const existedNft = await this.nftModel.findOne({
       tokenId,
@@ -747,8 +741,8 @@ export class NftItemService {
 
     if (!nftCollection) return;
 
-    const fromUser = await this.userService.getOrCreateUser(from, chain.rpc);
-    const toUser = await this.userService.getOrCreateUser(to, chain.rpc);
+    const fromUser = await this.userService.getOrCreateUser(from);
+    const toUser = await this.userService.getOrCreateUser(to);
 
     const fromBalance = await this.nftModel
       .findOne({
@@ -905,10 +899,7 @@ export class NftItemService {
     const { user, orderNonce, timestamp } =
       log.returnValues as CancelOrderReturnValue;
 
-    const userDocument = await this.userService.getOrCreateUser(
-      user,
-      chain.rpc,
-    );
+    const userDocument = await this.userService.getOrCreateUser(user);
     const availableSale = await this.saleModel.findOne({
       signer: userDocument,
       saltNonce: orderNonce,
@@ -989,10 +980,7 @@ export class NftItemService {
     const { user, newMinNonce, timestamp } =
       log.returnValues as CancelAllOrdersReturnValue;
 
-    const userDocument = await this.userService.getOrCreateUser(
-      user,
-      chain.rpc,
-    );
+    const userDocument = await this.userService.getOrCreateUser(user);
     const availableSales = await this.saleModel.find({
       signer: userDocument,
       saltNonce: { $lt: newMinNonce },
@@ -1153,11 +1141,8 @@ export class NftItemService {
     const paymentToken = await this.paymentTokenModel.findOne({
       contractAddress: currency,
     });
-    const sellerUser = await this.userService.getOrCreateUser(
-      seller,
-      chain.rpc,
-    );
-    const buyerUser = await this.userService.getOrCreateUser(buyer, chain.rpc);
+    const sellerUser = await this.userService.getOrCreateUser(seller);
+    const buyerUser = await this.userService.getOrCreateUser(buyer);
 
     const sellerNft = await this.nftModel.findOne({
       tokenId,
@@ -1390,11 +1375,8 @@ export class NftItemService {
     const paymentToken = await this.paymentTokenModel.findOne({
       contractAddress: currency,
     });
-    const sellerUser = await this.userService.getOrCreateUser(
-      seller,
-      chain.rpc,
-    );
-    const buyerUser = await this.userService.getOrCreateUser(buyer, chain.rpc);
+    const sellerUser = await this.userService.getOrCreateUser(seller);
+    const buyerUser = await this.userService.getOrCreateUser(buyer);
 
     const sellerNft = await this.nftModel.findOne({
       tokenId,
@@ -1690,10 +1672,7 @@ export class NftItemService {
       chain,
     );
 
-    const payoutUser = await this.userService.getOrCreateUser(
-      newPayoutAddress,
-      chain.rpc,
-    );
+    const payoutUser = await this.userService.getOrCreateUser(newPayoutAddress);
     nftCollection.creatorPayout = payoutUser;
     await nftCollection.save();
   }
@@ -1707,7 +1686,7 @@ export class NftItemService {
       chain,
     );
 
-    const payerUser = await this.userService.getOrCreateUser(payer, chain.rpc);
+    const payerUser = await this.userService.getOrCreateUser(payer);
     const oldPayers = nftCollection.payers;
     if (allowed) {
       nftCollection.payers.push(payerUser);
