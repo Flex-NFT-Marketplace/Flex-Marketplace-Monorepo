@@ -35,7 +35,7 @@ import {
   SaleReturnValue,
   UpgradedContractReturnValue,
 } from '@app/web3-service/decodeEvent';
-import { ABIS, EventType, LogsReturnValues } from '@app/web3-service/types';
+import { EventType, LogsReturnValues } from '@app/web3-service/types';
 import { Web3Service } from '@app/web3-service/web3.service';
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
@@ -117,15 +117,8 @@ export class NftItemService {
       return null;
     }
 
-    const {
-      name,
-      standard,
-      symbol,
-      isNonFungibleFlexDropToken,
-      baseUri,
-      contractUri,
-      classHash,
-    } = collectionInfo;
+    const { name, standard, symbol, isNonFungibleFlexDropToken, contractUri } =
+      collectionInfo;
     const paymentTokens = await this.paymentTokenModel.find({
       isNative: true,
     });
@@ -150,11 +143,9 @@ export class NftItemService {
       paymentTokens,
       collaboratories: [],
       isNonFungibleFlexDropToken,
-      baseUri,
       contractUri,
       dropPhases: [],
       attributesMap: [],
-      classHash,
     };
 
     const nftCollectionDocument =
@@ -168,55 +159,13 @@ export class NftItemService {
     return nftCollectionDocument;
   }
 
-  async convertProxyClassToImplementationClass(
-    calldata: string[],
-    chain: ChainDocument,
-    classHash: string,
-  ): Promise<string> {
-    const provider = this.web3Service.getProvider(chain.rpc);
-    const { abi } = await provider.getClassByHash(classHash);
-
-    let isProxy = true;
-    ABIS.ProxyABI.map(i => {
-      if (i.type !== 'event') {
-        const isIncluded = abi.some(item => {
-          return item.name == i.name && item.type == i.type;
-        });
-
-        if (!isIncluded) {
-          isProxy = false;
-          return;
-        }
-      }
-    });
-
-    if (!isProxy) return classHash;
-
-    const constructor = abi.find(i => i.name === 'constructor');
-    const index = constructor.inputs.findIndex(
-      (item: { name: string; type: string }) =>
-        item.name === 'implementation' || item.name === 'implementation_hash',
-    );
-
-    if (index == -1) throw new Error('Invalid proxy class hash');
-
-    const implementation = calldata[index];
-    return formattedContractAddress(implementation);
-  }
-
   async processContractDeployed(log: LogsReturnValues, chain: ChainDocument) {
-    const { address, deployer, classHash, calldata } =
+    const { address, deployer } =
       log.returnValues as ContractDeployedReturnValue;
 
-    const implClashHash = await this.convertProxyClassToImplementationClass(
-      calldata,
-      chain,
-      classHash,
-    );
     const nftInfo = await this.web3Service.getNFTCollectionDetail(
       address,
       chain.rpc,
-      implClashHash,
     );
 
     if (nftInfo) {
@@ -227,7 +176,6 @@ export class NftItemService {
         symbol,
         standard,
         isNonFungibleFlexDropToken,
-        baseUri,
         contractUri,
       } = nftInfo;
 
@@ -252,11 +200,9 @@ export class NftItemService {
         paymentTokens: paymentTokens,
         collaboratories: [],
         isNonFungibleFlexDropToken,
-        baseUri,
         contractUri,
         dropPhases: [],
         attributesMap: [],
-        classHash: implClashHash,
       };
 
       const nftCollection = await this.nftCollectionModel.findOneAndUpdate(
@@ -278,13 +224,11 @@ export class NftItemService {
   }
 
   async processUpgradedContract(log: LogsReturnValues, chain: ChainDocument) {
-    const { nftAddress, implementation } =
-      log.returnValues as UpgradedContractReturnValue;
+    const { nftAddress } = log.returnValues as UpgradedContractReturnValue;
 
     const nftInfo = await this.web3Service.getNFTCollectionDetail(
       nftAddress,
       chain.rpc,
-      implementation,
     );
 
     if (nftInfo) {
@@ -294,9 +238,7 @@ export class NftItemService {
         symbol,
         standard,
         isNonFungibleFlexDropToken,
-        baseUri,
         contractUri,
-        classHash,
       } = nftInfo;
 
       const paymentTokens = await this.paymentTokenModel.find({
@@ -312,9 +254,7 @@ export class NftItemService {
         standard,
         paymentTokens: paymentTokens,
         isNonFungibleFlexDropToken,
-        baseUri,
         contractUri,
-        classHash,
       };
 
       const nftCollection = await this.nftCollectionModel.findOneAndUpdate(
