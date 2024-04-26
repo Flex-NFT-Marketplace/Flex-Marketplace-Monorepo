@@ -5,6 +5,7 @@ import { UserSchema, Users } from '@app/shared/models';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getModelToken } from '@nestjs/mongoose';
 import { formattedContractAddress } from '@app/shared/utils';
+import { Web3Service } from '@app/web3-service/web3.service';
 
 describe('User service', () => {
   let userService: UserService;
@@ -20,6 +21,7 @@ describe('User service', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         UserService,
+        Web3Service,
         { provide: getModelToken(Users.name), useValue: userModel },
       ],
     }).compile();

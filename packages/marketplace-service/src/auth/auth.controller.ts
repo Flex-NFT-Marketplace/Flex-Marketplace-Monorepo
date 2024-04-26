@@ -61,10 +61,12 @@ export class AuthController {
   async getNonce(
     @Query() query: GetNonceReqDto,
   ): Promise<BaseResult<GetNonceRspDto>> {
-    const address = formattedContractAddress(query.address);
-    const user = await this.userService.getOrCreateUser(address, query.rpc);
+    const user = await this.userService.getOrCreateUser(query.address);
 
-    const message = await this.authService.getSignMessage(address, user.nonce);
+    const message = await this.authService.getSignMessage(
+      query.address,
+      user.nonce,
+    );
     return {
       success: true,
       data: {
