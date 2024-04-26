@@ -3,6 +3,7 @@ import {
   IsArray,
   IsHexadecimal,
   IsNumber,
+  IsUUID,
   IsUrl,
   Length,
 } from 'class-validator';
@@ -27,20 +28,13 @@ export class GetNonceReqDto {
   @IsHexadecimal({ message: 'Address must be a hex string' })
   @Length(60, 66, { message: 'Address must be valid characters long' })
   address: string;
-
-  @ApiProperty({
-    required: true,
-    example: 'https://starknet-sepolia.public.blastapi.io',
-  })
-  @IsUrl()
-  rpc: string;
 }
 // Response Nonce Data
 // Response Nonce Data
 export class GetNonceRspDto {
   @ApiProperty()
-  @IsNumber()
-  nonce: number;
+  @IsUUID()
+  nonce: string;
 
   @ApiProperty({
     description: 'The sign message from server',
@@ -60,7 +54,7 @@ export class GetTokenReqDto {
   signature: string[];
   @ApiProperty({
     required: true,
-    example: 'https://starknet-sepolia.public.blastapi.io',
+    example: 'https://starknet-mainnet.public.blastapi.io',
   })
   @IsUrl()
   rpc: string;

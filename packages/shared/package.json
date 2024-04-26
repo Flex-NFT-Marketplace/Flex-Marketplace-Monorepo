@@ -28,6 +28,7 @@
     "@nestjs/platform-express": "^10.0.0",
     "@nestjs/swagger": "^7.3.1",
     "@types/dotenv-safe": "^8.1.6",
+    "@types/uuid": "^9.0.8",
     "axios": "^1.6.8",
     "bull": "^4.12.2",
     "class-transformer": "^0.5.1",
@@ -38,7 +39,8 @@
     "passport-jwt": "^4.0.1",
     "reflect-metadata": "^0.2.0",
     "rxjs": "^7.8.1",
-    "starknet": "^6.7.0"
+    "starknet": "^6.7.0",
+    "uuid": "^9.0.1"
   },
   "devDependencies": {
     "@nestjs/cli": "^10.0.0",

@@ -4,9 +4,9 @@ import {
   IsBoolean,
   IsEmail,
   IsHexadecimal,
-  IsNumber,
   IsObject,
   IsString,
+  IsUUID,
   IsUrl,
   Length,
 } from 'class-validator';
@@ -45,8 +45,8 @@ export class UserDto {
   })
   address: string;
 
-  @IsNumber()
-  nonce: number;
+  @IsUUID()
+  nonce: string;
 
   @IsObject()
   socials?: Socials;

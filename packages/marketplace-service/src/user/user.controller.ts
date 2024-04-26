@@ -13,8 +13,6 @@ export class UsersController {
 
   @JWT()
   @Get('/info')
-
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async getUserInfo(
     @Req() req: Request,
     @User() user: iInfoToken,
