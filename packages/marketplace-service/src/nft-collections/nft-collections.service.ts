@@ -4,30 +4,72 @@ import { NftCollectionDto, NftCollections } from '@app/shared/models';
 import { Model } from 'mongoose';
 import { NftCollectionQueryParams } from '@app/shared/modules/dtos-query';
 import { PaginationDto } from '@app/shared/types/pagination.dto';
+import { formattedContractAddress, isValidObjectId } from '@app/shared/utils';
+import { UserService } from '../user/user.service';
 @Injectable()
 export class NftCollectionsService {
   constructor(
     @InjectModel(NftCollections.name)
-    private nftCollectionModel: Model<NftCollections>,
+    private readonly nftCollectionModel: Model<NftCollections>,
+    private readonly userService: UserService,
   ) {}
   async getListNFTCollections(
     query: NftCollectionQueryParams,
   ): Promise<PaginationDto<NftCollectionDto>> {
+    const {
+      nftContract,
+      standard,
+      verified,
+      owner,
+      status,
+      size,
+      skipIndex,
+      sort,
+      page,
+    } = query;
     const filter: any = {};
-    if (query.standard) {
-      filter.standard = query.standard;
+    if (standard) {
+      filter.standard = standard;
     }
-    if (query.nftContract) {
-      filter.nftContract = query.nftContract;
+    if (nftContract) {
+      filter.nftContract = formattedContractAddress(nftContract);
+    }
+    if (verified) {
+      filter.verified = verified;
+    }
+    if (status) {
+      filter.status = status;
+    }
+
+    if (owner) {
+      if (isValidObjectId(owner)) {
+        filter.owner = owner;
+      } else {
+        const user = await this.userService.getUser(owner);
+        if (user) {
+          filter.owner = user._id;
+        }
+      }
     }
     const count = await this.nftCollectionModel.countDocuments(filter);
     const items = await this.nftCollectionModel
       .find(filter)
-      .sort(query.sort)
-      .skip(query.skipIndex)
-      .limit(query.size)
+      .sort(sort)
+      .skip(skipIndex)
+      .limit(size)
+      .populate([
+        {
+          path: 'owner',
+          select: 'address username avatar cover isVerified',
+        },
+        {
+          path: 'collaboratories',
+          select: 'address',
+        },
+        'paymentTokens',
+      ])
       .exec();
-    return new PaginationDto(items, count, query.page, query.size);
+    return new PaginationDto(items, count, page, size);
   }
 
   async getNFTCollectionDetail(nftContract: string) {
