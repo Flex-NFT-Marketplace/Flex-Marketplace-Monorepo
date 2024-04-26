@@ -19,9 +19,10 @@ import {
 } from 'starknet';
 import { Web3Service } from '@app/web3-service/web3.service';
 import {
-  BigNumberishToText,
+  convertDataIntoString,
   formattedContractAddress,
 } from '@app/shared/utils';
+import { ABIS } from '@app/web3-service/types';
 
 @Injectable()
 export class AuthService {
@@ -32,7 +33,8 @@ export class AuthService {
     this.web3Service = new Web3Service();
   }
   private readonly web3Service: Web3Service;
-  async getSignMessage(address: string, nonce: number) {
+  async getSignMessage(address: string, nonce: string) {
+    const formatAddress = formattedContractAddress(address);
     const typedDataValidate: TypedData = {
       types: {
         StarkNetDomain: [
@@ -41,20 +43,18 @@ export class AuthService {
           { name: 'chainId', type: 'felt' },
         ],
         Validate: [
-          { name: 'id', type: 'felt' },
-          { name: 'from', type: 'felt' },
-          { name: 'nonce', type: 'felt' },
+          { name: 'address', type: 'felt' },
+          { name: 'nonce', type: 'selector' },
         ],
       },
       primaryType: 'Validate',
       domain: {
         name: 'flex-marketplace',
         version: '1',
-        chainId: shortString.encodeShortString('SN_SEPOLIA'),
+        chainId: shortString.encodeShortString('SN_MAIN'),
       },
       message: {
-        id: '0x0000004f000f',
-        from: address,
+        address: formatAddress,
         nonce: nonce,
       },
     };
@@ -62,12 +62,13 @@ export class AuthService {
   }
   async verifySignature(address: string, signature: string[], rpc: string) {
     const user = await this.userService.getUser(address);
+
     const message = await this.getSignMessage(address, user.nonce);
     try {
       const msgHash = typedData.getMessageHash(message, address);
 
       const accountContract = await this.web3Service.getContractInstance(
-        address,
+        ABIS.AccountABI,
         address,
         rpc,
       );
@@ -82,21 +83,23 @@ export class AuthService {
       // console.log('Why Result', result);
       // console.log('Result ', BigNumberishToText(result));
       // return result1;
-      return BigNumberishToText(result);
+
+      return convertDataIntoString(result);
     } catch (error) {
-      return false;
+      throw new Error(error);
     }
   }
 
   async login({ address, signature, rpc }: GetTokenReqDto) {
     const accessPayload = {
-      sub: address,
+      sub: formattedContractAddress(address),
       role: [],
     };
     const data = await this.verifySignature(address, signature, rpc);
     if (!data) {
       throw new Error('Signature is not valid');
     }
+
     const token = await this.generateToken(accessPayload);
     await this.userService.updateRandomNonce(address);
     return {
@@ -116,7 +119,7 @@ export class AuthService {
     address,
     privateKey,
     nonce,
-  }: GetSignatureTestDto & { nonce: number }) {
+  }: GetSignatureTestDto & { nonce: string }) {
     address = formattedContractAddress(address);
 
     const rpc = 'https://starknet-sepolia.public.blastapi.io';

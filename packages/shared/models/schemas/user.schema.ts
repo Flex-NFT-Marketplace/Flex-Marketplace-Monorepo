@@ -40,8 +40,8 @@ export class Users extends BaseSchema {
   @Prop()
   privateKey?: string;
 
-  @Prop()
-  nonce: number;
+  @Prop({ type: SchemaTypes.UUID })
+  nonce: string;
 
   @Prop()
   socials?: Socials;
