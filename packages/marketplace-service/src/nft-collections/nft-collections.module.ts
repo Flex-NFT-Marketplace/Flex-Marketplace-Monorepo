@@ -2,14 +2,19 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { Module } from '@nestjs/common';
 import { NftCollectionsService } from './nft-collections.service';
 import {
+  DropPhaseSchema,
+  DropPhases,
   NftCollectionSchema,
   NftCollections,
   NftSchema,
   Nfts,
   PaymentTokenSchema,
   PaymentTokens,
+  UserSchema,
+  Users,
 } from '@app/shared/models';
 import { NftCollectionsController } from './nft-collections.controller';
+import { UserService } from '../user/user.service';
 
 @Module({
   imports: [
@@ -26,9 +31,17 @@ import { NftCollectionsController } from './nft-collections.controller';
         name: Nfts.name,
         schema: NftSchema,
       },
+      {
+        name: Users.name,
+        schema: UserSchema,
+      },
+      {
+        name: DropPhases.name,
+        schema: DropPhaseSchema,
+      },
     ]),
   ],
   controllers: [NftCollectionsController],
-  providers: [NftCollectionsService],
+  providers: [NftCollectionsService, UserService],
 })
 export class NftCollectionsModule {}
