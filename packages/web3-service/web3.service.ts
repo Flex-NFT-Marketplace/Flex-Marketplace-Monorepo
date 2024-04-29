@@ -403,24 +403,31 @@ export class Web3Service {
     const provider = this.getProvider(rpc);
 
     let abi = ABIS.Erc721ABI;
+    let otherVerAbi = ABIS.OtherErc721ABI;
     let oldVerAbi = ABIS.OldErc721ABI;
     if (standard === NftCollectionStandard.ERC1155) {
       abi = ABIS.Erc1155ABI;
+      otherVerAbi = ABIS.OtherErc1155ABI;
       oldVerAbi = ABIS.OldErc1155ABI;
     }
 
     const contractInstance = new Contract(abi, address, provider);
+    const otherVerContract = new Contract(otherVerAbi, address, provider);
     const oldVerContract = new Contract(oldVerAbi, address, provider);
 
     const tokenUriOperations = [
       () => contractInstance.token_uri(tokenId),
       () => contractInstance.tokenURI(tokenId),
       () => contractInstance.uri(tokenId),
+      () => otherVerContract.token_uri(tokenId),
+      () => otherVerContract.tokenURI(tokenId),
+      () => otherVerContract.uri(tokenId),
       () => oldVerContract.token_uri(tokenId),
       () => oldVerContract.tokenURI(tokenId),
       () => oldVerContract.uri(tokenId),
     ];
     const tokenUri = await attemptOperations(tokenUriOperations);
+
     if (!tokenUri) return null;
 
     return convertDataIntoString(tokenUri);
@@ -478,12 +485,19 @@ export class Web3Service {
     }
 
     const contractInstance = new Contract(ABIS.Erc721ABI, address, provider);
+    const otherVerContract = new Contract(
+      ABIS.OtherErc721ABI,
+      address,
+      provider,
+    );
     const oldVerContract = new Contract(ABIS.OldErc721ABI, address, provider);
 
     // List of possible operations to retrieve the contract URI
     const contractUriOperations = [
       () => contractInstance.get_contract_uri(),
       () => contractInstance.getContractURI(),
+      () => otherVerContract.get_contract_uri(),
+      () => otherVerContract.getContractURI(),
       () => oldVerContract.get_contract_uri(),
       () => oldVerContract.getContractURI(),
     ];
@@ -491,12 +505,14 @@ export class Web3Service {
     // List of operations to retrieve the contract name
     const nameOperations = [
       () => contractInstance.name(),
+      () => otherVerContract.name(),
       () => oldVerContract.name(),
     ];
 
     // List of operations to retrieve the contract symbol
     const symbolOperations = [
       () => contractInstance.symbol(),
+      () => otherVerContract.symbol(),
       () => oldVerContract.symbol(),
     ];
 
