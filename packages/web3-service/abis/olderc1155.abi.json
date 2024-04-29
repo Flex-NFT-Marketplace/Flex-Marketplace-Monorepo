@@ -240,7 +240,7 @@
         ],
         "outputs": [
           {
-            "type": "core::array::Span::<core::felt252>"
+            "type": "core::felt252"
           }
         ],
         "state_mutability": "view"
@@ -460,17 +460,17 @@
     "type": "event",
     "members": [
       {
-        "kind": "key",
+        "kind": "data",
         "name": "operator",
         "type": "core::starknet::contract_address::ContractAddress"
       },
       {
-        "kind": "key",
+        "kind": "data",
         "name": "from",
         "type": "core::starknet::contract_address::ContractAddress"
       },
       {
-        "kind": "key",
+        "kind": "data",
         "name": "to",
         "type": "core::starknet::contract_address::ContractAddress"
       },
@@ -492,17 +492,17 @@
     "type": "event",
     "members": [
       {
-        "kind": "key",
+        "kind": "data",
         "name": "operator",
         "type": "core::starknet::contract_address::ContractAddress"
       },
       {
-        "kind": "key",
+        "kind": "data",
         "name": "from",
         "type": "core::starknet::contract_address::ContractAddress"
       },
       {
-        "kind": "key",
+        "kind": "data",
         "name": "to",
         "type": "core::starknet::contract_address::ContractAddress"
       },

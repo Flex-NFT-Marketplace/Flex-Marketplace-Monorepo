@@ -1,6 +1,13 @@
-import { BigNumberish, Contract, ParsedStruct, Provider, num } from 'starknet';
+import {
+  BigNumberish,
+  Contract,
+  ParsedStruct,
+  Provider,
+  num,
+  uint256,
+} from 'starknet';
 import { formattedContractAddress } from '@app/shared/utils';
-import { ABIS } from './types';
+import { ABIS, EventTopic } from './types';
 
 export type ContractDeployedReturnValue = {
   address: string;
@@ -66,22 +73,53 @@ export const decodeERC721Transfer = (
   timestamp: number,
 ): ERC721TransferReturnValue => {
   const nftAddress = formattedContractAddress(txReceipt.events[0].from_address);
-  const contractInstance = new Contract(ABIS.Erc721ABI, nftAddress, provider);
 
-  const parsedEvent = contractInstance.parseEvents(txReceipt)[0];
-  const returnValue: ERC721TransferReturnValue = {
-    from: formattedContractAddress(
-      num.toHex(parsedEvent.Transfer.from as BigNumberish),
-    ),
-    to: formattedContractAddress(
-      num.toHex(parsedEvent.Transfer.to as BigNumberish),
-    ),
-    tokenId: Number((parsedEvent.Transfer.token_id as bigint).toString()),
-    nftAddress,
-    timestamp,
-  };
+  try {
+    const contractInstance = new Contract(ABIS.Erc721ABI, nftAddress, provider);
+    const parsedEvent = contractInstance.parseEvents(txReceipt)[0];
+    const returnValue: ERC721TransferReturnValue = {
+      from: formattedContractAddress(
+        num.toHex(parsedEvent.Transfer.from as BigNumberish),
+      ),
+      to: formattedContractAddress(
+        num.toHex(parsedEvent.Transfer.to as BigNumberish),
+      ),
+      tokenId: Number((parsedEvent.Transfer.token_id as bigint).toString()),
+      nftAddress,
+      timestamp,
+    };
 
-  return returnValue;
+    return returnValue;
+  } catch (error) {
+    try {
+      const oldVercontractInstance = new Contract(
+        ABIS.OldErc721ABI,
+        nftAddress,
+        provider,
+      );
+      txReceipt.events[0].keys = [EventTopic.TRANSFER];
+      const parsedEvent = oldVercontractInstance.parseEvents(txReceipt)[0];
+      const returnValue: ERC721TransferReturnValue = {
+        from: formattedContractAddress(
+          num.toHex(parsedEvent.Transfer.from as BigNumberish),
+        ),
+        to: formattedContractAddress(
+          num.toHex(parsedEvent.Transfer.to as BigNumberish),
+        ),
+        tokenId: Number(
+          (
+            uint256.uint256ToBN(parsedEvent.Transfer.token_id as any) as bigint
+          ).toString(),
+        ),
+        nftAddress,
+        timestamp,
+      };
+
+      return returnValue;
+    } catch (error) {
+      throw new Error(error);
+    }
+  }
 };
 
 export type ERC1155TransferReturnValue = {
@@ -101,23 +139,55 @@ export const decodeERC115Transfer = (
   timestamp: number,
 ): ERC1155TransferReturnValue => {
   const nftAddress = formattedContractAddress(txReceipt.events[0].from_address);
-  const contractInstance = new Contract(ABIS.Erc1155ABI, nftAddress, provider);
+  try {
+    const contractInstance = new Contract(
+      ABIS.Erc1155ABI,
+      nftAddress,
+      provider,
+    );
 
-  const parsedEvent = contractInstance.parseEvents(txReceipt)[0];
-  const returnValue: ERC1155TransferReturnValue = {
-    from: formattedContractAddress(
-      num.toHex(parsedEvent.TransferSingle.from as BigNumberish),
-    ),
-    to: formattedContractAddress(
-      num.toHex(parsedEvent.TransferSingle.to as BigNumberish),
-    ),
-    tokenId: Number((parsedEvent.TransferSingle.id as bigint).toString()),
-    nftAddress,
-    timestamp,
-    value: Number((parsedEvent.TransferSingle.value as bigint).toString()),
-  };
+    const parsedEvent = contractInstance.parseEvents(txReceipt)[0];
+    const returnValue: ERC1155TransferReturnValue = {
+      from: formattedContractAddress(
+        num.toHex(parsedEvent.TransferSingle.from as BigNumberish),
+      ),
+      to: formattedContractAddress(
+        num.toHex(parsedEvent.TransferSingle.to as BigNumberish),
+      ),
+      tokenId: Number((parsedEvent.TransferSingle.id as bigint).toString()),
+      nftAddress,
+      timestamp,
+      value: Number((parsedEvent.TransferSingle.value as bigint).toString()),
+    };
 
-  return returnValue;
+    return returnValue;
+  } catch (error) {
+    try {
+      const contractInstance = new Contract(
+        ABIS.OldErc1155ABI,
+        nftAddress,
+        provider,
+      );
+
+      txReceipt.events[0].keys = [EventTopic.TRANSFER_SINGLE];
+      const parsedEvent = contractInstance.parseEvents(txReceipt)[0];
+      const returnValue: ERC1155TransferReturnValue = {
+        from: formattedContractAddress(
+          num.toHex(parsedEvent.TransferSingle.from as BigNumberish),
+        ),
+        to: formattedContractAddress(
+          num.toHex(parsedEvent.TransferSingle.to as BigNumberish),
+        ),
+        tokenId: Number((parsedEvent.TransferSingle.id as bigint).toString()),
+        nftAddress,
+        timestamp,
+        value: Number((parsedEvent.TransferSingle.value as bigint).toString()),
+      };
+      return returnValue;
+    } catch (error) {
+      throw new Error(error);
+    }
+  }
 };
 
 export const decodeERC115TransferBatch = (
@@ -127,24 +197,62 @@ export const decodeERC115TransferBatch = (
 ): ERC1155TransferReturnValue[] => {
   const returnValues: ERC1155TransferReturnValue[] = [];
   const nftAddress = formattedContractAddress(txReceipt.events[0].from_address);
-  const contractInstance = new Contract(ABIS.Erc1155ABI, nftAddress, provider);
-
-  const parsedEvent = contractInstance.parseEvents(txReceipt)[0];
-  const { from, to, ids, values } = parsedEvent.TransferBatch;
-  const fromAddress = formattedContractAddress(num.toHex(from as BigNumberish));
-  const toAddress = formattedContractAddress(num.toHex(to as BigNumberish));
-  for (let i = 0; i < (ids as BigNumberish[]).length; i++) {
-    returnValues.push({
-      from: fromAddress,
-      to: toAddress,
-      tokenId: Number((ids[i] as bigint).toString()),
+  try {
+    const contractInstance = new Contract(
+      ABIS.Erc1155ABI,
       nftAddress,
-      timestamp,
-      value: Number((values[i] as bigint).toString()),
-    });
-  }
+      provider,
+    );
 
-  return returnValues;
+    txReceipt.events[0].keys = [EventTopic.TRANSFER_BATCH];
+    const parsedEvent = contractInstance.parseEvents(txReceipt)[0];
+    const { from, to, ids, values } = parsedEvent.TransferBatch;
+    const fromAddress = formattedContractAddress(
+      num.toHex(from as BigNumberish),
+    );
+    const toAddress = formattedContractAddress(num.toHex(to as BigNumberish));
+    for (let i = 0; i < (ids as BigNumberish[]).length; i++) {
+      returnValues.push({
+        from: fromAddress,
+        to: toAddress,
+        tokenId: Number((ids[i] as bigint).toString()),
+        nftAddress,
+        timestamp,
+        value: Number((values[i] as bigint).toString()),
+      });
+    }
+
+    return returnValues;
+  } catch (error) {
+    try {
+      const contractInstance = new Contract(
+        ABIS.OldErc1155ABI,
+        nftAddress,
+        provider,
+      );
+
+      const parsedEvent = contractInstance.parseEvents(txReceipt)[0];
+      const { from, to, ids, values } = parsedEvent.TransferBatch;
+      const fromAddress = formattedContractAddress(
+        num.toHex(from as BigNumberish),
+      );
+      const toAddress = formattedContractAddress(num.toHex(to as BigNumberish));
+      for (let i = 0; i < (ids as BigNumberish[]).length; i++) {
+        returnValues.push({
+          from: fromAddress,
+          to: toAddress,
+          tokenId: Number((ids[i] as bigint).toString()),
+          nftAddress,
+          timestamp,
+          value: Number((values[i] as bigint).toString()),
+        });
+      }
+
+      return returnValues;
+    } catch (error) {
+      throw new Error(error);
+    }
+  }
 };
 
 export type CancelOrderReturnValue = {
