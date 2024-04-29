@@ -5,7 +5,7 @@
       "interface_name": "flex::marketplace::openedition::interfaces::INonFungibleFlexDropToken::INonFungibleFlexDropToken"
     },
     {
-      "name": "Uint256",
+      "name": "core::integer::u256",
       "type": "struct",
       "members": [
         {
@@ -576,7 +576,7 @@
           "inputs": [],
           "outputs": [
             {
-              "type": "core::felt252"
+              "type": "core::array::Array::<core::felt252>"
             }
           ],
           "state_mutability": "view"
@@ -587,7 +587,7 @@
           "inputs": [],
           "outputs": [
             {
-              "type": "core::felt252"
+              "type": "core::array::Array::<core::felt252>"
             }
           ],
           "state_mutability": "view"
@@ -603,7 +603,7 @@
           ],
           "outputs": [
             {
-              "type": "core::felt252"
+              "type": "core::array::Array::<core::felt252>"
             }
           ],
           "state_mutability": "view"
@@ -630,7 +630,7 @@
           ],
           "outputs": [
             {
-              "type": "core::felt252"
+              "type": "core::array::Array::<core::felt252>"
             }
           ],
           "state_mutability": "view"
@@ -699,7 +699,7 @@
           "inputs": [],
           "outputs": [
             {
-              "type": "core::felt252"
+              "type": "core::array::Array::<core::felt252>"
             }
           ],
           "state_mutability": "view"
@@ -710,7 +710,7 @@
           "inputs": [],
           "outputs": [
             {
-              "type": "core::felt252"
+              "type": "core::array::Array::<core::felt252>"
             }
           ],
           "state_mutability": "view"
@@ -873,19 +873,19 @@
       "type": "event",
       "members": [
         {
-          "kind": "data",
+          "kind": "key",
           "name": "from",
-          "type": "core::felt252"
+          "type": "core::starknet::contract_address::ContractAddress"
         },
         {
-          "kind": "data",
+          "kind": "key",
           "name": "to",
-          "type": "core::felt252"
+          "type": "core::starknet::contract_address::ContractAddress"
         },
         {
-          "kind": "data",
+          "kind": "key",
           "name": "token_id",
-          "type": "Uint256"
+          "type": "core::integer::u256"
         }
       ]
     },

@@ -440,10 +440,6 @@ export class NftItemService {
     const { from, to, tokenId, nftAddress, timestamp } =
       log.returnValues as ERC721TransferReturnValue;
 
-    this.logger.debug(
-      `nft transfer ${nftAddress}: ${tokenId} from ${from} -> ${to} at - ${timestamp}`,
-    );
-
     const nftCollection = await this.getOrCreateNftCollection(
       nftAddress,
       chain,
@@ -539,6 +535,10 @@ export class NftItemService {
     if (newNfts.length > 0) {
       await this.nftModel.insertMany(newNfts);
     }
+
+    this.logger.debug(
+      `nft transfer ${nftAddress}: ${tokenId} from ${from} -> ${to} at - ${timestamp}`,
+    );
   }
 
   async processNft1155Minted(
