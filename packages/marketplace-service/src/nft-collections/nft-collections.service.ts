@@ -27,6 +27,7 @@ export class NftCollectionsService {
       skipIndex,
       sort,
       page,
+      name,
     } = query;
     const filter: any = {};
     if (standard) {
@@ -40,6 +41,9 @@ export class NftCollectionsService {
     }
     if (status) {
       filter.status = status;
+    }
+    if (name) {
+      filter.name = { $regex: `${query.name}`, $options: 'i' };
     }
 
     if (owner) {

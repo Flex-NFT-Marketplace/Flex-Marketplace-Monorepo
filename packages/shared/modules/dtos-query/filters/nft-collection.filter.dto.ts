@@ -21,4 +21,6 @@ export class NftCollectionQueryParams extends BaseQueryParams {
     example: NftCollectionStatus.Active,
   })
   status?: NftCollectionStatus = NftCollectionStatus.Active;
+  @ApiProperty()
+  name?: string;
 }

@@ -6,6 +6,7 @@ export function configureSwagger(app: INestApplication) {
     .setTitle('Flex Marketplace API:Gateway')
     .setDescription('Flex Marketplace API Gateway Document Description Content')
     .setVersion('0.0.1')
+
     .addBearerAuth(
       {
         type: 'apiKey',
@@ -19,5 +20,6 @@ export function configureSwagger(app: INestApplication) {
     )
     .build();
   const swaggerDoc = SwaggerModule.createDocument(app, swaggerDocOptions);
+
   SwaggerModule.setup('/docs', app, swaggerDoc); // to get json file goto /docs-json
 }
