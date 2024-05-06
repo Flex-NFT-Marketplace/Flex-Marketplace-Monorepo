@@ -78,10 +78,7 @@ export class NftController {
   async getNfts(@Body() query: NftFilterQueryParams) {
     try {
       const data = await this.nftsService.getNftsByQuery(query);
-      return new BaseResult({
-        success: true,
-        data: data,
-      });
+      return data;
     } catch (error) {
       return new BaseResult({
         success: false,

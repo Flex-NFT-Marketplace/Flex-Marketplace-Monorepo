@@ -1,6 +1,6 @@
 import { InjectModel } from '@nestjs/mongoose';
 import { Injectable } from '@nestjs/common';
-import { NftCollectionDto, NftCollections } from '@app/shared/models';
+import { NftCollectionDto, NftCollections, Nfts } from '@app/shared/models';
 import { Model } from 'mongoose';
 import { NftCollectionQueryParams } from '@app/shared/modules/dtos-query';
 import { PaginationDto } from '@app/shared/types/pagination.dto';
@@ -11,6 +11,7 @@ export class NftCollectionsService {
   constructor(
     @InjectModel(NftCollections.name)
     private readonly nftCollectionModel: Model<NftCollections>,
+    @InjectModel(Nfts.name) private readonly nftModel: Model<Nfts>,
     private readonly userService: UserService,
   ) {}
   async getListNFTCollections(
@@ -26,6 +27,7 @@ export class NftCollectionsService {
       skipIndex,
       sort,
       page,
+      name,
     } = query;
     const filter: any = {};
     if (standard) {
@@ -39,6 +41,9 @@ export class NftCollectionsService {
     }
     if (status) {
       filter.status = status;
+    }
+    if (name) {
+      filter.name = { $regex: `${query.name}`, $options: 'i' };
     }
 
     if (owner) {
