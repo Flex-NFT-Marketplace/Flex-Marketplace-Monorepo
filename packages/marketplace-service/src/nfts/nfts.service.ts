@@ -17,7 +17,7 @@ export class NftService {
   async getNftsByQuery(
     query: NftFilterQueryParams,
   ): Promise<PaginationDto<NftDto>> {
-    const filter: any = {};
+    let filter: any = {};
     if (query.owner) {
       if (isValidObjectId(query.owner)) {
         filter.owner = query.owner;
@@ -33,6 +33,22 @@ export class NftService {
     }
     if (query.tokenId) {
       filter.tokenId = query.tokenId;
+    }
+    if (query.name) {
+      filter.name = { $regex: `${query.name}`, $options: 'i' };
+    }
+    if (query.attributes) {
+      filter = {
+        $and: [
+          filter,
+          {
+            $and: query.attributes.map(attr => ({
+              'attributes.value': attr.value,
+              'attributes.trait_type': attr.trait_type,
+            })),
+          },
+        ],
+      };
     }
 
     const count = await this.nftModel.countDocuments(filter);
