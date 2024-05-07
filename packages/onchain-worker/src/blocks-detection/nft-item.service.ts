@@ -284,10 +284,6 @@ export class NftItemService {
       isFlexDropMinted,
     } = log.returnValues as ERC721TransferReturnValue;
 
-    this.logger.debug(
-      `nft minted ${nftAddress}: ${tokenId} ${from} -> ${to} - ${timestamp}`,
-    );
-
     const nftCollection = await this.getOrCreateNftCollection(
       nftAddress,
       chain,
@@ -349,6 +345,10 @@ export class NftItemService {
       { upsert: true, new: true },
     );
 
+    this.logger.debug(
+      `nft minted ${nftAddress}: ${tokenId} ${from} -> ${to} - ${timestamp}`,
+    );
+
     await this.fetchMetadataQueue.add(nftDocument._id);
   }
 
@@ -359,8 +359,6 @@ export class NftItemService {
   ) {
     const { from, to, tokenId, nftAddress, timestamp } =
       log.returnValues as ERC721TransferReturnValue;
-
-    this.logger.debug(`nft burned ${nftAddress}: ${tokenId} at - ${timestamp}`);
 
     const nftCollection = await this.getOrCreateNftCollection(
       nftAddress,
@@ -430,6 +428,8 @@ export class NftItemService {
       { $set: history },
       { upsert: true, new: true },
     );
+
+    this.logger.debug(`nft burned ${nftAddress}: ${tokenId} at - ${timestamp}`);
   }
 
   async processNft721Transfered(
@@ -549,10 +549,6 @@ export class NftItemService {
     const { from, to, tokenId, nftAddress, timestamp, value } =
       log.returnValues as ERC1155TransferReturnValue;
 
-    this.logger.debug(
-      `${value} nft minted ${nftAddress}: ${tokenId} ${from} -> ${to} - ${timestamp}`,
-    );
-
     const nftCollection = await this.getOrCreateNftCollection(
       nftAddress,
 
@@ -627,6 +623,10 @@ export class NftItemService {
       { upsert: true, new: true },
     );
 
+    this.logger.debug(
+      `${value} nft minted ${nftAddress}: ${tokenId} ${from} -> ${to} - ${timestamp}`,
+    );
+
     await this.fetchMetadataQueue.add(nftDocument._id);
   }
 
@@ -637,10 +637,6 @@ export class NftItemService {
   ) {
     const { from, to, tokenId, nftAddress, timestamp, value } =
       log.returnValues as ERC1155TransferReturnValue;
-
-    this.logger.debug(
-      `${value} nft burned ${nftAddress}: ${tokenId} ${from} -> ${to} - ${timestamp}`,
-    );
 
     const nftCollection = await this.getOrCreateNftCollection(
       nftAddress,
@@ -720,6 +716,10 @@ export class NftItemService {
       { $set: history },
       { upsert: true, new: true },
     );
+
+    this.logger.debug(
+      `${value} nft burned ${nftAddress}: ${tokenId} ${from} -> ${to} - ${timestamp}`,
+    );
   }
 
   async processNft1155Transfered(
@@ -729,10 +729,6 @@ export class NftItemService {
   ) {
     const { from, to, tokenId, nftAddress, timestamp, value } =
       log.returnValues as ERC1155TransferReturnValue;
-
-    this.logger.debug(
-      `${value} nft transfers ${nftAddress}: ${tokenId} ${from} -> ${to} - ${timestamp}`,
-    );
 
     const nftCollection = await this.getOrCreateNftCollection(
       nftAddress,
@@ -860,6 +856,10 @@ export class NftItemService {
     if (updateNfts.length > 0) {
       await this.nftModel.bulkWrite(updateNfts);
     }
+
+    this.logger.debug(
+      `${value} nft transfers ${nftAddress}: ${tokenId} ${from} -> ${to} - ${timestamp}`,
+    );
   }
 
   async updateSaleRemainningAmount(
