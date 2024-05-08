@@ -6,6 +6,7 @@ import configuration from '@app/shared/configuration';
 import { AppLoggerMiddleware } from '@app/shared/middleware/app-logger.middleware';
 import { NftModule } from './nfts/nfts.module';
 import { NftCollectionsModule } from './nft-collections/nft-collections.module';
+import { WalletModule } from './wallet/wallet.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { NftCollectionsModule } from './nft-collections/nft-collections.module';
     MongooseModule.forRoot(configuration().db_path),
     NftModule,
     NftCollectionsModule,
+    WalletModule,
   ],
   controllers: [],
   providers: [],

@@ -12,4 +12,10 @@ export default () => ({
   jwt_secret: String(process.env.JWT_SECRET),
   jwt_expire: String(process.env.JWT_EXPIRE) || '1d',
   ipfs_gateway: String(process.env.IPFS_GATEWAY) || 'https://ipfs.io/ipfs/',
+  secret_key_encrypt:
+    String(process.env.SECRET_KEY_ENCRYPT) || 'base64_encoded_secret_key', /// Key Encrypto privatekey
+  secret_iv_encrypt:
+    String(process.env.SECRET_IV_ENCRYPT) || 'base64_encoded_secret_iv',
+  secret_encrypt_method:
+    String(process.env.SECRET_ENCRYPT_METHOD) || 'aes-256-cbc',
 });
