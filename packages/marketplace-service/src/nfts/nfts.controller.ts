@@ -12,12 +12,19 @@ import { PaginationDto } from '@app/shared/types/pagination.dto';
 
 import { NftFilterQueryParams } from '@app/shared/modules/dtos-query';
 
-import { NftDto } from '@app/shared/models';
+import { ChainDto, NftDto, PaymentTokenDto, UserDto } from '@app/shared/models';
 import { BaseResult } from '@app/shared/types/base.result';
 
 @ApiTags('NFTs')
 @Controller('nft')
-@ApiExtraModels(NftFilterQueryParams, PaginationDto, NftDto)
+@ApiExtraModels(
+  NftFilterQueryParams,
+  PaginationDto,
+  NftDto,
+  ChainDto,
+  PaymentTokenDto,
+  UserDto,
+)
 export class NftController {
   constructor(private readonly nftsService: NftService) {}
   @Post('/get-nfts')

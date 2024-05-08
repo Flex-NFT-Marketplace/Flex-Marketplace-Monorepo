@@ -3,13 +3,9 @@ import { PaginationDto } from './pagination.dto';
 
 export class BaseResultPagination<T> {
   @ApiProperty()
-  errors: Record<string, string[]>;
+  errors?: Record<string, string[]>;
   @ApiProperty()
-  data: PaginationDto<T>;
+  data?: PaginationDto<T>;
   @ApiProperty()
-  success = true;
-  constructor(data: PaginationDto<T>) {
-    this.data = data;
-    this.success = true;
-  }
+  success? = true;
 }
