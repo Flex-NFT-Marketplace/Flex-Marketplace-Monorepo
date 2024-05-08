@@ -6,7 +6,6 @@ import {
   IsHexadecimal,
   IsObject,
   IsString,
-  IsUUID,
   IsUrl,
   Length,
 } from 'class-validator';
@@ -16,6 +15,7 @@ import { ApiProperty } from '@nestjs/swagger';
 export class UserDto {
   @IsString()
   @Transform(({ value }) => String(value).trim())
+  @ApiProperty()
   username: string;
 
   @ApiProperty()
@@ -27,12 +27,15 @@ export class UserDto {
   avatar?: string;
 
   @IsUrl()
+  @ApiProperty()
   cover?: string;
 
   @IsString()
+  @ApiProperty()
   about?: string;
 
   @IsBoolean()
+  @ApiProperty()
   emailVerified?: boolean;
 
   @IsHexadecimal()
@@ -43,15 +46,15 @@ export class UserDto {
     }
     return String(value).toLowerCase().trim().replace('0x', '0x0');
   })
+  @ApiProperty()
   address: string;
 
-  @IsUUID()
-  nonce: string;
-
   @IsObject()
+  @ApiProperty()
   socials?: Socials;
 
   @IsBoolean()
+  @ApiProperty()
   isVerified?: boolean;
 
   @IsArray()
