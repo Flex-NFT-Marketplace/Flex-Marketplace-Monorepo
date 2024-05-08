@@ -1,0 +1,12 @@
+{
+  "burnedAt": null,
+  "nftContract": "0x05dbdedc203e92749e2e746e2d40a768d966bd243df04a6b712e222bc040a9af",
+  "tokenId": 1,
+  "amount": 1,
+  "blockTime": 1669055689000,
+  "chain": null,
+  "isBurned": false,
+  "marketType": "NotForSale",
+  "nftCollection": null,
+  "royaltyRate": 0
+}
