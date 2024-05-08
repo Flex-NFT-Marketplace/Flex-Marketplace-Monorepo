@@ -8,7 +8,7 @@ import oldErc1155Abi from '../abis/olderc1155.abi.json';
 import otherErc1155Abi from '../abis/othererc1155.abi.json';
 import marketplaceAbi from '../abis/marketplace.abi.json';
 import accountAbi from '../abis/account.abi.json';
-import flexDrop from '../abis/flexdrop.abit.json';
+import flexDrop from '../abis/flexdrop.abi.json';
 import proxyAbi from '../abis/proxy.abi.json';
 import src5Abi from '../abis/src5.abi.json';
 

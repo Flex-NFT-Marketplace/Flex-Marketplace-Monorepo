@@ -1,0 +1,16 @@
+{
+  "chain": null,
+  "nftContract": "0x05dbdedc203e92749e2e746e2d40a768d966bd243df04a6b712e222bc040a9af",
+  "attributesMap": [],
+  "collaboratories": [],
+  "contractUri": null,
+  "dropPhases": [],
+  "isNonFungibleFlexDropToken": false,
+  "name": "Starknet.id",
+  "payers": [],
+  "paymentTokens": [],
+  "standard": "ERC-721",
+  "status": "active",
+  "symbol": "ID",
+  "verified": false
+}

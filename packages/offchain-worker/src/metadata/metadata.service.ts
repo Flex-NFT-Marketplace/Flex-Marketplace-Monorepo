@@ -50,10 +50,10 @@ export class MetadataService {
       standard,
       chain.rpc,
     );
-
     if (!tokenURI) return null;
 
     const httpUrl = getUrl(tokenURI);
+
     this.logger.debug(
       `tokenUrl of ${nft.nftContract}:${tokenId} is '${httpUrl}'`,
     );
@@ -103,21 +103,27 @@ export class MetadataService {
     } catch (error) {
       this.logger.warn(error);
     }
+
     const rs = await this.nftModel.findOneAndUpdate(
       {
         tokenId: nft.tokenId,
         nftContract: nft.nftContract,
       },
       {
-        name: metadata.name,
-        image: metadata.image,
-        originImage: metadata.image,
-        description: metadata.description,
-        attributes,
-        tokenUrl: tokenURI,
-        externalUrl: metadata.externalUrl,
-        animationUrl: metadata.animation_url,
-        animationPlayType: animationFileType,
+        $set: {
+          name: metadata.name,
+          image: metadata.image,
+          originImage: metadata.image,
+          description: metadata.description,
+          attributes,
+          tokenUri: tokenURI,
+          externalUrl: metadata.externalUrl,
+          animationUrl: metadata.animation_url,
+          animationPlayType: animationFileType,
+        },
+      },
+      {
+        new: true,
       },
     );
     await this.reloadAttributeMap(nft.nftCollection, attributes);
@@ -170,17 +176,28 @@ export class MetadataService {
     );
   }
 
-  parseJSON(data: string): any {
+  parseJSON(dataURI: string): any {
     try {
-      if (data.startsWith('data:application/json;base64,')) {
-        const decodedData = atob(
-          data.replace('data:application/json;base64,', ''),
+      // Check for Base64 encoding
+      const base64Prefix = 'base64,';
+      const isBase64 = dataURI.indexOf(base64Prefix) > -1;
+      let jsonPart;
+
+      if (isBase64) {
+        // Extract and decode the Base64 part
+        const base64EncodedJson = dataURI.substring(
+          dataURI.indexOf(base64Prefix) + base64Prefix.length,
         );
-        const parsedData = JSON.parse(decodedData);
-        return parsedData;
-      } else if (data.startsWith('data:application/json,')) {
-        return JSON.parse(data.replace('data:application/json,', ''));
+        const decodedJson = atob(base64EncodedJson); // `atob` is used to decode Base64 content
+        jsonPart = decodedJson;
+      } else {
+        // Simply remove the prefix and decode URI-encoded parts
+        jsonPart = dataURI.substring(dataURI.indexOf(',') + 1);
+        jsonPart = decodeURIComponent(jsonPart);
       }
+
+      // Parse the JSON string into an object
+      return JSON.parse(jsonPart);
     } catch (error) {
       return undefined;
     }

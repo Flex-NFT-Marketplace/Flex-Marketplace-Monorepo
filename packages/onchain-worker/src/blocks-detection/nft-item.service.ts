@@ -747,7 +747,7 @@ export class NftItemService {
         owner: fromUser,
         isBurned: false,
       })
-      .populate(['sales']);
+      .populate(['sale']);
 
     const toBalance = await this.nftModel
       .findOne({
@@ -756,7 +756,7 @@ export class NftItemService {
         owner: toUser,
         isBurned: false,
       })
-      .populate(['sales']);
+      .populate(['sale']);
 
     const updateNfts = [];
     const newNfts: Nfts[] = [];
