@@ -5,18 +5,21 @@ import {
   IsArray,
   IsEnum,
   IsHexadecimal,
-  IsMongoId,
   IsNumber,
   Length,
 } from 'class-validator';
-import { ObjectId } from 'mongoose';
 import { OfferStatus } from '../types';
+import { NftDto } from './nft.dto';
+import { ApiProperty } from '@nestjs/swagger';
+import { UserDto } from './user.dto';
+import { PaymentTokenDto } from './paymentToken.dto';
 
 export class OfferDto {
-  @IsMongoId()
-  nft: ObjectId;
+  @ApiProperty({ type: () => NftDto })
+  nft: NftDto;
 
   @IsNumber()
+  @ApiProperty()
   tokenId: number;
 
   @IsHexadecimal()
@@ -27,43 +30,49 @@ export class OfferDto {
     }
     return String(value).toLowerCase().trim().replace('0x', '0x0');
   })
+  @ApiProperty()
   nftContract: string;
 
-  @IsMongoId()
-  nftCollection: ObjectId;
+  @ApiProperty({ type: () => UserDto })
+  buyer: UserDto;
 
-  @IsMongoId()
-  buyer: ObjectId;
-
-  @IsMongoId()
-  seller: ObjectId;
+  @ApiProperty({ type: () => UserDto })
+  seller: UserDto;
 
   @IsArray()
   @ArrayMaxSize(2)
   @ArrayMinSize(2)
+  @ApiProperty()
   signedSignature: string[];
 
   @IsNumber()
+  @ApiProperty()
   saltNonce: number;
 
   @IsNumber()
+  @ApiProperty()
   startTime: number;
 
   @IsNumber()
+  @ApiProperty()
   endTime: number;
 
   @IsNumber()
+  @ApiProperty()
   offerPrice: number;
 
   @IsNumber()
+  @ApiProperty()
   amount: number;
 
   @IsNumber()
+  @ApiProperty()
   remainingAmount: number;
 
-  @IsMongoId()
-  paymentToken: ObjectId;
+  @ApiProperty({ type: () => PaymentTokenDto })
+  paymentToken: PaymentTokenDto;
 
   @IsEnum(OfferStatus)
+  @ApiProperty({ enum: OfferStatus })
   status: OfferStatus;
 }

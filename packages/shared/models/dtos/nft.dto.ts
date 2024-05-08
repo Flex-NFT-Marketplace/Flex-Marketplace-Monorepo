@@ -4,17 +4,19 @@ import {
   IsBoolean,
   IsEnum,
   IsHexadecimal,
-  IsMongoId,
   IsNumber,
   IsString,
   IsUrl,
   Length,
 } from 'class-validator';
-import { ObjectId } from 'mongoose';
 import { Attribute, MarketType } from '../types';
+import { ApiProperty } from '@nestjs/swagger';
+import { NftCollectionDto } from './nftCollection.dto';
+import { UserDto } from './user.dto';
 
 export class NftDto {
   @IsNumber()
+  @ApiProperty()
   tokenId: number;
 
   @IsHexadecimal()
@@ -25,53 +27,62 @@ export class NftDto {
     }
     return String(value).toLowerCase().trim().replace('0x', '0x0');
   })
+  @ApiProperty()
   nftContract: string;
 
-  @IsMongoId()
-  nftCollection: ObjectId;
-
-  @IsMongoId()
-  chain: ObjectId;
+  @ApiProperty({ type: () => NftCollectionDto })
+  nftCollection: NftCollectionDto;
 
   @IsNumber()
+  @ApiProperty()
   royaltyRate: number;
 
   @IsString()
+  @ApiProperty()
   name?: string;
 
   @IsUrl()
+  @ApiProperty()
   image: string;
 
+  @IsUrl()
+  @ApiProperty()
   originalImage: string;
 
   @IsUrl()
+  @ApiProperty()
   animationUrl: string;
 
   @IsString()
+  @ApiProperty()
   description: string;
 
+  @ApiProperty()
   tokenUri: string;
 
-  @IsMongoId()
-  creator: ObjectId;
+  @ApiProperty({ type: () => UserDto })
+  creator: UserDto;
 
-  @IsMongoId()
-  owner: ObjectId;
+  @ApiProperty({ type: () => UserDto })
+  owner: UserDto;
 
+  @IsNumber()
+  @ApiProperty()
   amount: number;
 
   @IsArray()
+  @ApiProperty({ type: () => Array })
   attributes: Attribute[];
 
   @IsEnum(MarketType)
+  @ApiProperty({ enum: MarketType })
   marketType: MarketType;
 
   @IsBoolean()
+  @ApiProperty()
   isBurned?: boolean;
 
   @IsNumber()
+  @ApiProperty()
   burnedAt?: number;
-
-  @IsMongoId()
-  sales?: ObjectId;
 }
