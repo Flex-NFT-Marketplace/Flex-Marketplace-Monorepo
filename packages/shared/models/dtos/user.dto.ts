@@ -56,4 +56,7 @@ export class UserDto {
 
   @IsArray()
   roles: string[];
+
+  @IsBoolean()
+  isCreatorPayer?: boolean;
 }
