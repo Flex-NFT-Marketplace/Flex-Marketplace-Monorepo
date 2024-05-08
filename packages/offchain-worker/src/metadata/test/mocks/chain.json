@@ -1,0 +1,39 @@
+{
+    "name": "SN_MAIN",
+    "rpc": "https://starknet-mainnet.public.blastapi.io/rpc/v0_7",
+    "delayBlock": 1,
+    "explore": "https://starkscan.co/",
+  "deployerContract": "0x041a78e741e5af2fec34b695679bc6891742439f7afb8484ecd7766661ad02bf",
+
+  "marketplaceContract": "0x079bab835e6e8b3645447dfd11426fa904a03974a0ce3fac907f8a2f30d876d1",
+
+  "royaltyManagerContract": "0x05f69256b6ac950d3cd2297be5e6a798993f9ea6d39c7935a0ad65d2d54fec55",
+
+  "royaltyRegistryContract": "0x025dcc5b8b223ed5e09e811138226036f2a93d62a03e4e8bfc7ea91e18bd27b7",
+
+  "currencyManagerContract": "0x07a677b5d3b5e817b921075bb68ba3af4b89471fa08610a3cd0a3349f7709043",
+
+  "executeManagerContract": "0x05b7f07eef26a71c6cfc0d774a688ee8b04260456d4470bafabbcda1d190b990",
+
+  "signatureCheckerContract": "0x079e6ba8a0b2c22f0a60f39796017ff93a604649a0203f11ce5fd199a9d8045c",
+
+  "strategyStandardSaleForFixedPrice": "0x03e521e903568783842bd5abd6e422965e5d35ccea9b9387c10c14eb0a5e2fdb",
+
+  "transferManagerERC721": "0x03723634d12617fb48176d2092f3c0c83831084e833a38c332e058a49dfa4580",
+
+  "transferManagerERC1155": "0x061b415902620d6fa72675db6264ecddcff1831d0d3cd3374297041d0ae1516a",
+
+  "transferSelectorNFT": "0x0788dfb70b2e0d8b9182c4a2541cb5004284f7563081155f8d189de1bec953b1",
+
+  "FlexStorefrontNFT": "0x02e6c908da3d1ced80d81085ed9374b7c5048f86799e1f35e54daca4d70832d7",
+
+  "FlexEvoContract": "0x04546729db564bb29a9e1e215463f41bc53116ac75eeb8e029b8a87fee7d85fd",
+
+  "flexDropContract": "0x035ad04f665eab91b6ee05994f6203d72d0c2ceba21a8c1f0335d848ac66eb5c",
+
+  "strategyForAnyItemFromCollectionFixedPrice": "string",
+
+  "strategyHighestBidder": "string",
+
+  "strategyPrivateSale": "string"
+}
