@@ -50,7 +50,9 @@ export class UserService {
   async getUser(userAddress: string): Promise<UserDocument> {
     const formatAddress = formattedContractAddress(userAddress);
 
-    return await this.userModel.findOne({ address: formatAddress });
+    return await this.userModel
+      .findOne({ address: formatAddress })
+      .populate('mappingAddress');
   }
   async updateUserInformation(query: UpdateInfoReqDTO) {
     const update: any = {};
