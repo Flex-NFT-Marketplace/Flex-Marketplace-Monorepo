@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
-import { iInfoToken } from '../dtos-query/auth.dto';
+import { iInfoToken } from './jwt.dto';
 
 @Injectable()
 export class RequestContext {

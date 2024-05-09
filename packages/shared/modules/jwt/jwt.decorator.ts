@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { JwtAuthGuard } from './jwt.auth.guard';
 import { ApiBearerAuth } from '@nestjs/swagger';
-import { iInfoToken } from '../dtos-query/auth.dto';
+import { iInfoToken } from './jwt.dto';
 
 export function JWT() {
   return applyDecorators(UseGuards(JwtAuthGuard), ApiBearerAuth('JWT'));

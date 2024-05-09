@@ -1,27 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
-import {
-  IsArray,
-  IsHexadecimal,
-  IsNumber,
-  IsUUID,
-  IsUrl,
-  Length,
-} from 'class-validator';
+import { IsArray, IsHexadecimal, IsUUID, IsUrl, Length } from 'class-validator';
 import { TypedData } from 'starknet';
 
-export class JwtPayload {
-  sub: string; //address user
-  role: string[];
-}
-export class iInfoToken extends JwtPayload {
-  @ApiProperty()
-  @IsNumber()
-  iat: number;
-
-  @ApiProperty()
-  @IsNumber()
-  exp: number;
-}
 // Request Nonce Data
 export class GetNonceReqDto {
   @ApiProperty({ required: true })

@@ -3,11 +3,7 @@ import { Injectable } from '@nestjs/common';
 import { UserService } from '../user/user.service';
 import configuration from '@app/shared/configuration';
 
-import {
-  GetSignatureTestDto,
-  GetTokenReqDto,
-  JwtPayload,
-} from '@app/shared/modules/dtos-query/auth.dto';
+import { GetSignatureTestDto, GetTokenReqDto } from './dto/auth.dto';
 import {
   WeierstrassSignatureType,
   shortString,
@@ -23,6 +19,7 @@ import {
   formattedContractAddress,
 } from '@app/shared/utils';
 import { ABIS } from '@app/web3-service/types';
+import { JwtPayload } from '@app/shared/modules/jwt/jwt.dto';
 
 @Injectable()
 export class AuthService {

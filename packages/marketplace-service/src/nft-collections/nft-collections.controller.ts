@@ -8,9 +8,10 @@ import {
 } from '@nestjs/swagger';
 import { Controller, Get, Body, Post, Param, HttpCode } from '@nestjs/common';
 import { NftCollectionsService } from './nft-collections.service';
-import { NftCollectionQueryParams } from '@app/shared/modules/dtos-query';
+
 import { BaseResult } from '@app/shared/types/base.result';
 import { NftCollectionDto } from '@app/shared/models';
+import { NftCollectionQueryParams } from './dto/nft-collection.filter.dto';
 
 @ApiTags('NFT Collections')
 @Controller('nft-collection')

@@ -4,8 +4,9 @@ import { Module } from '@nestjs/common';
 import { WalletController } from './wallet.controller';
 import { WalletService } from './wallet.service';
 import { UserSchema, Users } from '@app/shared/models';
-import { JwtStrategy } from '@app/shared/modules/jwt';
+
 import { UsersModule } from '../user/user.module';
+import { JwtStrategy } from '@app/shared/modules';
 @Module({
   imports: [
     MongooseModule.forFeature([

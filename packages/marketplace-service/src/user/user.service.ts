@@ -2,10 +2,11 @@ import { InjectModel } from '@nestjs/mongoose';
 import { UserDocument, Users } from '@app/shared/models';
 import { Injectable } from '@nestjs/common';
 import { Model } from 'mongoose';
-import { UpdateInfoReqDTO } from '@app/shared/modules/dtos-query/user.dto';
+
 import { Web3Service } from '@app/web3-service/web3.service';
 import { v1 as uuidv1 } from 'uuid';
 import { formattedContractAddress } from '@app/shared/utils';
+import { UpdateInfoReqDTO } from './dto/user.dto';
 
 @Injectable()
 export class UserService {

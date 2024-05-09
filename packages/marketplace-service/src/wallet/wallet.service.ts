@@ -17,12 +17,14 @@ export class WalletService {
   async createWalletByEth(creatorAddress: string) {
     const userExist = await this.userService.getUser(creatorAddress);
     if (userExist.mappingAddress) {
+      return {
+        message: `User Address argentx already deploy at: ${userExist.deployHash}`,
+      };
     }
 
     const privateKeyAX = stark.randomAddress();
     const starkKeyPubAX = ec.starkCurve.getStarkKey(privateKeyAX);
 
-    // Calculate future address of the ArgentX account
     const AXConstructorCallData = CallData.compile({
       owner: starkKeyPubAX,
       guardian: '0',

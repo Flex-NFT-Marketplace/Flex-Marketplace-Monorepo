@@ -1,4 +1,3 @@
-import { formattedContractAddress } from './../../../shared/utils/formatContractAddress';
 import { Body, Controller, Get, Post, Query, HttpCode } from '@nestjs/common';
 import {
   ApiTags,
@@ -15,9 +14,10 @@ import {
   GetSignatureTestDto,
   GetTokenReqDto,
   GetTokenRspDto,
-} from '@app/shared/modules/dtos-query/auth.dto';
+} from './dto/auth.dto';
 import { BaseResult } from '@app/shared/types/base.result';
 import { UserService } from '../user/user.service';
+import { formattedContractAddress } from '@app/shared/utils/formatContractAddress';
 @ApiTags('Authentication')
 @ApiExtraModels(GetNonceRspDto, BaseResult, GetTokenRspDto)
 @Controller('authentication')
