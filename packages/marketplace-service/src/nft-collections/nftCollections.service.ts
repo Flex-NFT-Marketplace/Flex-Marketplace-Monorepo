@@ -6,7 +6,7 @@ import { Model } from 'mongoose';
 import { PaginationDto } from '@app/shared/types/pagination.dto';
 import { formattedContractAddress, isValidObjectId } from '@app/shared/utils';
 import { UserService } from '../user/user.service';
-import { NftCollectionQueryParams } from './dto/nft-collection.filter.dto';
+import { NftCollectionQueryParams } from './dto/nftCollectionQuery.dto';
 @Injectable()
 export class NftCollectionsService {
   constructor(

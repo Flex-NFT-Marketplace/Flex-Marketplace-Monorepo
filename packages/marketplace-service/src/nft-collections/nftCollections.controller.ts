@@ -7,11 +7,11 @@ import {
   ApiOkResponse,
 } from '@nestjs/swagger';
 import { Controller, Get, Body, Post, Param, HttpCode } from '@nestjs/common';
-import { NftCollectionsService } from './nft-collections.service';
+import { NftCollectionsService } from './nftCollections.service';
 
 import { BaseResult } from '@app/shared/types/base.result';
 import { NftCollectionDto } from '@app/shared/models';
-import { NftCollectionQueryParams } from './dto/nft-collection.filter.dto';
+import { NftCollectionQueryParams } from './dto/nftCollectionQuery.dto';
 
 @ApiTags('NFT Collections')
 @Controller('nft-collection')

@@ -6,7 +6,7 @@ import { Injectable } from '@nestjs/common';
 import { Model } from 'mongoose';
 import { UserService } from '../user/user.service';
 import { isValidObjectId } from '@app/shared/utils';
-import { NftFilterQueryParams } from './dto/nft.filter.dto';
+import { NftFilterQueryParams } from './dto/nftQuery.dto';
 @Injectable()
 export class NftService {
   constructor(

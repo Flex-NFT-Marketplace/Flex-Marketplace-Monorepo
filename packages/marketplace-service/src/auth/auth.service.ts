@@ -3,7 +3,7 @@ import { Injectable } from '@nestjs/common';
 import { UserService } from '../user/user.service';
 import configuration from '@app/shared/configuration';
 
-import { GetSignatureTestDto, GetTokenReqDto } from './dto/auth.dto';
+import { GetSignatureTestDto, GetTokenReqDto } from './dto/authQuery.dto';
 import {
   WeierstrassSignatureType,
   shortString,
@@ -132,10 +132,12 @@ export class AuthService {
     )) as WeierstrassSignatureType;
 
     const formatSignature = stark.formatSignature(signature);
-
-    return {
-      address: address,
+    // Return Data
+    const dataToken = await this.login({
+      address,
       signature: formatSignature,
-    };
+      rpc,
+    });
+    return dataToken;
   }
 }

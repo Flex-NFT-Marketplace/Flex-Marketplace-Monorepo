@@ -5,7 +5,7 @@ import { UsersModule } from './user/user.module';
 import configuration from '@app/shared/configuration';
 import { AppLoggerMiddleware } from '@app/shared/middleware/app-logger.middleware';
 import { NftModule } from './nfts/nfts.module';
-import { NftCollectionsModule } from './nft-collections/nft-collections.module';
+import { NftCollectionsModule } from './nft-collections/nftCollections.module';
 import { HistoryModule } from './histories/history.module';
 import { WalletModule } from './wallet/wallet.module';
 

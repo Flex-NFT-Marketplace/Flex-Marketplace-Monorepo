@@ -14,7 +14,7 @@ import {
   GetSignatureTestDto,
   GetTokenReqDto,
   GetTokenRspDto,
-} from './dto/auth.dto';
+} from './dto/authQuery.dto';
 import { BaseResult } from '@app/shared/types/base.result';
 import { UserService } from '../user/user.service';
 import { formattedContractAddress } from '@app/shared/utils/formatContractAddress';
@@ -137,7 +137,10 @@ export class AuthController {
   }
 
   @Post('/test-sign')
-  @ApiOperation({ summary: 'It just for testing purpose.' })
+  @ApiOperation({
+    summary: 'It just for testing purpose.',
+    description: 'Testing Service ',
+  })
   @ApiOkResponse({
     schema: {
       allOf: [

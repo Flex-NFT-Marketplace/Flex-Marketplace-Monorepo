@@ -70,4 +70,8 @@ export class WalletService {
       suggestMaxFee: feeDeploy,
     };
   }
+
+  async createWalletBySTRK(creatorAddress: string) {
+    return 'Create Wallet By STRK' + creatorAddress;
+  }
 }
