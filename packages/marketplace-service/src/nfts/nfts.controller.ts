@@ -10,10 +10,9 @@ import { Controller, Post, Body, HttpCode } from '@nestjs/common';
 import { NftService } from './nfts.service';
 import { PaginationDto } from '@app/shared/types/pagination.dto';
 
-import { NftFilterQueryParams } from '@app/shared/modules/dtos-query';
-
 import { ChainDto, NftDto, PaymentTokenDto, UserDto } from '@app/shared/models';
 import { BaseResult } from '@app/shared/types/base.result';
+import { NftFilterQueryParams } from './dto/nftQuery.dto';
 
 @ApiTags('NFTs')
 @Controller('nft')

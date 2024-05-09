@@ -1,11 +1,12 @@
 import { InjectModel } from '@nestjs/mongoose';
 import { NftDocument, NftDto, Nfts } from '@app/shared/models';
-import { NftFilterQueryParams } from '@app/shared/modules/dtos-query';
+
 import { PaginationDto } from '@app/shared/types/pagination.dto';
 import { Injectable } from '@nestjs/common';
 import { Model } from 'mongoose';
 import { UserService } from '../user/user.service';
 import { isValidObjectId } from '@app/shared/utils';
+import { NftFilterQueryParams } from './dto/nftQuery.dto';
 @Injectable()
 export class NftService {
   constructor(

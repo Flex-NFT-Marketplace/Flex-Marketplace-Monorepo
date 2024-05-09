@@ -102,3 +102,8 @@ export enum AttributesMapType {
 
 export const BURN_ADDRESS =
   '0x0000000000000000000000000000000000000000000000000000000000000000';
+
+export enum TokenType {
+  ETH = 'ETH',
+  STRK = 'STRK',
+}

@@ -1,6 +1,6 @@
 import { MongooseModule } from '@nestjs/mongoose';
 import { Module } from '@nestjs/common';
-import { NftCollectionsService } from './nft-collections.service';
+import { NftCollectionsService } from './nftCollections.service';
 import {
   DropPhaseSchema,
   DropPhases,
@@ -13,7 +13,7 @@ import {
   UserSchema,
   Users,
 } from '@app/shared/models';
-import { NftCollectionsController } from './nft-collections.controller';
+import { NftCollectionsController } from './nftCollections.controller';
 import { UserService } from '../user/user.service';
 
 @Module({
