@@ -1,4 +1,4 @@
-import { Controller, Post, Body, HttpCode } from '@nestjs/common';
+import { Controller, Post, Body, HttpCode, Get } from '@nestjs/common';
 import {
   ApiTags,
   ApiExtraModels,
@@ -78,13 +78,124 @@ export class WalletController {
           success: true,
           data,
         });
-      } else if (feeType == TokenType.STRK) {
-        const data = await this.walletService.createWalletBySTRK(user.sub);
+      }
+      // } else if (feeType == TokenType.STRK) {
+      // Deploy Wallet By STRK
+      const data = await this.walletService.createWalletBySTRK(user.sub);
+      return new BaseResult({
+        success: true,
+        data,
+      });
+    } catch (error) {
+      return new BaseResult({
+        success: false,
+        error: error.message,
+      });
+    }
+  }
+
+  @JWT()
+  @Post('deploy')
+  @HttpCode(200)
+  @ApiOperation({
+    summary: 'Deploy Wallet From User Address',
+    description:
+      'Utilize this API to enable users to generate a wallet directly within our marketplace when needed to a function',
+  })
+  @ApiOkResponse({
+    schema: {
+      allOf: [
+        {
+          $ref: getSchemaPath(BaseResult),
+        },
+      ],
+    },
+  })
+  @ApiInternalServerErrorResponse({
+    description: '<b>Internal server error</b>',
+    schema: {
+      allOf: [
+        {
+          $ref: getSchemaPath(BaseResult),
+          properties: {
+            errors: {
+              example: 'Error Message',
+            },
+            success: {
+              example: false,
+            },
+          },
+        },
+      ],
+    },
+  })
+  async deployWallet(
+    @Body() walletDto: CreateWalletReqDTO,
+    @User() user: iInfoToken,
+  ) {
+    try {
+      if (walletDto.feeType === TokenType.ETH) {
+        const data = await this.walletService.deployWalletByEth(user.sub);
         return new BaseResult({
           success: true,
           data,
         });
       }
+      // Deploy By STRK
+      const data = await this.walletService.deployWalletByStrk(user.sub);
+      return new BaseResult({
+        success: true,
+        data,
+      });
+    } catch (error) {
+      return new BaseResult({
+        success: false,
+        error: error.message,
+      });
+    }
+  }
+
+  @JWT()
+  @Get('get-balance-payer')
+  @ApiOperation({
+    summary: 'Get Balance Wallet Creator  From User Address',
+    description:
+      'Utilize this API to enable users to generate a wallet directly within our marketplace when needed to a function',
+  })
+  @ApiOkResponse({
+    schema: {
+      allOf: [
+        {
+          $ref: getSchemaPath(BaseResult),
+        },
+      ],
+    },
+  })
+  @ApiInternalServerErrorResponse({
+    description: '<b>Internal server error</b>',
+    schema: {
+      allOf: [
+        {
+          $ref: getSchemaPath(BaseResult),
+          properties: {
+            errors: {
+              example: 'Error Message',
+            },
+            success: {
+              example: false,
+            },
+          },
+        },
+      ],
+    },
+  })
+  async getBalanceWallet(@User() user: iInfoToken) {
+    try {
+      const data = await this.walletService.getBalancePayer(user.sub);
+      return new BaseResult({
+        success: true,
+        data,
+      });
     } catch (error) {
       return new BaseResult({
         success: false,

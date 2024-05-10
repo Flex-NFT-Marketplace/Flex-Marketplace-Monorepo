@@ -25,7 +25,6 @@ export const encryptData = (data: string) => {
 };
 
 export const decryptData = encryptedData => {
-  console.log('encryptedData', encryptedData);
   const buff = Buffer.from(encryptedData, 'base64');
 
   const decipher = crypto.createDecipheriv(
