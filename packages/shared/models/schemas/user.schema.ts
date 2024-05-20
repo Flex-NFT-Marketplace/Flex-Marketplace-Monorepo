@@ -39,6 +39,8 @@ export class Users extends BaseSchema {
 
   @Prop()
   privateKey?: string;
+  @Prop()
+  deployHash?: string;
 
   @Prop({ type: SchemaTypes.UUID })
   nonce: string;

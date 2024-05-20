@@ -1,11 +1,12 @@
 import { InjectModel } from '@nestjs/mongoose';
 import { NftDocument, NftDto, Nfts } from '@app/shared/models';
-import { NftFilterQueryParams } from '@app/shared/modules/dtos-query';
+
 import { PaginationDto } from '@app/shared/types/pagination.dto';
 import { Injectable } from '@nestjs/common';
 import { Model } from 'mongoose';
 import { UserService } from '../user/user.service';
 import { isValidObjectId } from '@app/shared/utils';
+import { NftFilterQueryParams } from './dto/nftQuery.dto';
 @Injectable()
 export class NftService {
   constructor(
@@ -17,7 +18,7 @@ export class NftService {
   async getNftsByQuery(
     query: NftFilterQueryParams,
   ): Promise<PaginationDto<NftDto>> {
-    const filter: any = {};
+    let filter: any = {};
     if (query.owner) {
       if (isValidObjectId(query.owner)) {
         filter.owner = query.owner;
@@ -33,6 +34,22 @@ export class NftService {
     }
     if (query.tokenId) {
       filter.tokenId = query.tokenId;
+    }
+    if (query.name) {
+      filter.name = { $regex: `${query.name}`, $options: 'i' };
+    }
+    if (query.attributes) {
+      filter = {
+        $and: [
+          filter,
+          {
+            $and: query.attributes.map(attr => ({
+              'attributes.value': attr.value,
+              'attributes.trait_type': attr.trait_type,
+            })),
+          },
+        ],
+      };
     }
 
     const count = await this.nftModel.countDocuments(filter);

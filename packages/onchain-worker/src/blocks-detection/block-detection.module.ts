@@ -31,6 +31,7 @@ import {
 import { MetadataQueueService } from './queue/metadata.queue';
 import { BullModule } from '@nestjs/bull';
 import { MQ_JOB_DEFAULT_CONFIG, QUEUE_METADATA } from '@app/shared/types';
+import { MailingService } from '../mailing/mailing.service';
 
 @Module({
   imports: [
@@ -52,7 +53,13 @@ import { MQ_JOB_DEFAULT_CONFIG, QUEUE_METADATA } from '@app/shared/types';
       defaultJobOptions: MQ_JOB_DEFAULT_CONFIG,
     }),
   ],
-  providers: [NftItemService, Web3Service, UserService, MetadataQueueService],
+  providers: [
+    NftItemService,
+    Web3Service,
+    UserService,
+    MetadataQueueService,
+    MailingService,
+  ],
   controllers: [BlockDetectionController],
 })
 export class BlockDetectionModule {}

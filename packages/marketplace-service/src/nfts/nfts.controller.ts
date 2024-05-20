@@ -10,14 +10,20 @@ import { Controller, Post, Body, HttpCode } from '@nestjs/common';
 import { NftService } from './nfts.service';
 import { PaginationDto } from '@app/shared/types/pagination.dto';
 
-import { NftFilterQueryParams } from '@app/shared/modules/dtos-query';
-
-import { NftDto } from '@app/shared/models';
+import { ChainDto, NftDto, PaymentTokenDto, UserDto } from '@app/shared/models';
 import { BaseResult } from '@app/shared/types/base.result';
+import { NftFilterQueryParams } from './dto/nftQuery.dto';
 
 @ApiTags('NFTs')
 @Controller('nft')
-@ApiExtraModels(NftFilterQueryParams, PaginationDto, NftDto)
+@ApiExtraModels(
+  NftFilterQueryParams,
+  PaginationDto,
+  NftDto,
+  ChainDto,
+  PaymentTokenDto,
+  UserDto,
+)
 export class NftController {
   constructor(private readonly nftsService: NftService) {}
   @Post('/get-nfts')
@@ -78,10 +84,7 @@ export class NftController {
   async getNfts(@Body() query: NftFilterQueryParams) {
     try {
       const data = await this.nftsService.getNftsByQuery(query);
-      return new BaseResult({
-        success: true,
-        data: data,
-      });
+      return data;
     } catch (error) {
       return new BaseResult({
         success: false,

@@ -16,13 +16,13 @@ export async function retryUntil<T>(
       }
 
       // Wait for a specified delay before next attempt
-      await new Promise((resolve) => setTimeout(resolve, delay));
+      await new Promise(resolve => setTimeout(resolve, delay));
     } catch (error) {
       console.error(`Attempt ${attempt} failed:`, error, error.track);
 
       // Wait for a specified delay before next attempt
       if (attempt < maxAttempts) {
-        await new Promise((resolve) => setTimeout(resolve, delay));
+        await new Promise(resolve => setTimeout(resolve, delay));
       }
     }
   }

@@ -3,11 +3,7 @@ import { Injectable } from '@nestjs/common';
 import { UserService } from '../user/user.service';
 import configuration from '@app/shared/configuration';
 
-import {
-  GetSignatureTestDto,
-  GetTokenReqDto,
-  JwtPayload,
-} from '@app/shared/modules/dtos-query/auth.dto';
+import { GetSignatureTestDto, GetTokenReqDto } from './dto/authQuery.dto';
 import {
   WeierstrassSignatureType,
   shortString,
@@ -23,6 +19,8 @@ import {
   formattedContractAddress,
 } from '@app/shared/utils';
 import { ABIS } from '@app/web3-service/types';
+import { JwtPayload } from '@app/shared/modules/jwt/jwt.dto';
+import { RPC_PROVIDER } from '@app/shared/constants';
 
 @Injectable()
 export class AuthService {
@@ -122,7 +120,7 @@ export class AuthService {
   }: GetSignatureTestDto & { nonce: string }) {
     address = formattedContractAddress(address);
 
-    const rpc = 'https://starknet-sepolia.public.blastapi.io';
+    const rpc = RPC_PROVIDER.TESTNET;
     const provider = new Provider({ nodeUrl: rpc });
 
     const account = new Account(provider, address, privateKey);
@@ -135,10 +133,12 @@ export class AuthService {
     )) as WeierstrassSignatureType;
 
     const formatSignature = stark.formatSignature(signature);
-
-    return {
-      address: address,
+    // Return Data
+    const dataToken = await this.login({
+      address,
       signature: formatSignature,
-    };
+      rpc,
+    });
+    return dataToken;
   }
 }

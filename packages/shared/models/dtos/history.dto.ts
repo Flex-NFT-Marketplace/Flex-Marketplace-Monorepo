@@ -1,19 +1,13 @@
 import { Transform } from 'class-transformer';
-import {
-  IsEnum,
-  IsHexadecimal,
-  IsMongoId,
-  IsNumber,
-  Length,
-} from 'class-validator';
-import { ObjectId } from 'mongoose';
+import { IsEnum, IsHexadecimal, IsNumber, Length } from 'class-validator';
 import { HistoryType } from '../types';
+import { ApiProperty } from '@nestjs/swagger';
+import { UserDto } from './user.dto';
+import { PaymentTokenDto } from './paymentToken.dto';
 
 export class HistoryDto {
-  @IsMongoId()
-  nft: ObjectId;
-
   @IsNumber()
+  @ApiProperty()
   tokenId: number;
 
   @IsHexadecimal()
@@ -24,38 +18,35 @@ export class HistoryDto {
     }
     return String(value).toLowerCase().trim().replace('0x', '0x0');
   })
+  @ApiProperty()
   nftContract: string;
 
-  @IsMongoId()
-  nftCollection: ObjectId;
+  @ApiProperty({ type: () => UserDto })
+  from: UserDto;
 
-  @IsMongoId()
-  from: ObjectId;
-
-  @IsMongoId()
-  to: ObjectId;
+  @ApiProperty({ type: () => UserDto })
+  to: UserDto;
 
   @IsNumber()
+  @ApiProperty()
   price: number;
 
   @IsNumber()
+  @ApiProperty()
   priceInUsd: number;
 
   @IsHexadecimal()
+  @ApiProperty()
   txHash: string;
 
   @IsNumber()
+  @ApiProperty()
   timestamp: number;
 
-  @IsMongoId()
-  chain: ObjectId;
-
   @IsEnum(HistoryType)
+  @ApiProperty({ required: true, enum: HistoryType })
   type: HistoryType;
 
-  @IsMongoId()
-  sale?: ObjectId;
-
-  @IsMongoId()
-  paymentToken?: ObjectId;
+  @ApiProperty({ type: () => PaymentTokenDto })
+  paymentToken?: PaymentTokenDto;
 }
