@@ -10,6 +10,7 @@ import {
 } from '@app/shared/models';
 import { Model } from 'mongoose';
 import { Web3Service } from '@app/web3-service/web3.service';
+import { MailingService } from '../mailing/mailing.service';
 
 @Controller('block-detection')
 export class BlockDetectionController {
@@ -20,6 +21,7 @@ export class BlockDetectionController {
     private readonly blockModel: Model<BlockDocument>,
     private readonly nftItemService: NftItemService,
     private readonly web3Service: Web3Service,
+    private readonly maillingService: MailingService,
   ) {
     if (!this.listeners) this.init();
   }
@@ -36,6 +38,7 @@ export class BlockDetectionController {
             this.web3Service,
             chain,
             this.nftItemService,
+            this.maillingService,
           ),
       );
 

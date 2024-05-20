@@ -19,4 +19,10 @@ export default () => ({
     String(process.env.SECRET_IV_ENCRYPT) || '12345678901234567890123456789012',
   secret_encrypt_method:
     String(process.env.SECRET_ENCRYPT_METHOD) || 'aes-256-gcm',
+  mailer: {
+    host: String(process.env.EMAIL_HOST),
+    port: Number(process.env.EMAIL_PORT),
+    user: String(process.env.EMAIL_USERNAME),
+    pass: String(process.env.EMAIL_PASS),
+  },
 });

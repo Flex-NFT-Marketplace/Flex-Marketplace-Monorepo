@@ -6,6 +6,7 @@ import { BlockDetectionModule } from './blocks-detection/block-detection.module'
 import configuration from '@app/shared/configuration';
 import { MongooseModule } from '@nestjs/mongoose';
 import { BullModule } from '@nestjs/bull';
+import { MailingModule } from './mailing/mailing.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { BullModule } from '@nestjs/bull';
       }),
       inject: [ConfigService],
     }),
+    MailingModule,
   ],
   controllers: [AppController],
   providers: [AppService],

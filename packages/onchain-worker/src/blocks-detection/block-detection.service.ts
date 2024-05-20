@@ -12,6 +12,7 @@ import { arraySliceProcess } from '@app/shared/utils/arrayLimitProcess';
 import { NftItemService } from './nft-item.service';
 import { retryUntil } from '@app/shared';
 import { EventType } from '@app/web3-service/types';
+import { MailingService } from '../mailing/mailing.service';
 
 export class BlockDetectionService extends OnchainWorker {
   constructor(
@@ -19,17 +20,20 @@ export class BlockDetectionService extends OnchainWorker {
     web3Service: Web3Service,
     chain: ChainDocument,
     nftItemService: NftItemService,
+    mailingSerivce: MailingService,
   ) {
     super(1000, 10, `${BlockDetectionService.name}:${chain.name}`);
     this.logger.log('Created');
     this.web3Service = web3Service;
     this.nftItemService = nftItemService;
+    this.mailingSerivce = mailingSerivce;
     this.chain = chain;
     this.chainId = chain.id;
     this.blockModel = blockModel;
   }
   chainId: string;
   web3Service: Web3Service;
+  mailingSerivce: MailingService;
   provider: Provider;
   chain: ChainDocument;
   nftItemService: NftItemService;
@@ -103,7 +107,7 @@ export class BlockDetectionService extends OnchainWorker {
       },
     );
 
-    const batchProcess = 20;
+    const batchProcess = 100;
     const maxRetry = 10;
     //batch process 10 txs, max retry 10 times
     await arraySliceProcess(
@@ -132,82 +136,92 @@ export class BlockDetectionService extends OnchainWorker {
   };
 
   async processTx(txHash: string, timestamp: number) {
-    const trasactionReceipt = await this.provider.getTransactionReceipt(txHash);
-    if (!trasactionReceipt) {
-      // throw new Error(`Can not get transaction receipt ${txHash}`);
-      return undefined;
-    }
-
-    //parse event
-    const eventWithType = this.web3Service.getReturnValuesEvent(
-      trasactionReceipt,
-      this.chain,
-      timestamp,
-    );
-
-    const matchTakerAskEv = eventWithType.filter(
-      ev => ev.eventType === EventType.TAKER_ASK,
-    );
-
-    const matchTakerBidEv = eventWithType.filter(
-      ev => ev.eventType === EventType.TAKER_BID,
-    );
-
-    const flexDropMintedEv = eventWithType.filter(
-      ev => ev.eventType === EventType.FLEX_DROP_MINTED,
-    );
-
-    const deployContractEv = eventWithType.filter(
-      ev => ev.eventType === EventType.DEPLOY_CONTRACT,
-    );
-
-    // skip transfer event if it is sale or accept offer or flexdrop minted -> prevent duplicate event
-    const eventlogs = eventWithType.filter(ev => {
-      if (
-        ev.eventType === EventType.TRANSFER_721 ||
-        ev.eventType === EventType.TRANSFER_1155
-      ) {
-        return (
-          !matchTakerAskEv.find(
-            e => e.transaction_hash === ev.transaction_hash,
-          ) &&
-          !matchTakerBidEv.find(e => e.transaction_hash === ev.transaction_hash)
-        );
+    try {
+      const trasactionReceipt =
+        await this.provider.getTransactionReceipt(txHash);
+      if (!trasactionReceipt) {
+        // throw new Error(`Can not get transaction receipt ${txHash}`);
+        return undefined;
       }
 
-      if (ev.eventType === EventType.FLEX_DROP_MINTED) {
-        return false;
-      }
+      //parse event
+      const eventWithType = this.web3Service.getReturnValuesEvent(
+        trasactionReceipt,
+        this.chain,
+        timestamp,
+      );
 
-      if (ev.eventType === EventType.UPGRADE_CONTRACT) {
-        return !deployContractEv.find(
-          e => e.transaction_hash === ev.transaction_hash,
-        );
-      }
+      const matchTakerAskEv = eventWithType.filter(
+        ev => ev.eventType === EventType.TAKER_ASK,
+      );
 
-      return true;
-    });
+      const matchTakerBidEv = eventWithType.filter(
+        ev => ev.eventType === EventType.TAKER_BID,
+      );
 
-    for (const ev of flexDropMintedEv) {
-      eventlogs.map(log => {
+      const flexDropMintedEv = eventWithType.filter(
+        ev => ev.eventType === EventType.FLEX_DROP_MINTED,
+      );
+
+      const deployContractEv = eventWithType.filter(
+        ev => ev.eventType === EventType.DEPLOY_CONTRACT,
+      );
+
+      // skip transfer event if it is sale or accept offer or flexdrop minted -> prevent duplicate event
+      const eventlogs = eventWithType.filter(ev => {
         if (
-          (log.eventType === EventType.MINT_1155 ||
-            log.eventType === EventType.MINT_721) &&
-          log.returnValues.nftAddress === ev.returnValues.nftAddress
+          ev.eventType === EventType.TRANSFER_721 ||
+          ev.eventType === EventType.TRANSFER_1155
         ) {
-          log.returnValues.isFlexDropMinted = true;
-          log.returnValues.price =
-            ev.returnValues.totalMintPrice / ev.returnValues.quantityMinted;
+          return (
+            !matchTakerAskEv.find(
+              e => e.transaction_hash === ev.transaction_hash,
+            ) &&
+            !matchTakerBidEv.find(
+              e => e.transaction_hash === ev.transaction_hash,
+            )
+          );
         }
-      });
-    }
 
-    //process event
-    let index = 0;
-    for (const event of eventlogs) {
-      await this.nftItemService.processEvent(event, this.chain, index);
-      index++;
+        if (ev.eventType === EventType.FLEX_DROP_MINTED) {
+          return false;
+        }
+
+        if (ev.eventType === EventType.UPGRADE_CONTRACT) {
+          return !deployContractEv.find(
+            e => e.transaction_hash === ev.transaction_hash,
+          );
+        }
+
+        return true;
+      });
+
+      for (const ev of flexDropMintedEv) {
+        eventlogs.map(log => {
+          if (
+            (log.eventType === EventType.MINT_1155 ||
+              log.eventType === EventType.MINT_721) &&
+            log.returnValues.nftAddress === ev.returnValues.nftAddress
+          ) {
+            log.returnValues.isFlexDropMinted = true;
+            log.returnValues.price =
+              ev.returnValues.totalMintPrice / ev.returnValues.quantityMinted;
+          }
+        });
+      }
+
+      //process event
+      let index = 0;
+      for (const event of eventlogs) {
+        await this.nftItemService.processEvent(event, this.chain, index);
+        index++;
+      }
+      return trasactionReceipt;
+    } catch (error) {
+      await this.mailingSerivce.sendMail(
+        `Failed to fetch data of tx hash - ${txHash}`,
+      );
+      throw new Error(`Failed to fetch data of tx Hash - ${txHash}`);
     }
-    return trasactionReceipt;
   }
 }
