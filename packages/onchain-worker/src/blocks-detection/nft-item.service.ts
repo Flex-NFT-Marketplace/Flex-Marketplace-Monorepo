@@ -294,28 +294,40 @@ export class NftItemService {
     const fromUser = await this.userService.getOrCreateUser(from);
     const toUser = await this.userService.getOrCreateUser(to);
 
-    const newNftEntity: Nfts = {
-      tokenId,
+    const existedNft = await this.nftModel.findOne({
       nftContract: nftAddress,
-      nftCollection: nftCollection._id,
-      chain,
-      royaltyRate: 0,
-      creator: toUser,
-      owner: toUser,
-      amount: 1,
-      marketType: MarketType.NotForSale,
-      blockTime: timestamp,
-    };
+      tokenId,
+    });
+    let nftDocument: NftDocument = null;
 
-    const nftDocument = await this.nftModel.findOneAndUpdate(
-      {
-        nftContract: nftAddress,
+    if (existedNft) {
+      existedNft.creator = toUser;
+      await existedNft.save();
+      nftDocument = existedNft;
+    } else {
+      const newNftEntity: Nfts = {
         tokenId,
-        burnedAt: null,
-      },
-      { $set: newNftEntity },
-      { new: true, upsert: true },
-    );
+        nftContract: nftAddress,
+        nftCollection: nftCollection._id,
+        chain,
+        royaltyRate: 0,
+        creator: toUser,
+        owner: toUser,
+        amount: 1,
+        marketType: MarketType.NotForSale,
+        blockTime: timestamp,
+      };
+
+      nftDocument = await this.nftModel.findOneAndUpdate(
+        {
+          nftContract: nftAddress,
+          tokenId,
+          burnedAt: null,
+        },
+        { $set: newNftEntity },
+        { new: true, upsert: true },
+      );
+    }
 
     const history: Histories = {
       nft: nftDocument,
@@ -1228,89 +1240,91 @@ export class NftItemService {
         });
       }
     } else {
-      const counterSignatureUsage =
-        await this.web3Service.getCounterUsageSignature(
-          seller,
-          orderNonce,
-          chain,
-        );
+      try {
+        const counterSignatureUsage =
+          await this.web3Service.getCounterUsageSignature(
+            seller,
+            orderNonce,
+            chain,
+          );
 
-      const remainingUsage = sale.amount - counterSignatureUsage;
+        const remainingUsage = sale ? sale.amount - counterSignatureUsage : 0;
 
-      if (sellerNft.blockTime <= timestamp) {
-        sellerNft.amount -= amount;
-        sellerNft.blockTime = timestamp;
-        if (remainingUsage == 0) {
-          sellerNft.sale = null;
-        }
-
-        updateNftItems.push({
-          updateOne: {
-            filter: {
-              tokenId,
-              nftContract: collection,
-              owner: sellerUser,
-            },
-            update: { $set: sellerNft },
-          },
-        });
-      }
-
-      const buyerNft = await this.nftModel.findOne({
-        tokenId,
-        nftContract: collection,
-        owner: buyerUser,
-      });
-      if (buyerNft) {
-        if (buyerNft.blockTime <= timestamp) {
-          buyerNft.amount += amount;
-          buyerNft.blockTime = timestamp;
+        if (sellerNft.blockTime <= timestamp) {
+          sellerNft.amount -= amount;
+          sellerNft.blockTime = timestamp;
+          if (remainingUsage == 0) {
+            sellerNft.sale = null;
+          }
 
           updateNftItems.push({
             updateOne: {
               filter: {
-                _id: buyerNft._id,
+                tokenId,
+                nftContract: collection,
+                owner: sellerUser,
               },
-              update: { $set: buyerNft },
+              update: { $set: sellerNft },
             },
           });
         }
-      } else {
-        const newBuyerNft: Nfts = {
+
+        const buyerNft = await this.nftModel.findOne({
           tokenId,
           nftContract: collection,
-          nftCollection,
-          chain,
-          blockTime: timestamp,
-          royaltyRate: 0,
-          creator: buyerNft.creator,
           owner: buyerUser,
-          amount,
-          marketType: MarketType.NotForSale,
-        };
-        updateNftItems.push({ insertOne: newBuyerNft });
-      }
-
-      if (sale) {
-        updateSale.push({
-          updateOne: {
-            filter: {
-              _id: sale._id,
-            },
-            update: {
-              $set:
-                remainingUsage == 0
-                  ? {
-                      remainingAmount: remainingUsage,
-                      status: MarketStatus.Sold,
-                    }
-                  : {
-                      remainingAmount: remainingUsage,
-                    },
-            },
-          },
         });
-      }
+        if (buyerNft) {
+          if (buyerNft.blockTime <= timestamp) {
+            buyerNft.amount += amount;
+            buyerNft.blockTime = timestamp;
+
+            updateNftItems.push({
+              updateOne: {
+                filter: {
+                  _id: buyerNft._id,
+                },
+                update: { $set: buyerNft },
+              },
+            });
+          }
+        } else {
+          const newBuyerNft: Nfts = {
+            tokenId,
+            nftContract: collection,
+            nftCollection,
+            chain,
+            blockTime: timestamp,
+            royaltyRate: 0,
+            creator: buyerNft.creator,
+            owner: buyerUser,
+            amount,
+            marketType: MarketType.NotForSale,
+          };
+          updateNftItems.push({ insertOne: newBuyerNft });
+        }
+
+        if (sale) {
+          updateSale.push({
+            updateOne: {
+              filter: {
+                _id: sale._id,
+              },
+              update: {
+                $set:
+                  remainingUsage == 0
+                    ? {
+                        remainingAmount: remainingUsage,
+                        status: MarketStatus.Sold,
+                      }
+                    : {
+                        remainingAmount: remainingUsage,
+                      },
+              },
+            },
+          });
+        }
+      } catch (error) {}
     }
 
     if (updateNftItems.length > 0) {
@@ -1466,113 +1480,118 @@ export class NftItemService {
         ),
       );
     } else {
-      const counterSignatureUsage =
-        await this.web3Service.getCounterUsageSignature(
-          buyer,
-          orderNonce,
-          chain,
-        );
-
-      const remainingUsage = offer.amount - counterSignatureUsage;
-
-      if (sellerNft.blockTime <= timestamp) {
-        sellerNft.amount -= amount;
-        sellerNft.blockTime = timestamp;
-        const availableSale = await this.saleModel.findOne({
-          signer: sellerUser,
-          saltNonce: orderNonce,
-          status: MarketStatus.OnSale,
-        });
-
-        if (availableSale && availableSale.remainingAmount > sellerNft.amount) {
-          availableSale.remainingAmount = sellerNft.amount;
-          if (availableSale.remainingAmount === 0) {
-            availableSale.status = MarketStatus.Cancelled;
-            sellerNft.sale = null;
-          }
-
-          await this.saleModel.findOneAndUpdate(
-            { _id: availableSale._id },
-            { $set: availableSale },
+      try {
+        const counterSignatureUsage =
+          await this.web3Service.getCounterUsageSignature(
+            buyer,
+            orderNonce,
+            chain,
           );
-        }
 
-        updateNftItems.push({
-          updateOne: {
-            filter: {
-              tokenId,
-              nftContract: collection,
-              owner: seller,
-            },
-            update: { $set: sellerNft },
-          },
-        });
-      }
+        const remainingUsage = offer ? offer.amount - counterSignatureUsage : 0;
 
-      const buyerNft = await this.nftModel.findOne({
-        tokenId,
-        nftContract: collection,
-        owner: buyer,
-      });
-      if (buyerNft) {
-        if (buyerNft.blockTime <= timestamp) {
-          buyerNft.amount += amount;
-          buyerNft.blockTime = timestamp;
+        if (sellerNft.blockTime <= timestamp) {
+          sellerNft.amount -= amount;
+          sellerNft.blockTime = timestamp;
+          const availableSale = await this.saleModel.findOne({
+            signer: sellerUser,
+            saltNonce: orderNonce,
+            status: MarketStatus.OnSale,
+          });
+
+          if (
+            availableSale &&
+            availableSale.remainingAmount > sellerNft.amount
+          ) {
+            availableSale.remainingAmount = sellerNft.amount;
+            if (availableSale.remainingAmount === 0) {
+              availableSale.status = MarketStatus.Cancelled;
+              sellerNft.sale = null;
+            }
+
+            await this.saleModel.findOneAndUpdate(
+              { _id: availableSale._id },
+              { $set: availableSale },
+            );
+          }
 
           updateNftItems.push({
             updateOne: {
               filter: {
-                _id: buyerNft._id,
+                tokenId,
+                nftContract: collection,
+                owner: seller,
               },
-              update: { $set: buyerNft },
+              update: { $set: sellerNft },
             },
           });
         }
-      } else {
-        const newBuyerNft: Nfts = {
+
+        const buyerNft = await this.nftModel.findOne({
           tokenId,
           nftContract: collection,
-          nftCollection,
-          chain,
-          blockTime: timestamp,
-          royaltyRate: 0,
-          creator: buyerNft.creator,
-          owner: buyerUser,
-          amount,
-          marketType: MarketType.NotForSale,
-        };
-        updateNftItems.push({ insertOne: newBuyerNft });
-      }
-
-      if (offer) {
-        updateOffer.push({
-          updateOne: {
-            filter: {
-              _id: offer._id,
-            },
-            update: {
-              $set:
-                remainingUsage == 0
-                  ? {
-                      remainingAmount: remainingUsage,
-                      status: OfferStatus.accepted,
-                    }
-                  : {
-                      remainingAmount: remainingUsage,
-                    },
-            },
-          },
+          owner: buyer,
         });
-      }
+        if (buyerNft) {
+          if (buyerNft.blockTime <= timestamp) {
+            buyerNft.amount += amount;
+            buyerNft.blockTime = timestamp;
 
-      await this.offerModel.updateMany(
-        {
-          _id: { $ne: offer._id },
-          remainingAmount: { $gt: sellerNft.amount },
-          status: OfferStatus.pending,
-        },
-        { $set: { status: OfferStatus.cancelled } },
-      );
+            updateNftItems.push({
+              updateOne: {
+                filter: {
+                  _id: buyerNft._id,
+                },
+                update: { $set: buyerNft },
+              },
+            });
+          }
+        } else {
+          const newBuyerNft: Nfts = {
+            tokenId,
+            nftContract: collection,
+            nftCollection,
+            chain,
+            blockTime: timestamp,
+            royaltyRate: 0,
+            creator: buyerNft.creator,
+            owner: buyerUser,
+            amount,
+            marketType: MarketType.NotForSale,
+          };
+          updateNftItems.push({ insertOne: newBuyerNft });
+        }
+
+        if (offer) {
+          updateOffer.push({
+            updateOne: {
+              filter: {
+                _id: offer._id,
+              },
+              update: {
+                $set:
+                  remainingUsage == 0
+                    ? {
+                        remainingAmount: remainingUsage,
+                        status: OfferStatus.accepted,
+                      }
+                    : {
+                        remainingAmount: remainingUsage,
+                      },
+              },
+            },
+          });
+        }
+
+        await this.offerModel.updateMany(
+          {
+            _id: { $ne: offer._id },
+            remainingAmount: { $gt: sellerNft.amount },
+            status: OfferStatus.pending,
+          },
+          { $set: { status: OfferStatus.cancelled } },
+        );
+      } catch (error) {}
     }
 
     if (updateNftItems.length > 0) {
