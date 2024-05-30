@@ -917,8 +917,9 @@ export class NftItemService {
       saltNonce: orderNonce,
     });
 
-    let newNftDocument: NftDocument;
-    let historyType: HistoryType;
+    let newNftDocument: NftDocument = null;
+    let historyType: HistoryType = HistoryType.CancelSale;
+
     if (availableSale) {
       await this.saleModel.findOneAndUpdate(
         { _id: availableSale._id },
@@ -958,9 +959,9 @@ export class NftItemService {
 
     const history: Histories = {
       nft: newNftDocument,
-      tokenId: newNftDocument.tokenId,
-      nftContract: newNftDocument.nftContract,
-      nftCollection: newNftDocument.nftCollection,
+      tokenId: newNftDocument ? newNftDocument.tokenId : null,
+      nftContract: newNftDocument ? newNftDocument.nftContract : null,
+      nftCollection: newNftDocument ? newNftDocument.nftCollection : null,
       from: userDocument,
       amount: 0,
       price: 0,
