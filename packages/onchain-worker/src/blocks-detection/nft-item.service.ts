@@ -1173,59 +1173,89 @@ export class NftItemService {
       { $set: { status: OfferStatus.cancelled } },
     );
 
-    const history: Histories = {
-      nft: sellerNft,
-      tokenId,
-      nftContract: collection,
-      nftCollection,
-      from: sellerUser,
-      to: buyerUser,
-      amount,
-      price,
-      priceInUsd: 0,
-      txHash: log.transaction_hash,
-      index,
-      timestamp,
-      chain,
-      type: HistoryType.Sale,
-      paymentToken,
-      sale,
-    };
-
-    await this.historyModel.findOneAndUpdate(
-      {
-        nftContract: collection,
+    if (sellerNft) {
+      const history: Histories = {
+        nft: sellerNft,
         tokenId,
+        nftContract: collection,
+        nftCollection,
+        from: sellerUser,
+        to: buyerUser,
+        amount,
+        price,
+        priceInUsd: 0,
         txHash: log.transaction_hash,
         index,
-      },
-      { $set: history },
-      { upsert: true, new: true },
-    );
+        timestamp,
+        chain,
+        type: HistoryType.Sale,
+        paymentToken,
+        sale,
+      };
+
+      await this.historyModel.findOneAndUpdate(
+        {
+          nftContract: collection,
+          tokenId,
+          txHash: log.transaction_hash,
+          index,
+        },
+        { $set: history },
+        { upsert: true, new: true },
+      );
+
+      const notification: Notifications = {
+        nft: sellerNft,
+        content: template.sold({
+          name: sellerNft.name || `#${sellerNft.tokenId}`,
+          amount: price,
+          tokenSymbol: paymentToken.symbol.toUpperCase(),
+        }),
+        user: sellerUser,
+        txHash: log.transaction_hash,
+        index,
+      };
+
+      await this.notificationModel.findOneAndUpdate(
+        {
+          nft: sellerNft,
+          txHash: log.transaction_hash,
+          index,
+        },
+        {
+          $set: notification,
+        },
+        {
+          upsert: true,
+        },
+      );
+    }
 
     const updateNftItems = [];
     const updateSale = [];
     if (nftCollection.standard === NftCollectionStandard.ERC721) {
-      updateNftItems.push({
-        updateOne: {
-          filter: {
-            _id: sellerNft._id,
-            $or: [
-              { blockTime: { $lte: timestamp } },
-              {
-                blockTime: null,
-              },
-            ],
+      if (sellerNft) {
+        updateNftItems.push({
+          updateOne: {
+            filter: {
+              _id: sellerNft._id,
+              $or: [
+                { blockTime: { $lte: timestamp } },
+                {
+                  blockTime: null,
+                },
+              ],
+            },
+            update: {
+              sale: null,
+              price: 0,
+              owner: buyerUser,
+              blockTime: timestamp,
+              marketType: MarketType.NotForSale,
+            },
           },
-          update: {
-            sale: null,
-            price: 0,
-            owner: buyerUser,
-            blockTime: timestamp,
-            marketType: MarketType.NotForSale,
-          },
-        },
-      });
+        });
+      }
 
       if (sale) {
         updateSale.push({
@@ -1249,7 +1279,10 @@ export class NftItemService {
             chain,
           );
 
-        const remainingUsage = sale ? sale.amount - counterSignatureUsage : 0;
+        const remainingUsage =
+          sale && counterSignatureUsage
+            ? sale.amount - counterSignatureUsage
+            : 0;
 
         if (sellerNft.blockTime <= timestamp) {
           sellerNft.amount -= amount;
@@ -1335,32 +1368,6 @@ export class NftItemService {
     if (updateSale.length > 0) {
       await this.saleModel.bulkWrite(updateSale);
     }
-
-    const notification: Notifications = {
-      nft: sellerNft,
-      content: template.sold({
-        name: sellerNft.name || `#${sellerNft.tokenId}`,
-        amount: price,
-        tokenSymbol: paymentToken.symbol.toUpperCase(),
-      }),
-      user: sellerUser,
-      txHash: log.transaction_hash,
-      index,
-    };
-
-    await this.notificationModel.findOneAndUpdate(
-      {
-        nft: sellerNft,
-        txHash: log.transaction_hash,
-        index,
-      },
-      {
-        $set: notification,
-      },
-      {
-        upsert: true,
-      },
-    );
   }
 
   async processTakerAsk(
@@ -1404,58 +1411,88 @@ export class NftItemService {
       saltNonce: orderNonce,
     });
 
-    const history: Histories = {
-      nft: sellerNft,
-      tokenId,
-      nftContract: collection,
-      nftCollection,
-      from: sellerUser,
-      to: buyerUser,
-      amount,
-      price,
-      priceInUsd: 0,
-      txHash: log.transaction_hash,
-      index,
-      timestamp,
-      chain,
-      type: HistoryType.Sale,
-      paymentToken,
-    };
-
-    await this.historyModel.findOneAndUpdate(
-      {
-        nftContract: collection,
+    if (sellerNft) {
+      const history: Histories = {
+        nft: sellerNft,
         tokenId,
+        nftContract: collection,
+        nftCollection,
+        from: sellerUser,
+        to: buyerUser,
+        amount,
+        price,
+        priceInUsd: 0,
         txHash: log.transaction_hash,
         index,
-      },
-      { $set: history },
-      { upsert: true, new: true },
-    );
+        timestamp,
+        chain,
+        type: HistoryType.Sale,
+        paymentToken,
+      };
+
+      await this.historyModel.findOneAndUpdate(
+        {
+          nftContract: collection,
+          tokenId,
+          txHash: log.transaction_hash,
+          index,
+        },
+        { $set: history },
+        { upsert: true, new: true },
+      );
+
+      const notification: Notifications = {
+        nft: sellerNft,
+        content: template.offerAccepted({
+          name: sellerNft.name || `#${sellerNft.tokenId}`,
+          amount: price,
+          tokenSymbol: paymentToken.symbol.toUpperCase(),
+        }),
+        user: sellerUser,
+        txHash: log.transaction_hash,
+        index,
+      };
+
+      await this.notificationModel.findOneAndUpdate(
+        {
+          nft: sellerNft,
+          txHash: log.transaction_hash,
+          index,
+        },
+        {
+          $set: notification,
+        },
+        {
+          upsert: true,
+        },
+      );
+    }
 
     const updateNftItems = [];
     const updateOffer = [];
     if (nftCollection.standard === NftCollectionStandard.ERC721) {
-      updateNftItems.push({
-        updateOne: {
-          filter: {
-            _id: sellerNft._id,
-            $or: [
-              { blockTime: { $lte: timestamp } },
-              {
-                blockTime: null,
-              },
-            ],
+      if (sellerNft) {
+        updateNftItems.push({
+          updateOne: {
+            filter: {
+              _id: sellerNft._id,
+              $or: [
+                { blockTime: { $lte: timestamp } },
+                {
+                  blockTime: null,
+                },
+              ],
+            },
+            update: {
+              sale: null,
+              price: 0,
+              owner: buyer,
+              blockTime: timestamp,
+              marketType: MarketType.NotForSale,
+            },
           },
-          update: {
-            sale: null,
-            price: 0,
-            owner: buyer,
-            blockTime: timestamp,
-            marketType: MarketType.NotForSale,
-          },
-        },
-      });
+        });
+      }
 
       if (offer) {
         updateOffer.push({
@@ -1469,17 +1506,19 @@ export class NftItemService {
             },
           },
         });
-      }
-
-      await this.saleModel.findOneAndUpdate(
-        { nft: sellerNft._id, status: MarketStatus.OnSale },
-        { $set: { status: MarketStatus.Cancelled } },
 
         await this.offerModel.updateMany(
           { _id: { $ne: offer._id }, status: OfferStatus.pending },
           { $set: { status: OfferStatus.cancelled } },
-        ),
-      );
+        );
+      }
+
+      if (sellerNft) {
+        await this.saleModel.findOneAndUpdate(
+          { nft: sellerNft._id, status: MarketStatus.OnSale },
+          { $set: { status: MarketStatus.Cancelled } },
+        );
+      }
     } else {
       try {
         const counterSignatureUsage =
@@ -1489,7 +1528,10 @@ export class NftItemService {
             chain,
           );
 
-        const remainingUsage = offer ? offer.amount - counterSignatureUsage : 0;
+        const remainingUsage =
+          offer && counterSignatureUsage
+            ? offer.amount - counterSignatureUsage
+            : 0;
 
         if (sellerNft.blockTime <= timestamp) {
           sellerNft.amount -= amount;
@@ -1602,32 +1644,6 @@ export class NftItemService {
     if (updateOffer.length > 0) {
       await this.offerModel.bulkWrite(updateOffer);
     }
-
-    const notification: Notifications = {
-      nft: sellerNft,
-      content: template.offerAccepted({
-        name: sellerNft.name || `#${sellerNft.tokenId}`,
-        amount: price,
-        tokenSymbol: paymentToken.symbol.toUpperCase(),
-      }),
-      user: sellerUser,
-      txHash: log.transaction_hash,
-      index,
-    };
-
-    await this.notificationModel.findOneAndUpdate(
-      {
-        nft: sellerNft,
-        txHash: log.transaction_hash,
-        index,
-      },
-      {
-        $set: notification,
-      },
-      {
-        upsert: true,
-      },
-    );
   }
 
   async processPhaseDropUpdated(log: LogsReturnValues, chain: ChainDocument) {
