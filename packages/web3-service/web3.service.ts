@@ -365,19 +365,23 @@ export class Web3Service {
     nonce: number,
     chain: ChainDocument,
   ): Promise<number> {
-    const provider = this.getProvider(chain.rpc);
-    const contractInstance = new Contract(
-      ABIS.MarketplaceABI,
-      chain.currentMarketplaceContract,
-      provider,
-    );
+    try {
+      const provider = this.getProvider(chain.rpc);
+      const contractInstance = new Contract(
+        ABIS.MarketplaceABI,
+        chain.currentMarketplaceContract,
+        provider,
+      );
 
-    const couter = await contractInstance.get_counter_usage_signature(
-      user,
-      nonce,
-    );
+      const couter = await contractInstance.get_counter_usage_signature(
+        user,
+        nonce,
+      );
 
-    return Number((couter as bigint).toString());
+      return Number((couter as bigint).toString());
+    } catch (error) {
+      return null;
+    }
   }
 
   async checkInterfaceSupported(
