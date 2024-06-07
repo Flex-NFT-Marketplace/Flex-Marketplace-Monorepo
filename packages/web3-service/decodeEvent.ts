@@ -117,7 +117,7 @@ export const decodeERC721Transfer = (
 
       return returnValue;
     } catch (error) {
-      throw new Error(error);
+      return null;
     }
   }
 };

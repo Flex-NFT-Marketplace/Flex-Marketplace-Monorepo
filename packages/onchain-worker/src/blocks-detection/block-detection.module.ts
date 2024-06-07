@@ -28,10 +28,14 @@ import {
   UserSchema,
   Users,
 } from '@app/shared/models';
-import { MetadataQueueService } from './queue/metadata.queue';
 import { BullModule } from '@nestjs/bull';
-import { MQ_JOB_DEFAULT_CONFIG, QUEUE_METADATA } from '@app/shared/types';
+import {
+  MQ_JOB_DEFAULT_CONFIG,
+  ONCHAIN_QUEUES,
+  QUEUE_METADATA,
+} from '@app/shared/types';
 import { MailingService } from '../mailing/mailing.service';
+import { OnchainQueueService, ERC721MintProcessor } from './queue';
 
 @Module({
   imports: [
@@ -48,16 +52,79 @@ import { MailingService } from '../mailing/mailing.service';
       { name: Histories.name, schema: HistorySchema },
       { name: DropPhases.name, schema: DropPhaseSchema },
     ]),
-    BullModule.registerQueue({
-      name: QUEUE_METADATA,
-      defaultJobOptions: MQ_JOB_DEFAULT_CONFIG,
-    }),
+    BullModule.registerQueue(
+      {
+        name: QUEUE_METADATA,
+        defaultJobOptions: MQ_JOB_DEFAULT_CONFIG,
+      },
+      {
+        name: ONCHAIN_QUEUES.QUEUE_CANCEL_ALL_ORDERS,
+        defaultJobOptions: MQ_JOB_DEFAULT_CONFIG,
+      },
+      {
+        name: ONCHAIN_QUEUES.QUEUE_CANCEL_OFFER,
+        defaultJobOptions: MQ_JOB_DEFAULT_CONFIG,
+      },
+      {
+        name: ONCHAIN_QUEUES.QUEUE_CREATOR_PAYOUT_UPDATED,
+        defaultJobOptions: MQ_JOB_DEFAULT_CONFIG,
+      },
+      {
+        name: ONCHAIN_QUEUES.QUEUE_DEPLOY_CONTRACT,
+        defaultJobOptions: MQ_JOB_DEFAULT_CONFIG,
+      },
+      {
+        name: ONCHAIN_QUEUES.QUEUE_BURN_721,
+        defaultJobOptions: MQ_JOB_DEFAULT_CONFIG,
+      },
+      {
+        name: ONCHAIN_QUEUES.QUEUE_MINT_721,
+        defaultJobOptions: MQ_JOB_DEFAULT_CONFIG,
+      },
+      {
+        name: ONCHAIN_QUEUES.QUEUE_TRANSFER_721,
+        defaultJobOptions: MQ_JOB_DEFAULT_CONFIG,
+      },
+      {
+        name: ONCHAIN_QUEUES.QUEUE_BURN_1155,
+        defaultJobOptions: MQ_JOB_DEFAULT_CONFIG,
+      },
+      {
+        name: ONCHAIN_QUEUES.QUEUE_MINT_1155,
+        defaultJobOptions: MQ_JOB_DEFAULT_CONFIG,
+      },
+      {
+        name: ONCHAIN_QUEUES.QUEUE_TRANSFER_1155,
+        defaultJobOptions: MQ_JOB_DEFAULT_CONFIG,
+      },
+      {
+        name: ONCHAIN_QUEUES.QUEUE_PAYER_UPDATED,
+        defaultJobOptions: MQ_JOB_DEFAULT_CONFIG,
+      },
+      {
+        name: ONCHAIN_QUEUES.QUEUE_PHASE_DROP_UPDATED,
+        defaultJobOptions: MQ_JOB_DEFAULT_CONFIG,
+      },
+      {
+        name: ONCHAIN_QUEUES.QUEUE_TAKER_ASK,
+        defaultJobOptions: MQ_JOB_DEFAULT_CONFIG,
+      },
+      {
+        name: ONCHAIN_QUEUES.QUEUE_TAKER_BID,
+        defaultJobOptions: MQ_JOB_DEFAULT_CONFIG,
+      },
+      {
+        name: ONCHAIN_QUEUES.QUEUE_UPGRADE_CONTRACT,
+        defaultJobOptions: MQ_JOB_DEFAULT_CONFIG,
+      },
+    ),
   ],
   providers: [
     NftItemService,
+    OnchainQueueService,
+    ERC721MintProcessor,
     Web3Service,
     UserService,
-    MetadataQueueService,
     MailingService,
   ],
   controllers: [BlockDetectionController],
