@@ -43,7 +43,9 @@ import { Model } from 'mongoose';
 import { UserService } from '../users/user.service';
 import template from '../notifications/template';
 import { formattedContractAddress } from '@app/shared/utils';
-import { MetadataQueueService } from './queue/metadata.queue';
+import { InjectQueue } from '@nestjs/bull';
+import { JOB_QUEUE_NFT_METADATA, QUEUE_METADATA } from '@app/shared/types';
+import { Queue } from 'bull';
 
 @Injectable()
 export class NftItemService {
@@ -64,9 +66,10 @@ export class NftItemService {
     private readonly notificationModel: Model<NotificationDocument>,
     @InjectModel(DropPhases.name)
     private readonly dropPhaseModel: Model<DropPhaseDocument>,
+    @InjectQueue(QUEUE_METADATA)
+    private readonly fetchMetadataQueue: Queue<string>,
     private readonly web3Service: Web3Service,
     private readonly userService: UserService,
-    private readonly fetchMetadataQueue: MetadataQueueService,
   ) {}
 
   logger = new Logger(NftItemService.name);
@@ -361,7 +364,7 @@ export class NftItemService {
       `nft minted ${nftAddress}: ${tokenId} ${from} -> ${to} - ${timestamp}`,
     );
 
-    await this.fetchMetadataQueue.add(nftDocument._id);
+    await this.fetchMetadataQueue.add(JOB_QUEUE_NFT_METADATA, nftDocument._id);
   }
 
   async processNft721Burned(
@@ -639,7 +642,7 @@ export class NftItemService {
       `${value} nft minted ${nftAddress}: ${tokenId} ${from} -> ${to} - ${timestamp}`,
     );
 
-    await this.fetchMetadataQueue.add(nftDocument._id);
+    await this.fetchMetadataQueue.add(JOB_QUEUE_NFT_METADATA, nftDocument._id);
   }
 
   async processNft1155Burned(

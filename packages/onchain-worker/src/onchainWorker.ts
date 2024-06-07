@@ -64,17 +64,34 @@ export abstract class OnchainWorker {
 
   async processBlocks() {
     while (!this.shutdown) {
-      const data = await this.blockDataBuffer.take();
+      // const data = await this.blockDataBuffer.take();
+      // let done = false;
+      // while (!done) {
+      //   try {
+      //     await this.process(data);
+      //     done = true;
+      //   } catch (error) {
+      //     this.logger.error(error, error.stack);
+      //     this.logger.error(JSON.stringify(data));
+      //     this.logger.warn('Fail of process block data. Try again ...');
+      //     await delay(1);
+      //   }
+      // }
+
+      const datas = await this.blockDataBuffer.takeAll(4);
       let done = false;
       while (!done) {
         try {
-          await this.process(data);
+          await Promise.all(
+            datas.map(async data => {
+              await this.process(data);
+            }),
+          );
           done = true;
         } catch (error) {
           this.logger.error(error, error.stack);
-          this.logger.error(JSON.stringify(data));
+          // this.logger.error(JSON.stringify(data));
           this.logger.warn('Fail of process block data. Try again ...');
-          await delay(1);
         }
       }
     }
