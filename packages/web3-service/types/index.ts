@@ -57,6 +57,7 @@ export enum EventType {
 export type LogsReturnValues = SuccessfulTransactionReceiptResponse & {
   returnValues: any;
   eventType: EventType;
+  index?: number;
 };
 
 export const ABIS = {

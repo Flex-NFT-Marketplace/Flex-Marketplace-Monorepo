@@ -80,3 +80,6 @@ export class Nfts extends BaseSchema {
 
 export const NftSchema = SchemaFactory.createForClass(Nfts);
 NftSchema.index({ nftContract: 1, tokenId: 1 });
+NftSchema.index({ nftContract: 1, tokenId: 1, burnedAt: 1 });
+NftSchema.index({ nftContract: 1, tokenId: 1, owner: 1 }, { unique: true });
+NftSchema.index({ nftContract: 1, tokenId: 1, owner: 1, burnedAt: 1 });

@@ -9,23 +9,55 @@ import {
 import { Web3Service } from '@app/web3-service/web3.service';
 import { BlockStatus, Block, Provider, RpcProvider } from 'starknet';
 import { arraySliceProcess } from '@app/shared/utils/arrayLimitProcess';
-import { NftItemService } from './nft-item.service';
 import { retryUntil } from '@app/shared';
-import { EventType } from '@app/web3-service/types';
+import { EventType, LogsReturnValues } from '@app/web3-service/types';
 import { MailingService } from '../mailing/mailing.service';
+import { ONCHAIN_JOBS } from '@app/shared/types';
+import { Queue } from 'bull';
+import { OnchainQueueService } from './queue';
 
 export class BlockDetectionService extends OnchainWorker {
   constructor(
+    cancelAllOrdersQueue: Queue<LogsReturnValues>,
+    cancelOfferQueue: Queue<LogsReturnValues>,
+    creatorPayoutQueue: Queue<LogsReturnValues>,
+    deployContractQueue: Queue<LogsReturnValues>,
+    erc721BurnQueue: Queue<LogsReturnValues>,
+    erc721MintQueue: Queue<LogsReturnValues>,
+    erc721TransferQueue: Queue<LogsReturnValues>,
+    erc1155BurnQueue: Queue<LogsReturnValues>,
+    erc1155MintQueue: Queue<LogsReturnValues>,
+    erc1155TransferQueue: Queue<LogsReturnValues>,
+    payerUpdateQueue: Queue<LogsReturnValues>,
+    phaseDropQueue: Queue<LogsReturnValues>,
+    takerAskQueue: Queue<LogsReturnValues>,
+    takerBidQueue: Queue<LogsReturnValues>,
+    upgradeContractQueue: Queue<LogsReturnValues>,
+    onchainQueue: OnchainQueueService,
     blockModel: Model<BlockDocument>,
     web3Service: Web3Service,
     chain: ChainDocument,
-    nftItemService: NftItemService,
     mailingSerivce: MailingService,
   ) {
     super(1000, 10, `${BlockDetectionService.name}:${chain.name}`);
     this.logger.log('Created');
     this.web3Service = web3Service;
-    this.nftItemService = nftItemService;
+    this.cancelAllOrdersQueue = cancelAllOrdersQueue;
+    this.cancelOfferQueue = cancelOfferQueue;
+    this.creatorPayoutQueue = creatorPayoutQueue;
+    this.deployContractQueue = deployContractQueue;
+    this.erc721BurnQueue = erc721BurnQueue;
+    this.erc721MintQueue = erc721MintQueue;
+    this.erc721TransferQueue = erc721TransferQueue;
+    this.erc1155BurnQueue = erc1155BurnQueue;
+    this.erc1155MintQueue = erc1155MintQueue;
+    this.erc1155TransferQueue = erc1155TransferQueue;
+    this.payerUpdateQueue = payerUpdateQueue;
+    this.phaseDropQueue = phaseDropQueue;
+    this.takerAskQueue = takerAskQueue;
+    this.takerBidQueue = takerBidQueue;
+    this.upgradeContractQueue = upgradeContractQueue;
+    this.onchainQueue = onchainQueue;
     this.mailingSerivce = mailingSerivce;
     this.chain = chain;
     this.chainId = chain.id;
@@ -33,10 +65,25 @@ export class BlockDetectionService extends OnchainWorker {
   }
   chainId: string;
   web3Service: Web3Service;
+  onchainQueue: OnchainQueueService;
   mailingSerivce: MailingService;
   provider: Provider;
   chain: ChainDocument;
-  nftItemService: NftItemService;
+  cancelAllOrdersQueue: Queue<LogsReturnValues>;
+  cancelOfferQueue: Queue<LogsReturnValues>;
+  creatorPayoutQueue: Queue<LogsReturnValues>;
+  deployContractQueue: Queue<LogsReturnValues>;
+  erc721BurnQueue: Queue<LogsReturnValues>;
+  erc721MintQueue: Queue<LogsReturnValues>;
+  erc721TransferQueue: Queue<LogsReturnValues>;
+  erc1155BurnQueue: Queue<LogsReturnValues>;
+  erc1155MintQueue: Queue<LogsReturnValues>;
+  erc1155TransferQueue: Queue<LogsReturnValues>;
+  payerUpdateQueue: Queue<LogsReturnValues>;
+  phaseDropQueue: Queue<LogsReturnValues>;
+  takerAskQueue: Queue<LogsReturnValues>;
+  takerBidQueue: Queue<LogsReturnValues>;
+  upgradeContractQueue: Queue<LogsReturnValues>;
   blockModel: Model<BlockDocument>;
 
   fetchLatestBlock: () => Promise<number> = async () => {
@@ -107,7 +154,7 @@ export class BlockDetectionService extends OnchainWorker {
       },
     );
 
-    const batchProcess = 100;
+    const batchProcess = 250;
     const maxRetry = 10;
     //batch process 10 txs, max retry 10 times
     await arraySliceProcess(
@@ -213,14 +260,83 @@ export class BlockDetectionService extends OnchainWorker {
       //process event
       let index = 0;
       for (const event of eventlogs) {
-        await this.nftItemService.processEvent(event, this.chain, index);
+        event.index = index;
+        let queue: Queue<LogsReturnValues> = null;
+        let jobName: string = null;
+        switch (event.eventType) {
+          case EventType.CANCEL_ALL_ORDERS:
+            queue = this.cancelAllOrdersQueue;
+            jobName = ONCHAIN_JOBS.JOB_CANCEL_ALL_ORDERS;
+            break;
+          case EventType.CANCEL_OFFER:
+            queue = this.cancelOfferQueue;
+            jobName = ONCHAIN_JOBS.JOB_CANCEL_OFFER;
+            break;
+          case EventType.CREATOR_PAYOUT_UPDATED:
+            queue = this.creatorPayoutQueue;
+            jobName = ONCHAIN_JOBS.JOB_CREATOR_PAYOUT_UPDATED;
+            break;
+          case EventType.DEPLOY_CONTRACT:
+            queue = this.deployContractQueue;
+            jobName = ONCHAIN_JOBS.JOB_DEPLOY_CONTRACT;
+            break;
+          case EventType.BURN_721:
+            queue = this.erc721BurnQueue;
+            jobName = ONCHAIN_JOBS.JOB_BURN_721;
+            break;
+          case EventType.MINT_721:
+            queue = this.erc721MintQueue;
+            jobName = ONCHAIN_JOBS.JOB_MINT_721;
+            break;
+          case EventType.TRANSFER_721:
+            queue = this.erc721TransferQueue;
+            jobName = ONCHAIN_JOBS.JOB_TRANSFER_721;
+            break;
+          case EventType.BURN_1155:
+            queue = this.erc1155BurnQueue;
+            jobName = ONCHAIN_JOBS.JOB_BURN_1155;
+            break;
+          case EventType.MINT_1155:
+            queue = this.erc1155MintQueue;
+            jobName = ONCHAIN_JOBS.JOB_MINT_1155;
+            break;
+          case EventType.TRANSFER_1155:
+            queue = this.erc1155TransferQueue;
+            jobName = ONCHAIN_JOBS.JOB_TRANSFER_1155;
+            break;
+          case EventType.PAYER_UPDATED:
+            queue = this.payerUpdateQueue;
+            jobName = ONCHAIN_JOBS.JOB_PAYER_UPDATED;
+            break;
+          case EventType.PHASE_DROP_UPDATED:
+            queue = this.phaseDropQueue;
+            jobName = ONCHAIN_JOBS.JOB_PHASE_DROP_UPDATED;
+            break;
+          case EventType.TAKER_ASK:
+            queue = this.takerAskQueue;
+            jobName = ONCHAIN_JOBS.JOB_TAKER_ASK;
+            break;
+          case EventType.TAKER_BID:
+            queue = this.takerBidQueue;
+            jobName = ONCHAIN_JOBS.JOB_TAKER_BID;
+            break;
+          case EventType.UPGRADE_CONTRACT:
+            queue = this.upgradeContractQueue;
+            jobName = ONCHAIN_JOBS.JOB_UPGRADE_CONTRACT;
+            break;
+        }
+
+        if (queue && jobName) {
+          await this.onchainQueue.add(queue, jobName, event);
+        }
         index++;
       }
       return trasactionReceipt;
     } catch (error) {
-      await this.mailingSerivce.sendMail(
-        `Failed to fetch data of tx hash - ${txHash}`,
-      );
+      // await this.mailingSerivce.sendMail(
+      //   `Failed to fetch data of tx hash - ${txHash}`,
+      // );
+
       throw new Error(`Failed to fetch data of tx Hash - ${txHash}`);
     }
   }
