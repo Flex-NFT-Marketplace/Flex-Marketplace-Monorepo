@@ -1,7 +1,3 @@
-import { Module } from '@nestjs/common';
-import { BlockDetectionController } from './block-detection.controller';
-import { Web3Service } from '@app/web3-service/web3.service';
-import { MongooseModule } from '@nestjs/mongoose';
 import {
   BlockSchema,
   Blocks,
@@ -26,13 +22,34 @@ import {
   UserSchema,
   Users,
 } from '@app/shared/models';
-import { BullModule } from '@nestjs/bull';
 import {
   MQ_JOB_DEFAULT_CONFIG,
   ONCHAIN_QUEUES,
   QUEUE_METADATA,
 } from '@app/shared/types';
-import { OnchainQueueService } from './queue';
+import { BullModule } from '@nestjs/bull';
+import { Module } from '@nestjs/common';
+import { MongooseModule } from '@nestjs/mongoose';
+import { Web3Service } from '@app/web3-service/web3.service';
+import { NftItemService } from './nft-item.service';
+import { UserService } from '../users/user.service';
+import {
+  CancelAllOrdersProcessor,
+  CancelOfferProcessor,
+  CreatorPayoutUpdatedProcessor,
+  DeployContractProcessor,
+  ERC1155BurnProcessor,
+  ERC1155MintProcessor,
+  ERC1155TransferProcessor,
+  ERC721BurnProcessor,
+  ERC721MintProcessor,
+  ERC721TransferProcessor,
+  PayerUpdatedProcessor,
+  PhaseDropUpdatedProcessor,
+  TakerAskProcessor,
+  TakerBidProcessor,
+  UpgradeContractProcessor,
+} from './processors';
 
 @Module({
   imports: [
@@ -116,7 +133,25 @@ import { OnchainQueueService } from './queue';
       },
     ),
   ],
-  providers: [OnchainQueueService, Web3Service],
-  controllers: [BlockDetectionController],
+  providers: [
+    NftItemService,
+    UserService,
+    Web3Service,
+    ERC721MintProcessor,
+    CancelAllOrdersProcessor,
+    CancelOfferProcessor,
+    CreatorPayoutUpdatedProcessor,
+    DeployContractProcessor,
+    ERC721BurnProcessor,
+    ERC721TransferProcessor,
+    ERC1155BurnProcessor,
+    ERC1155MintProcessor,
+    ERC1155TransferProcessor,
+    PayerUpdatedProcessor,
+    PhaseDropUpdatedProcessor,
+    TakerAskProcessor,
+    TakerBidProcessor,
+    UpgradeContractProcessor,
+  ],
 })
-export class BlockDetectionModule {}
+export class OnchainQueueModule {}

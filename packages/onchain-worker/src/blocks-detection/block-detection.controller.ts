@@ -9,7 +9,6 @@ import {
 } from '@app/shared/models';
 import { Model } from 'mongoose';
 import { Web3Service } from '@app/web3-service/web3.service';
-import { MailingService } from '../mailing/mailing.service';
 import { OnchainQueueService } from './queue/onchainQueue';
 import { ONCHAIN_QUEUES } from '@app/shared/types';
 import { InjectQueue } from '@nestjs/bull';
@@ -55,7 +54,6 @@ export class BlockDetectionController {
     private readonly upgradeContractQueue: Queue<LogsReturnValues>,
     private readonly onchainQueueService: OnchainQueueService,
     private readonly web3Service: Web3Service,
-    private readonly maillingService: MailingService,
   ) {
     if (!this.listeners) this.init();
   }
@@ -87,7 +85,6 @@ export class BlockDetectionController {
             this.blockModel,
             this.web3Service,
             chain,
-            this.maillingService,
           ),
       );
 
