@@ -78,7 +78,7 @@ export abstract class OnchainWorker {
       //   }
       // }
 
-      const datas = await this.blockDataBuffer.takeAll(4);
+      const datas = await this.blockDataBuffer.takeAll(1);
       let done = false;
       while (!done) {
         try {

@@ -5,7 +5,23 @@ import { BullModule } from '@nestjs/bull';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import configuration from '@app/shared/configuration';
 import { MongooseModule } from '@nestjs/mongoose';
-import { OnchainQueueModule } from './queues/queue.module';
+import {
+  CancelAllOrderQueueModule,
+  CancelOfferQueueModule,
+  CreatorPayoutUpdatedQueueModule,
+  DeployContractQueueModule,
+  Erc1155BurnQueueModule,
+  Erc1155MintQueueModule,
+  Erc1155TransferQueueModule,
+  Erc721BurnQueueModule,
+  Erc721MintQueueModule,
+  Erc721TransferQueueModule,
+  PayerUpdatedQueueModule,
+  PhaseDropUpdatedQueueModule,
+  TakerAskQueueModule,
+  TakerBidQueueModule,
+  UpgradeContractQueueModule,
+} from './queues';
 
 @Module({
   imports: [
@@ -24,7 +40,21 @@ import { OnchainQueueModule } from './queues/queue.module';
       }),
       inject: [ConfigService],
     }),
-    OnchainQueueModule,
+    CancelAllOrderQueueModule,
+    CancelOfferQueueModule,
+    CreatorPayoutUpdatedQueueModule,
+    DeployContractQueueModule,
+    Erc721BurnQueueModule,
+    Erc721MintQueueModule,
+    Erc721TransferQueueModule,
+    Erc1155BurnQueueModule,
+    Erc1155MintQueueModule,
+    Erc1155TransferQueueModule,
+    PayerUpdatedQueueModule,
+    PhaseDropUpdatedQueueModule,
+    TakerAskQueueModule,
+    TakerBidQueueModule,
+    UpgradeContractQueueModule,
   ],
   controllers: [AppController],
   providers: [AppService],
