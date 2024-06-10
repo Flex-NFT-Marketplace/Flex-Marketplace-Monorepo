@@ -11,10 +11,10 @@ import { BlockStatus, Block, Provider, RpcProvider } from 'starknet';
 import { arraySliceProcess } from '@app/shared/utils/arrayLimitProcess';
 import { retryUntil } from '@app/shared';
 import { EventType, LogsReturnValues } from '@app/web3-service/types';
-import { MailingService } from '../mailing/mailing.service';
 import { ONCHAIN_JOBS } from '@app/shared/types';
 import { Queue } from 'bull';
 import { OnchainQueueService } from './queue';
+import { ERC721TransferReturnValue } from '@app/web3-service/decodeEvent';
 
 export class BlockDetectionService extends OnchainWorker {
   constructor(
@@ -37,7 +37,6 @@ export class BlockDetectionService extends OnchainWorker {
     blockModel: Model<BlockDocument>,
     web3Service: Web3Service,
     chain: ChainDocument,
-    mailingSerivce: MailingService,
   ) {
     super(1000, 10, `${BlockDetectionService.name}:${chain.name}`);
     this.logger.log('Created');
@@ -58,7 +57,6 @@ export class BlockDetectionService extends OnchainWorker {
     this.takerBidQueue = takerBidQueue;
     this.upgradeContractQueue = upgradeContractQueue;
     this.onchainQueue = onchainQueue;
-    this.mailingSerivce = mailingSerivce;
     this.chain = chain;
     this.chainId = chain.id;
     this.blockModel = blockModel;
@@ -66,7 +64,6 @@ export class BlockDetectionService extends OnchainWorker {
   chainId: string;
   web3Service: Web3Service;
   onchainQueue: OnchainQueueService;
-  mailingSerivce: MailingService;
   provider: Provider;
   chain: ChainDocument;
   cancelAllOrdersQueue: Queue<LogsReturnValues>;
@@ -281,16 +278,43 @@ export class BlockDetectionService extends OnchainWorker {
             jobName = ONCHAIN_JOBS.JOB_DEPLOY_CONTRACT;
             break;
           case EventType.BURN_721:
-            queue = this.erc721BurnQueue;
-            jobName = ONCHAIN_JOBS.JOB_BURN_721;
+            const { nftAddress: nftAddressBurned } =
+              event.returnValues as ERC721TransferReturnValue;
+            const collectionBurnedInfo =
+              await this.web3Service.getNFTCollectionDetail(
+                nftAddressBurned,
+                this.chain.rpc,
+              );
+            if (collectionBurnedInfo) {
+              queue = this.erc721BurnQueue;
+              jobName = ONCHAIN_JOBS.JOB_BURN_721;
+            }
             break;
           case EventType.MINT_721:
-            queue = this.erc721MintQueue;
-            jobName = ONCHAIN_JOBS.JOB_MINT_721;
+            const { nftAddress: nftAddressMinted } =
+              event.returnValues as ERC721TransferReturnValue;
+            const collectionMintedInfo =
+              await this.web3Service.getNFTCollectionDetail(
+                nftAddressMinted,
+                this.chain.rpc,
+              );
+            if (collectionMintedInfo) {
+              queue = this.erc721MintQueue;
+              jobName = ONCHAIN_JOBS.JOB_MINT_721;
+            }
             break;
           case EventType.TRANSFER_721:
-            queue = this.erc721TransferQueue;
-            jobName = ONCHAIN_JOBS.JOB_TRANSFER_721;
+            const { nftAddress } =
+              event.returnValues as ERC721TransferReturnValue;
+            const collectionInfo =
+              await this.web3Service.getNFTCollectionDetail(
+                nftAddress,
+                this.chain.rpc,
+              );
+            if (collectionInfo) {
+              queue = this.erc721TransferQueue;
+              jobName = ONCHAIN_JOBS.JOB_TRANSFER_721;
+            }
             break;
           case EventType.BURN_1155:
             queue = this.erc1155BurnQueue;

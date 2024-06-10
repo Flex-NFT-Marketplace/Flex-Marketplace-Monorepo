@@ -11,42 +11,32 @@ import { retryUntil } from '@app/shared/index';
 import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bull';
 
-@Processor(ONCHAIN_QUEUES.QUEUE_TAKER_ASK)
-export class TakerAskProcessor {
+@Processor(ONCHAIN_QUEUES.QUEUE_TAKER_BID)
+export class TakerBidProcessor {
   constructor(
     private readonly nftItemService: NftItemService,
     @InjectModel(Chains.name) private readonly chainModel: Model<ChainDocument>,
-    @InjectQueue(ONCHAIN_QUEUES.QUEUE_TAKER_ASK)
+    @InjectQueue(ONCHAIN_QUEUES.QUEUE_TAKER_BID)
     private readonly queue: Queue<LogsReturnValues>,
-  ) {
-    if (!this.chain) this.init();
-  }
+  ) {}
 
-  chain: ChainDocument;
-  logger = new Logger(TakerAskProcessor.name);
+  logger = new Logger(TakerBidProcessor.name);
 
-  async init() {
-    this.chain = await this.chainModel.findOne();
-  }
-
-  @Process({ name: ONCHAIN_JOBS.JOB_TAKER_ASK, concurrency: 100 })
+  @Process({ name: ONCHAIN_JOBS.JOB_TAKER_BID, concurrency: 100 })
   async detectEvent(job: Job<LogsReturnValues>) {
     const event = job.data;
     const maxRetry = 10;
+    const chain = await this.chainModel.findOne();
     try {
       await retryUntil(
         async () =>
-          await this.nftItemService.processEvent(
-            event,
-            this.chain,
-            event.index,
-          ),
+          await this.nftItemService.processEvent(event, chain, event.index),
         () => true,
         maxRetry,
       );
     } catch (error) {
       this.logger.error(`Failed to detect tx hash ${event.transaction_hash}`);
-      this.queue.add(ONCHAIN_JOBS.JOB_TAKER_ASK, event);
+      this.queue.add(ONCHAIN_JOBS.JOB_TAKER_BID, event);
     }
   }
 }
