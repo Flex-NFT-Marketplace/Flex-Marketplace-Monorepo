@@ -18,29 +18,19 @@ export class DeployContractProcessor {
     @InjectModel(Chains.name) private readonly chainModel: Model<ChainDocument>,
     @InjectQueue(ONCHAIN_QUEUES.QUEUE_DEPLOY_CONTRACT)
     private readonly queue: Queue<LogsReturnValues>,
-  ) {
-    if (!this.chain) this.init();
-  }
+  ) {}
 
-  chain: ChainDocument;
   logger = new Logger(DeployContractProcessor.name);
-
-  async init() {
-    this.chain = await this.chainModel.findOne();
-  }
 
   @Process({ name: ONCHAIN_JOBS.JOB_DEPLOY_CONTRACT, concurrency: 100 })
   async detectEvent(job: Job<LogsReturnValues>) {
     const event = job.data;
     const maxRetry = 10;
+    const chain = await this.chainModel.findOne();
     try {
       await retryUntil(
         async () =>
-          await this.nftItemService.processEvent(
-            event,
-            this.chain,
-            event.index,
-          ),
+          await this.nftItemService.processEvent(event, chain, event.index),
         () => true,
         maxRetry,
       );
