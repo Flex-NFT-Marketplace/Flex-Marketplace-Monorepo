@@ -1,3 +1,4 @@
+import { delay } from '@app/shared/utils';
 import { Injectable, Logger } from '@nestjs/common';
 import { Queue } from 'bull';
 
@@ -12,13 +13,20 @@ export class OnchainQueueService {
     ignoreError = true,
   ) => {
     try {
-      const count = await eventQueue.count();
+      let isFull = true;
+      while (isFull) {
+        const count = await eventQueue.count();
 
-      if (count > this.queueMaxSize) {
-        throw new Error(
-          `Max queue waiting ${eventQueue.name} job exception.Waiting job is ${count}, limit: ${this.queueMaxSize}`,
-        );
+        if (count > this.queueMaxSize) {
+          this.logger.warn(
+            `Max queue waiting ${eventQueue.name} job exception.Waiting job is ${count}, limit: ${this.queueMaxSize}`,
+          );
+          await delay(1);
+        } else {
+          isFull = false;
+        }
       }
+
       return await eventQueue.add(jobName, payload);
     } catch (error) {
       this.logger.warn(error);
