@@ -139,6 +139,9 @@ export class AuthService {
       signature: formatSignature,
       rpc,
     });
-    return dataToken;
+    return {
+      dataToken,
+      signature: formatSignature,
+    };
   }
 }
