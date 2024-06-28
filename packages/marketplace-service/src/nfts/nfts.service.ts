@@ -5,7 +5,7 @@ import { PaginationDto } from '@app/shared/types/pagination.dto';
 import { Injectable } from '@nestjs/common';
 import { Model } from 'mongoose';
 import { UserService } from '../user/user.service';
-import { isValidObjectId } from '@app/shared/utils';
+import { isValidObjectId, formattedContractAddress } from '@app/shared/utils';
 import { NftFilterQueryParams } from './dto/nftQuery.dto';
 @Injectable()
 export class NftService {
@@ -21,16 +21,18 @@ export class NftService {
     let filter: any = {};
     if (query.owner) {
       if (isValidObjectId(query.owner)) {
-        filter.owner = query.owner;
+        filter.owner = formattedContractAddress(query.owner);
       } else {
-        const user = this.userService.getUser(query.owner);
+        const user = this.userService.getUser(
+          formattedContractAddress(query.owner),
+        );
         if (user) {
           filter.owner = (await user)._id;
         }
       }
     }
     if (query.nftContract) {
-      filter.nftContract = query.nftContract;
+      filter.nftContract = formattedContractAddress(query.nftContract);
     }
     if (query.tokenId) {
       filter.tokenId = query.tokenId;
