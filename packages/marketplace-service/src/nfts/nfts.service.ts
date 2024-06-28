@@ -61,7 +61,6 @@ export class NftService {
       .skip(query.skipIndex)
       .limit(query.size)
       .exec();
-
     return new PaginationDto(items, count, query.page, query.size);
   }
 }
