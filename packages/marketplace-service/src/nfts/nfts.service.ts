@@ -60,9 +60,9 @@ export class NftService {
       .sort(query.sort)
       .skip(query.skipIndex)
       .limit(query.size)
-      .populate(['owner', 'nftCollection'])
       .exec();
 
     return new PaginationDto(items, count, query.page, query.size);
   }
 }
+//.populate(['owner', 'nftCollection'])
