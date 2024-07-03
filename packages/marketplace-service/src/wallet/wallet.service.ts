@@ -97,7 +97,7 @@ export class WalletService {
 
     const newPayer = await this.usersModel.create(newUser);
     newPayer.save();
-    console.log('Why User', newPayer);
+
     await this.usersModel.findOneAndUpdate(
       {
         address: creatorAddress,
@@ -435,10 +435,19 @@ export class WalletService {
         `User Address argentx already deploy at: ${userExist.mappingAddress.deployHash}`,
       );
     }
+
     const payerAddress = userExist.mappingAddress.address;
     const decodePrivateKey = decryptData(userExist.mappingAddress.privateKey);
     const provider = new Provider({ nodeUrl: RPC_PROVIDER.TESTNET });
     const accountAX = new Account(provider, payerAddress, decodePrivateKey);
+
+    const balanceEth = await this.getBalanceEth(accountAX, provider);
+    if (Number(formatBalance(balanceEth, 18)) < amount) {
+      throw new BadRequestException(
+        `Insufficient ETH balance to withdraw, Your Balance: ${formatBalance(balanceEth, 18)} ETH`,
+      );
+    }
+
     const { transaction_hash } = await accountAX.execute({
       contractAddress: COMMON_CONTRACT_ADDRESS.ETH,
       entrypoint: 'transfer',

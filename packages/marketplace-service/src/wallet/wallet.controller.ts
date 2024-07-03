@@ -170,18 +170,8 @@ export class WalletController {
     },
   })
   async getBalanceWallet(@User() user: iInfoToken) {
-    try {
-      const data = await this.walletService.getBalancePayer(user.sub);
-      return new BaseResult({
-        success: true,
-        data,
-      });
-    } catch (error) {
-      return new BaseResult({
-        success: false,
-        error: error.message,
-      });
-    }
+    const data = await this.walletService.getBalancePayer(user.sub);
+    return new BaseResult(data);
   }
 
   @JWT()
@@ -220,33 +210,20 @@ export class WalletController {
     },
   })
   async withdraw(@Body() withdrawDto: WidthDrawDTO, @User() user: iInfoToken) {
-    try {
-      if (withdrawDto.tokenType === TokenType.ETH) {
-        const data = await this.walletService.withDrawEth(
-          user.sub,
-          withdrawDto.reciverAddress,
-          withdrawDto.amount,
-        );
-        return new BaseResult({
-          success: true,
-          data,
-        });
-      } else if (withdrawDto.tokenType === TokenType.STRK) {
-        const data = await this.walletService.withDrawStrk(
-          user.sub,
-          withdrawDto.reciverAddress,
-          withdrawDto.amount,
-        );
-        return new BaseResult({
-          success: true,
-          data,
-        });
-      }
-    } catch (error) {
-      return new BaseResult({
-        success: false,
-        error: error.message,
-      });
+    if (withdrawDto.tokenType === TokenType.ETH) {
+      const data = await this.walletService.withDrawEth(
+        user.sub,
+        withdrawDto.reciverAddress,
+        withdrawDto.amount,
+      );
+      return new BaseResult(data);
+    } else if (withdrawDto.tokenType === TokenType.STRK) {
+      const data = await this.walletService.withDrawStrk(
+        user.sub,
+        withdrawDto.reciverAddress,
+        withdrawDto.amount,
+      );
+      return new BaseResult(data);
     }
   }
 }

@@ -7,6 +7,7 @@ import { PaginationDto } from '@app/shared/types/pagination.dto';
 import { formattedContractAddress, isValidObjectId } from '@app/shared/utils';
 import { UserService } from '../user/user.service';
 import { NftCollectionQueryParams } from './dto/nftCollectionQuery.dto';
+import { BaseResultPagination } from '@app/shared/types';
 @Injectable()
 export class NftCollectionsService {
   constructor(
@@ -17,7 +18,8 @@ export class NftCollectionsService {
   ) {}
   async getListNFTCollections(
     query: NftCollectionQueryParams,
-  ): Promise<PaginationDto<NftCollectionDto>> {
+  ): Promise<BaseResultPagination<NftCollectionDto>> {
+    const result = new BaseResultPagination<NftCollectionDto>();
     const {
       nftContract,
       standard,
@@ -30,6 +32,7 @@ export class NftCollectionsService {
       page,
       name,
     } = query;
+
     const filter: any = {};
     if (standard) {
       filter.standard = standard;
@@ -60,30 +63,38 @@ export class NftCollectionsService {
       }
     }
     const count = await this.nftCollectionModel.countDocuments(filter);
+    if (size === 0) {
+      result.data = new PaginationDto<NftCollectionDto>([], count, page, size);
+      return result;
+    }
     const items = await this.nftCollectionModel
       .find(filter)
       .sort(sort)
       .skip(skipIndex)
       .limit(size)
-      .populate([
-        {
-          path: 'owner',
-          select: 'address username avatar cover isVerified',
-        },
-        {
-          path: 'collaboratories',
-          select: 'address',
-        },
-        'paymentTokens',
-      ])
+      .populate('paymentTokens')
       .exec();
-    return new PaginationDto(items, count, page, size);
+    result.data = new PaginationDto(items, count, page, size);
+    return result;
   }
 
   async getNFTCollectionDetail(nftContract: string) {
+    const formatedAddress = formattedContractAddress(nftContract);
     const data = (
-      await this.nftCollectionModel.findOne({ nftContract })
-    ).populate(['paymentTokens']);
+      await this.nftCollectionModel.findOne({
+        nftContract: formatedAddress,
+      })
+    ).populate([
+      {
+        path: 'owner',
+        select: 'address username avatar cover isVerified',
+      },
+      {
+        path: 'collaboratories',
+        select: 'address',
+      },
+      'paymentTokens',
+    ]);
 
     return data;
   }
