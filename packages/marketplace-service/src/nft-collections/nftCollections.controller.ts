@@ -66,15 +66,12 @@ export class NftCollectionsController {
   async getListNFTCollections(@Body() query: NftCollectionQueryParams) {
     try {
       const data = await this.nftCollectionService.getListNFTCollections(query);
-      return new BaseResult({
-        success: true,
-        data: data,
-      });
+      return new BaseResult(data);
     } catch (error) {
-      return new BaseResult({
+      return {
         success: false,
         error: error.message,
-      });
+      };
     }
   }
   @Get('/:nftContract')
@@ -125,15 +122,12 @@ export class NftCollectionsController {
     try {
       const data =
         await this.nftCollectionService.getNFTCollectionDetail(nftContract);
-      return new BaseResult({
-        success: true,
-        data: data,
-      });
+      return new BaseResult(data);
     } catch (error) {
-      return new BaseResult({
+      return {
         success: false,
         error: error.message,
-      });
+      };
     }
   }
 }
