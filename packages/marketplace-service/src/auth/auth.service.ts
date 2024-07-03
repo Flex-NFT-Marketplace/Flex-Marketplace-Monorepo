@@ -1,5 +1,9 @@
 import { JwtService } from '@nestjs/jwt';
-import { Injectable } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  BadRequestException,
+} from '@nestjs/common';
 import { UserService } from '../user/user.service';
 import configuration from '@app/shared/configuration';
 
@@ -84,7 +88,7 @@ export class AuthService {
 
       return convertDataIntoString(result);
     } catch (error) {
-      throw new Error(error);
+      throw new BadRequestException(error.message);
     }
   }
 
@@ -95,7 +99,7 @@ export class AuthService {
     };
     const data = await this.verifySignature(address, signature, rpc);
     if (!data) {
-      throw new Error('Signature is not valid');
+      throw new UnauthorizedException('Signature is not valid');
     }
 
     const token = await this.generateToken(accessPayload);
@@ -139,6 +143,9 @@ export class AuthService {
       signature: formatSignature,
       rpc,
     });
-    return dataToken;
+    return {
+      dataToken,
+      signature: formatSignature,
+    };
   }
 }

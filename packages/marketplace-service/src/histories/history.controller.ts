@@ -1,7 +1,13 @@
 import { HistoryDto } from '@app/shared/models';
 import { BaseResultPagination } from '@app/shared/types';
 import { PaginationDto } from '@app/shared/types/pagination.dto';
-import { Controller, Post, HttpCode, Body } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  HttpCode,
+  Body,
+  BadRequestException,
+} from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
@@ -47,16 +53,11 @@ export class HistoryController {
       ],
     },
   })
-  async getHistories(
-    @Body() params: QueryHistoriesDto,
-  ): Promise<BaseResultPagination<HistoryDto>> {
+  async getHistories(@Body() params: QueryHistoriesDto) {
     try {
-      return await this.historyService.getHistories(params);
+      await this.historyService.getHistories(params);
     } catch (error) {
-      return {
-        success: false,
-        errors: error.message,
-      };
+      return new BadRequestException(error.message);
     }
   }
 }

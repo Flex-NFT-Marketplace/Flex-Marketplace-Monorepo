@@ -3,16 +3,22 @@ import {
   ApiExtraModels,
   ApiOkResponse,
   getSchemaPath,
-  ApiInternalServerErrorResponse,
   ApiOperation,
 } from '@nestjs/swagger';
-import { Controller, Post, Body, HttpCode } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  HttpCode,
+  BadRequestException,
+} from '@nestjs/common';
 import { NftService } from './nfts.service';
 import { PaginationDto } from '@app/shared/types/pagination.dto';
 
 import { ChainDto, NftDto, PaymentTokenDto, UserDto } from '@app/shared/models';
-import { BaseResult } from '@app/shared/types/base.result';
+
 import { NftFilterQueryParams } from './dto/nftQuery.dto';
+import { BaseResultPagination } from '@app/shared/types';
 
 @ApiTags('NFTs')
 @Controller('nft')
@@ -37,14 +43,14 @@ export class NftController {
     schema: {
       allOf: [
         {
-          $ref: getSchemaPath(BaseResult),
+          $ref: getSchemaPath(BaseResultPagination),
         },
         {
           properties: {
             data: {
               allOf: [
                 {
-                  $ref: getSchemaPath(PaginationDto),
+                  $ref: getSchemaPath(NftDto),
                 },
                 {
                   properties: {
@@ -63,33 +69,12 @@ export class NftController {
       ],
     },
   })
-  @ApiInternalServerErrorResponse({
-    description: '<b>Internal server error</b>',
-    schema: {
-      allOf: [
-        {
-          $ref: getSchemaPath(BaseResult),
-          properties: {
-            errors: {
-              example: 'Error Message',
-            },
-            success: {
-              example: false,
-            },
-          },
-        },
-      ],
-    },
-  })
   async getNfts(@Body() query: NftFilterQueryParams) {
     try {
       const data = await this.nftsService.getNftsByQuery(query);
       return data;
     } catch (error) {
-      return new BaseResult({
-        success: false,
-        error: error.message,
-      });
+      return new BadRequestException(error.message);
     }
   }
 }

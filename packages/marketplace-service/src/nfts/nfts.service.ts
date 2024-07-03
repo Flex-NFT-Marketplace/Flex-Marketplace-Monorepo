@@ -5,8 +5,9 @@ import { PaginationDto } from '@app/shared/types/pagination.dto';
 import { Injectable } from '@nestjs/common';
 import { Model } from 'mongoose';
 import { UserService } from '../user/user.service';
-import { isValidObjectId } from '@app/shared/utils';
+import { isValidObjectId, formattedContractAddress } from '@app/shared/utils';
 import { NftFilterQueryParams } from './dto/nftQuery.dto';
+import { BaseResultPagination } from '@app/shared/types';
 @Injectable()
 export class NftService {
   constructor(
@@ -17,20 +18,23 @@ export class NftService {
 
   async getNftsByQuery(
     query: NftFilterQueryParams,
-  ): Promise<PaginationDto<NftDto>> {
+  ): Promise<BaseResultPagination<NftDto>> {
+    const result = new BaseResultPagination<NftDto>();
     let filter: any = {};
     if (query.owner) {
       if (isValidObjectId(query.owner)) {
-        filter.owner = query.owner;
+        filter.owner = formattedContractAddress(query.owner);
       } else {
-        const user = this.userService.getUser(query.owner);
+        const user = this.userService.getUser(
+          formattedContractAddress(query.owner),
+        );
         if (user) {
           filter.owner = (await user)._id;
         }
       }
     }
     if (query.nftContract) {
-      filter.nftContract = query.nftContract;
+      filter.nftContract = formattedContractAddress(query.nftContract);
     }
     if (query.tokenId) {
       filter.tokenId = query.tokenId;
@@ -53,14 +57,19 @@ export class NftService {
     }
 
     const count = await this.nftModel.countDocuments(filter);
+    if (query.size === 0) {
+      result.data = new PaginationDto([], count, query.page, query.size);
+      return result;
+    }
+
     const items = await this.nftModel
       .find(filter)
       .sort(query.sort)
       .skip(query.skipIndex)
       .limit(query.size)
-      .populate(['owner', 'nftCollection'])
       .exec();
-
-    return new PaginationDto(items, count, query.page, query.size);
+    result.data = new PaginationDto(items, count, query.page, query.size);
+    return result;
   }
 }
+//.populate(['owner', 'nftCollection'])

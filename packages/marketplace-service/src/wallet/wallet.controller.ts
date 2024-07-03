@@ -9,13 +9,17 @@ import {
 } from '@nestjs/swagger';
 import { WalletService } from './wallet.service';
 import { JWT, User } from '@app/shared/modules';
-import { CreateWalletReqDTO, CreateWalletResDTO } from './dto/wallet.dto';
+import {
+  CreateWalletReqDTO,
+  CreateWalletResDTO,
+  WidthDrawDTO,
+} from './dto/wallet.dto';
 import { BaseResult } from '@app/shared/types';
 import { iInfoToken } from '@app/shared/modules/jwt/jwt.dto';
 import { TokenType } from '@app/shared/models';
 
 @ApiTags('Wallet')
-@ApiExtraModels(CreateWalletResDTO, CreateWalletReqDTO)
+@ApiExtraModels(CreateWalletResDTO, CreateWalletReqDTO, WidthDrawDTO)
 @Controller('wallet')
 export class WalletController {
   constructor(private readonly walletService: WalletService) {}
@@ -70,28 +74,14 @@ export class WalletController {
     @Body() createWalletDto: CreateWalletReqDTO,
     @User() user: iInfoToken,
   ) {
-    try {
-      const { feeType } = createWalletDto;
-      if (feeType == TokenType.ETH) {
-        const data = await this.walletService.createWalletByEth(user.sub);
-        return new BaseResult({
-          success: true,
-          data,
-        });
-      }
-      // } else if (feeType == TokenType.STRK) {
-      // Deploy Wallet By STRK
-      const data = await this.walletService.createWalletBySTRK(user.sub);
-      return new BaseResult({
-        success: true,
-        data,
-      });
-    } catch (error) {
-      return new BaseResult({
-        success: false,
-        error: error.message,
-      });
+    const { feeType } = createWalletDto;
+    if (feeType == TokenType.ETH) {
+      const data = await this.walletService.createWalletByEth(user.sub);
+      return new BaseResult(data);
     }
+    // Deploy Wallet By STRK
+    const data = await this.walletService.createWalletBySTRK(user.sub);
+    return new BaseResult(data);
   }
 
   @JWT()
@@ -133,26 +123,16 @@ export class WalletController {
     @Body() walletDto: CreateWalletReqDTO,
     @User() user: iInfoToken,
   ) {
-    try {
-      if (walletDto.feeType === TokenType.ETH) {
-        const data = await this.walletService.deployWalletByEth(user.sub);
-        return new BaseResult({
-          success: true,
-          data,
-        });
-      }
-      // Deploy By STRK
-      const data = await this.walletService.deployWalletByStrk(user.sub);
-      return new BaseResult({
-        success: true,
-        data,
-      });
-    } catch (error) {
-      return new BaseResult({
-        success: false,
-        error: error.message,
-      });
+    if (walletDto.feeType === TokenType.ETH) {
+      const data = await this.walletService.deployWalletByEth(user.sub);
+      return new BaseResult(data);
     }
+    // Deploy By STRK
+    // const data = await this.walletService.deployWalletByStrk(user.sub);
+    // return new BaseResult({
+    //   success: true,
+    //   data,
+    // });
   }
 
   @JWT()
@@ -190,17 +170,60 @@ export class WalletController {
     },
   })
   async getBalanceWallet(@User() user: iInfoToken) {
-    try {
-      const data = await this.walletService.getBalancePayer(user.sub);
-      return new BaseResult({
-        success: true,
-        data,
-      });
-    } catch (error) {
-      return new BaseResult({
-        success: false,
-        error: error.message,
-      });
+    const data = await this.walletService.getBalancePayer(user.sub);
+    return new BaseResult(data);
+  }
+
+  @JWT()
+  @Post('withdraw')
+  @HttpCode(200)
+  @ApiOperation({
+    summary: 'Width Draw ETH By Payer Address',
+    description:
+      'Utilize this API to enable users to generate a wallet directly within our marketplace when needed to a function',
+  })
+  @ApiOkResponse({
+    schema: {
+      allOf: [
+        {
+          $ref: getSchemaPath(BaseResult),
+        },
+      ],
+    },
+  })
+  @ApiInternalServerErrorResponse({
+    description: '<b>Internal server error</b>',
+    schema: {
+      allOf: [
+        {
+          $ref: getSchemaPath(BaseResult),
+          properties: {
+            errors: {
+              example: 'Error Message',
+            },
+            success: {
+              example: false,
+            },
+          },
+        },
+      ],
+    },
+  })
+  async withdraw(@Body() withdrawDto: WidthDrawDTO, @User() user: iInfoToken) {
+    if (withdrawDto.tokenType === TokenType.ETH) {
+      const data = await this.walletService.withDrawEth(
+        user.sub,
+        withdrawDto.reciverAddress,
+        withdrawDto.amount,
+      );
+      return new BaseResult(data);
+    } else if (withdrawDto.tokenType === TokenType.STRK) {
+      const data = await this.walletService.withDrawStrk(
+        user.sub,
+        withdrawDto.reciverAddress,
+        withdrawDto.amount,
+      );
+      return new BaseResult(data);
     }
   }
 }

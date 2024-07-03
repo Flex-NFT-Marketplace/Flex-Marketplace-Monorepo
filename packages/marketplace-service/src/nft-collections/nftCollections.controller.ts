@@ -2,20 +2,28 @@ import {
   ApiTags,
   ApiOperation,
   ApiExtraModels,
-  ApiInternalServerErrorResponse,
   getSchemaPath,
   ApiOkResponse,
 } from '@nestjs/swagger';
-import { Controller, Get, Body, Post, Param, HttpCode } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Body,
+  Post,
+  Param,
+  HttpCode,
+  BadRequestException,
+} from '@nestjs/common';
 import { NftCollectionsService } from './nftCollections.service';
 
 import { BaseResult } from '@app/shared/types/base.result';
 import { NftCollectionDto } from '@app/shared/models';
 import { NftCollectionQueryParams } from './dto/nftCollectionQuery.dto';
+import { PaginationDto } from '@app/shared/types/pagination.dto';
 
 @ApiTags('NFT Collections')
 @Controller('nft-collection')
-@ApiExtraModels(NftCollectionQueryParams, NftCollectionDto)
+@ApiExtraModels(NftCollectionQueryParams, NftCollectionDto, BadRequestException)
 export class NftCollectionsController {
   constructor(private readonly nftCollectionService: NftCollectionsService) {}
   @Post('/get-collections')
@@ -29,11 +37,11 @@ export class NftCollectionsController {
     schema: {
       allOf: [
         {
-          $ref: getSchemaPath(BaseResult),
+          $ref: getSchemaPath(PaginationDto),
         },
         {
           properties: {
-            data: {
+            items: {
               allOf: [
                 {
                   $ref: getSchemaPath(NftCollectionDto),
@@ -45,36 +53,12 @@ export class NftCollectionsController {
       ],
     },
   })
-  @ApiInternalServerErrorResponse({
-    description: '<b>Internal server error</b>',
-    schema: {
-      allOf: [
-        {
-          $ref: getSchemaPath(BaseResult),
-          properties: {
-            error: {
-              example: 'Error Message',
-            },
-            success: {
-              example: false,
-            },
-          },
-        },
-      ],
-    },
-  })
   async getListNFTCollections(@Body() query: NftCollectionQueryParams) {
     try {
       const data = await this.nftCollectionService.getListNFTCollections(query);
-      return new BaseResult({
-        success: true,
-        data: data,
-      });
+      return data;
     } catch (error) {
-      return new BaseResult({
-        success: false,
-        error: error.message,
-      });
+      return new BadRequestException(error.message);
     }
   }
   @Get('/:nftContract')
@@ -101,39 +85,13 @@ export class NftCollectionsController {
       ],
     },
   })
-  @ApiInternalServerErrorResponse({
-    description: '<b>Internal server error</b>',
-    schema: {
-      allOf: [
-        {
-          $ref: getSchemaPath(BaseResult),
-          properties: {
-            errors: {
-              example: 'Error Message',
-            },
-            success: {
-              example: false,
-            },
-          },
-        },
-      ],
-    },
-  })
-  async getNFTCollectionDetail(
-    @Param('nftContract') nftContract: string,
-  ): Promise<BaseResult<any>> {
+  async getNFTCollectionDetail(@Param('nftContract') nftContract: string) {
     try {
       const data =
         await this.nftCollectionService.getNFTCollectionDetail(nftContract);
-      return new BaseResult({
-        success: true,
-        data: data,
-      });
+      return new BaseResult(data);
     } catch (error) {
-      return new BaseResult({
-        success: false,
-        error: error.message,
-      });
+      throw new BadRequestException(error.message);
     }
   }
 }

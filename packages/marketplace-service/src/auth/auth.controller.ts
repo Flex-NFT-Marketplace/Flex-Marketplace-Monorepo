@@ -1,9 +1,16 @@
-import { Body, Controller, Get, Post, Query, HttpCode } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Post,
+  Query,
+  HttpCode,
+  BadRequestException,
+} from '@nestjs/common';
 import {
   ApiTags,
   ApiOkResponse,
   ApiExtraModels,
-  ApiInternalServerErrorResponse,
   getSchemaPath,
   ApiOperation,
 } from '@nestjs/swagger';
@@ -45,19 +52,6 @@ export class AuthController {
       ],
     },
   })
-  @ApiInternalServerErrorResponse({
-    description: '<b>Internal server error</b>',
-    schema: {
-      allOf: [
-        {
-          properties: {
-            error: { type: 'boolean' },
-            data: { type: 'object' },
-          },
-        },
-      ],
-    },
-  })
   async getNonce(
     @Query() query: GetNonceReqDto,
   ): Promise<BaseResult<GetNonceRspDto>> {
@@ -67,13 +61,11 @@ export class AuthController {
       query.address,
       user.nonce,
     );
-    return {
-      success: true,
-      data: {
-        nonce: user.nonce,
-        signMessage: message,
-      },
+    const result = {
+      nonce: user.nonce,
+      signMessage: message,
     };
+    return new BaseResult(result);
   }
 
   @Post('/token')
@@ -98,42 +90,9 @@ export class AuthController {
       ],
     },
   })
-  @ApiInternalServerErrorResponse({
-    description: '<b>Internal server error</b>',
-    schema: {
-      allOf: [
-        {
-          $ref: getSchemaPath(BaseResult),
-        },
-        {
-          properties: {
-            errors: {
-              example: 'Error Message',
-            },
-            data: {},
-            success: {
-              example: false,
-            },
-          },
-        },
-      ],
-    },
-  })
-  async connectWallet(
-    @Body() tokenDto: GetTokenReqDto,
-  ): Promise<BaseResult<GetTokenRspDto>> {
-    try {
-      const data = await this.authService.login(tokenDto);
-      return {
-        success: true,
-        data: data,
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error: error.message,
-      };
-    }
+  async connectWallet(@Body() tokenDto: GetTokenReqDto) {
+    const data = await this.authService.login(tokenDto);
+    return new BaseResult(data);
   }
 
   @Post('/test-sign')
@@ -160,19 +119,19 @@ export class AuthController {
       ],
     },
   })
-  @ApiInternalServerErrorResponse({
-    description: '<b>Internal server error</b>',
-    schema: {
-      allOf: [
-        {
-          properties: {
-            error: { type: 'boolean' },
-            data: { type: 'object' },
-          },
-        },
-      ],
-    },
-  })
+  // @ApiInternalServerErrorResponse({
+  //   description: '<b>Internal server error</b>',
+  //   schema: {
+  //     allOf: [
+  //       {
+  //         properties: {
+  //           error: { type: 'boolean' },
+  //           data: { type: 'object' },
+  //         },
+  //       },
+  //     ],
+  //   },
+  // })
   async testSign(
     @Body() testSignDto: GetSignatureTestDto,
   ): Promise<BaseResult<any>> {
@@ -180,7 +139,7 @@ export class AuthController {
       const address = formattedContractAddress(testSignDto.address);
       const user = await this.userService.getUser(address);
       if (!user) {
-        throw new Error('User not found');
+        throw new BadRequestException('User not found');
       }
       const data = await this.authService.testSignMessage({
         address: address,
@@ -189,12 +148,7 @@ export class AuthController {
       });
       return new BaseResult({ success: true, data: data });
     } catch (error) {
-      return new BaseResult({
-        success: false,
-        data: {
-          error: error.message,
-        },
-      });
+      throw new Error(error.message);
     }
   }
 }
