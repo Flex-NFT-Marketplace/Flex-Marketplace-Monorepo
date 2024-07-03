@@ -1,4 +1,10 @@
+import { BaseQueryParams } from '@app/shared/types';
 import { ApiProperty } from '@nestjs/swagger';
+
+export class TopNftCollectionQueryDto extends BaseQueryParams {
+  @ApiProperty()
+  nftContract?: string;
+}
 
 export class TopNftCollectionDto {
   @ApiProperty()

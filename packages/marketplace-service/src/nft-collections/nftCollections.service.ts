@@ -14,8 +14,11 @@ import { PaginationDto } from '@app/shared/types/pagination.dto';
 import { formattedContractAddress, isValidObjectId } from '@app/shared/utils';
 import { UserService } from '../user/user.service';
 import { NftCollectionQueryParams } from './dto/nftCollectionQuery.dto';
-import { BaseQueryParams, BaseResultPagination } from '@app/shared/types';
-import { TopNftCollectionDto } from './dto/topNftCollection.dto';
+import { BaseResultPagination } from '@app/shared/types';
+import {
+  TopNftCollectionDto,
+  TopNftCollectionQueryDto,
+} from './dto/topNftCollection.dto';
 @Injectable()
 export class NftCollectionsService {
   constructor(
@@ -89,19 +92,21 @@ export class NftCollectionsService {
   }
 
   async getTopNFTCollection(
-    query: BaseQueryParams,
+    query: TopNftCollectionQueryDto,
   ): Promise<BaseResultPagination<TopNftCollectionDto>> {
     const { page, size, skipIndex } = query;
 
     const result = new BaseResultPagination<TopNftCollectionDto>();
     const oneDay = Date.now() - 86400000;
     const sevenDay = Date.now() - 7 * 86400000;
+    const filter: any = { type: HistoryType.Sale };
+    if (query.nftContract) {
+      filter.nftContract = query.nftContract;
+    }
 
     const topNftCollection = await this.historyModel.aggregate([
       {
-        $match: {
-          type: HistoryType.Sale,
-        },
+        $match: filter,
       },
       {
         $group: {
@@ -272,7 +277,7 @@ export class NftCollectionsService {
       },
     ]);
 
-    const total = await this.nftCollectionModel.countDocuments();
+    const total = await this.nftCollectionModel.countDocuments(filter);
     result.data = new PaginationDto<TopNftCollectionDto>(
       topNftCollection,
       total,

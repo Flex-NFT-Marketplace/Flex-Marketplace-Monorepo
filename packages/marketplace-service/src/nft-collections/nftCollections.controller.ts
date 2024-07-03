@@ -14,7 +14,6 @@ import {
   HttpCode,
   BadRequestException,
   Inject,
-  UseInterceptors,
 } from '@nestjs/common';
 import { NftCollectionsService } from './nftCollections.service';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
@@ -22,9 +21,12 @@ import { Cache } from 'cache-manager';
 import { BaseResult } from '@app/shared/types/base.result';
 import { NftCollectionDto } from '@app/shared/models';
 import { NftCollectionQueryParams } from './dto/nftCollectionQuery.dto';
-import { BaseQueryParams, BaseResultPagination } from '@app/shared/types';
+import { BaseResultPagination } from '@app/shared/types';
 import { PaginationDto } from '@app/shared/types/pagination.dto';
-import { TopNftCollectionDto } from './dto/topNftCollection.dto';
+import {
+  TopNftCollectionDto,
+  TopNftCollectionQueryDto,
+} from './dto/topNftCollection.dto';
 
 @ApiTags('NFT Collections')
 @Controller('nft-collection')
@@ -103,9 +105,10 @@ export class NftCollectionsController {
     }
   }
 
-  @Post('top-collections')
+  @Post('economic')
   @ApiOperation({
-    summary: 'Get Top NFT Collection Base On Total Volume',
+    summary:
+      'Get Top NFT Collection Base On Total Vol, If there is no nft contract in filter',
   })
   @ApiOkResponse({
     schema: {
@@ -135,14 +138,14 @@ export class NftCollectionsController {
     },
   })
   async getTopCollection(
-    @Body() query: BaseQueryParams,
+    @Body() query: TopNftCollectionQueryDto,
   ): Promise<BaseResultPagination<TopNftCollectionDto>> {
     try {
-      const key = `top-collection - ${JSON.stringify(query)}`;
+      const key = `top-collection - ${JSON.stringify({ ...query })}`;
       let data = await this.cacheManager.get(key);
       if (!data) {
         data = await this.nftCollectionService.getTopNFTCollection(query);
-        await this.cacheManager.set(key, data, 24 * 60 * 60 * 1e3);
+        await this.cacheManager.set(key, data, 60 * 60 * 1e3);
       }
       return data;
     } catch (error) {
