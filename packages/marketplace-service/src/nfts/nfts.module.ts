@@ -10,7 +10,6 @@ import {
   UserSchema,
   Users,
 } from '@app/shared/models';
-
 import { UsersModule } from '../user/user.module';
 
 @Module({
