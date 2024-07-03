@@ -56,6 +56,8 @@ export class NftService {
       };
     }
 
+    filter.isBurned = query.isBurned ? query.isBurned : false;
+
     const count = await this.nftModel.countDocuments(filter);
     if (query.size === 0) {
       result.data = new PaginationDto([], count, query.page, query.size);
@@ -69,6 +71,7 @@ export class NftService {
       .limit(query.size)
       .exec();
     result.data = new PaginationDto(items, count, query.page, query.size);
+
     return result;
   }
 }

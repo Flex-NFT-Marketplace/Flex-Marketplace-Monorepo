@@ -11,12 +11,13 @@ import {
   Body,
   HttpCode,
   BadRequestException,
+  Inject,
 } from '@nestjs/common';
 import { NftService } from './nfts.service';
 import { PaginationDto } from '@app/shared/types/pagination.dto';
-
+import { CACHE_MANAGER, CacheTTL } from '@nestjs/cache-manager';
 import { ChainDto, NftDto, PaymentTokenDto, UserDto } from '@app/shared/models';
-
+import { Cache } from 'cache-manager';
 import { NftFilterQueryParams } from './dto/nftQuery.dto';
 import { BaseResultPagination } from '@app/shared/types';
 
@@ -31,7 +32,10 @@ import { BaseResultPagination } from '@app/shared/types';
   UserDto,
 )
 export class NftController {
-  constructor(private readonly nftsService: NftService) {}
+  constructor(
+    @Inject(CACHE_MANAGER) private cacheManager: Cache,
+    private readonly nftsService: NftService,
+  ) {}
   @Post('/get-nfts')
   @ApiOperation({
     summary: 'Get Nfts By Query params',
@@ -71,7 +75,12 @@ export class NftController {
   })
   async getNfts(@Body() query: NftFilterQueryParams) {
     try {
-      const data = await this.nftsService.getNftsByQuery(query);
+      let key = `get-nfts - ${JSON.stringify(query)}`;
+      let data = await this.cacheManager.get(key);
+      if (!data) {
+        data = await this.nftsService.getNftsByQuery(query);
+        await this.cacheManager.set(key, data, 300000);
+      }
       return data;
     } catch (error) {
       return new BadRequestException(error.message);

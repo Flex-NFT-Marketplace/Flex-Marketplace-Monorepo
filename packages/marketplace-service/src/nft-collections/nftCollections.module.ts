@@ -4,6 +4,8 @@ import { NftCollectionsService } from './nftCollections.service';
 import {
   DropPhaseSchema,
   DropPhases,
+  Histories,
+  HistorySchema,
   NftCollectionSchema,
   NftCollections,
   NftSchema,
@@ -38,6 +40,10 @@ import { UserService } from '../user/user.service';
       {
         name: DropPhases.name,
         schema: DropPhaseSchema,
+      },
+      {
+        name: Histories.name,
+        schema: HistorySchema,
       },
     ]),
   ],
