@@ -28,10 +28,17 @@ import {
   TopNftCollectionQueryDto,
 } from './dto/topNftCollection.dto';
 import { isValidAddress } from '@app/shared/utils';
+import { updateCollectionMetadataDto } from './dto/updateCollectionMetadata.dto';
+import { isHexadecimal } from 'class-validator';
 
 @ApiTags('NFT Collections')
 @Controller('nft-collection')
-@ApiExtraModels(NftCollectionQueryParams, NftCollectionDto, TopNftCollectionDto)
+@ApiExtraModels(
+  NftCollectionQueryParams,
+  NftCollectionDto,
+  TopNftCollectionDto,
+  updateCollectionMetadataDto,
+)
 export class NftCollectionsController {
   constructor(
     @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
@@ -171,6 +178,27 @@ export class NftCollectionsController {
       }
 
       return new BaseResult(0);
+    } catch (error) {
+      throw new Error(error);
+    }
+  }
+
+  @Post('update-collection-metadata')
+  @ApiOperation({
+    summary: 'update All NFTs metadata',
+  })
+  async updateCollectionMetadata(
+    @Body() body: updateCollectionMetadataDto,
+  ): Promise<BaseResult<boolean>> {
+    try {
+      if (!isHexadecimal(body.nftContract)) {
+        throw new Error('Invalid Address');
+      }
+      await this.nftCollectionService.updateCollectionMetadatas(
+        body.nftContract,
+      );
+
+      return new BaseResult(true);
     } catch (error) {
       throw new Error(error);
     }

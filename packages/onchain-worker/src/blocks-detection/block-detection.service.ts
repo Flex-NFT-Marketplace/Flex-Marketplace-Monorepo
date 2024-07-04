@@ -13,8 +13,8 @@ import { retryUntil } from '@app/shared';
 import { EventType, LogsReturnValues } from '@app/web3-service/types';
 import { ONCHAIN_JOBS } from '@app/shared/types';
 import { Queue } from 'bull';
-import { OnchainQueueService } from './queue';
 import { ERC721TransferReturnValue } from '@app/web3-service/decodeEvent';
+import { OnchainQueueService } from '@app/shared/utils/queue';
 
 export class BlockDetectionService extends OnchainWorker {
   constructor(

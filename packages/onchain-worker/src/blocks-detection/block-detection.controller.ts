@@ -9,11 +9,12 @@ import {
 } from '@app/shared/models';
 import { Model } from 'mongoose';
 import { Web3Service } from '@app/web3-service/web3.service';
-import { OnchainQueueService } from './queue/onchainQueue';
+
 import { ONCHAIN_QUEUES } from '@app/shared/types';
 import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bull';
 import { LogsReturnValues } from '@app/web3-service/types';
+import { OnchainQueueService } from '@app/shared/utils/queue';
 
 @Controller('block-detection')
 export class BlockDetectionController {
