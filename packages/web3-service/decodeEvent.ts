@@ -60,7 +60,7 @@ export const decodeUpgradedContract = (txReceipt: any, provider: Provider) => {
 export type ERC721TransferReturnValue = {
   from: string;
   to: string;
-  tokenId: number;
+  tokenId: string;
   nftAddress: string;
   timestamp: number;
   isFlexDropMinted?: boolean;
@@ -84,7 +84,7 @@ export const decodeERC721Transfer = (
       to: formattedContractAddress(
         num.toHex(parsedEvent.Transfer.to as BigNumberish),
       ),
-      tokenId: Number((parsedEvent.Transfer.token_id as bigint).toString()),
+      tokenId: (parsedEvent.Transfer.token_id as bigint).toString(),
       nftAddress,
       timestamp,
     };
@@ -106,11 +106,9 @@ export const decodeERC721Transfer = (
         to: formattedContractAddress(
           num.toHex(parsedEvent.Transfer.to as BigNumberish),
         ),
-        tokenId: Number(
-          (
-            uint256.uint256ToBN(parsedEvent.Transfer.token_id as any) as bigint
-          ).toString(),
-        ),
+        tokenId: (
+          uint256.uint256ToBN(parsedEvent.Transfer.token_id as any) as bigint
+        ).toString(),
         nftAddress,
         timestamp,
       };
@@ -125,7 +123,7 @@ export const decodeERC721Transfer = (
 export type ERC1155TransferReturnValue = {
   from: string;
   to: string;
-  tokenId: number;
+  tokenId: string;
   nftAddress: string;
   value: number;
   timestamp: number;
@@ -154,7 +152,7 @@ export const decodeERC115Transfer = (
       to: formattedContractAddress(
         num.toHex(parsedEvent.TransferSingle.to as BigNumberish),
       ),
-      tokenId: Number((parsedEvent.TransferSingle.id as bigint).toString()),
+      tokenId: (parsedEvent.TransferSingle.id as bigint).toString(),
       nftAddress,
       timestamp,
       value: Number((parsedEvent.TransferSingle.value as bigint).toString()),
@@ -178,7 +176,7 @@ export const decodeERC115Transfer = (
         to: formattedContractAddress(
           num.toHex(parsedEvent.TransferSingle.to as BigNumberish),
         ),
-        tokenId: Number((parsedEvent.TransferSingle.id as bigint).toString()),
+        tokenId: (parsedEvent.TransferSingle.id as bigint).toString(),
         nftAddress,
         timestamp,
         value: Number((parsedEvent.TransferSingle.value as bigint).toString()),
@@ -215,7 +213,7 @@ export const decodeERC115TransferBatch = (
       returnValues.push({
         from: fromAddress,
         to: toAddress,
-        tokenId: Number((ids[i] as bigint).toString()),
+        tokenId: (ids[i] as bigint).toString(),
         nftAddress,
         timestamp,
         value: Number((values[i] as bigint).toString()),
@@ -241,7 +239,7 @@ export const decodeERC115TransferBatch = (
         returnValues.push({
           from: fromAddress,
           to: toAddress,
-          tokenId: Number((ids[i] as bigint).toString()),
+          tokenId: (ids[i] as bigint).toString(),
           nftAddress,
           timestamp,
           value: Number((values[i] as bigint).toString()),
@@ -329,7 +327,7 @@ export type SaleReturnValue = {
   buyer: string;
   currency: string;
   collection: string;
-  tokenId: number;
+  tokenId: string;
   amount: number;
   price: number;
   timestamp: number;
@@ -364,7 +362,7 @@ export const decodeTakerBid = (
     collection: formattedContractAddress(
       num.toHex(parsedEvent.TakerBid.collection as BigNumberish),
     ),
-    tokenId: Number((parsedEvent.TakerBid.token_id as bigint).toString()),
+    tokenId: (parsedEvent.TakerBid.token_id as bigint).toString(),
     amount: Number((parsedEvent.TakerBid.amount as bigint).toString()),
     price: Number((parsedEvent.TakerBid.price as bigint).toString()),
     timestamp,
@@ -402,7 +400,7 @@ export const decodeTakerAsk = (
     collection: formattedContractAddress(
       num.toHex(parsedEvent.TakerAsk.collection as BigNumberish),
     ),
-    tokenId: Number((parsedEvent.TakerAsk.token_id as bigint).toString()),
+    tokenId: (parsedEvent.TakerAsk.token_id as bigint).toString(),
     amount: Number((parsedEvent.TakerAsk.amount as bigint).toString()),
     price: Number((parsedEvent.TakerAsk.price as bigint).toString()),
     timestamp,

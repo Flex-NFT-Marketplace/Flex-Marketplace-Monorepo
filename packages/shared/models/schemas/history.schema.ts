@@ -18,7 +18,7 @@ export class Histories extends BaseSchema {
   nft: NftDocument;
 
   @Prop()
-  tokenId: number;
+  tokenId: string;
 
   @Prop()
   nftContract: string;
