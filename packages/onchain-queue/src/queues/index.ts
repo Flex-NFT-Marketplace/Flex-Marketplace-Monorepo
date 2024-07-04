@@ -15,3 +15,4 @@ export * from './taker-ask-queue.module';
 export * from './taker-bid-queue.module';
 export * from './upgrade-contract-queue.module';
 export * from './erc721-update-metadata.module';
+export * from './erc1155-update-metadata.module';

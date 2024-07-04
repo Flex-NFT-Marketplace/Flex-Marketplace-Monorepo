@@ -24,10 +24,4 @@ export class TopNftCollectionDto {
 
   @ApiProperty()
   totalVol: number;
-
-  @ApiProperty()
-  owners: number;
-
-  @ApiProperty()
-  supply: number;
 }

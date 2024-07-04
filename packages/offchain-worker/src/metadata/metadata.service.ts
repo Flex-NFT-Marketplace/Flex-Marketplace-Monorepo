@@ -104,11 +104,8 @@ export class MetadataService {
       this.logger.warn(error);
     }
 
-    const rs = await this.nftModel.findOneAndUpdate(
-      {
-        tokenId: nft.tokenId,
-        nftContract: nft.nftContract,
-      },
+    const rs = await this.nftModel.findByIdAndUpdate(
+      id,
       {
         $set: {
           name: metadata.name,
