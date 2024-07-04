@@ -97,6 +97,7 @@ export class NftItemService {
       this.processCreatorPayoutUpdated;
     process[EventType.PAYER_UPDATED] = this.processPayerUpdated;
     process[EventType.UPDATE_METADATA_721] = this.processNft721UpdateMetadata;
+    process[EventType.UPDATE_METADATA_1155] = this.processNft1155UpdateMetadata;
 
     await process[log.eventType].call(this, log, chain, index);
   }
@@ -642,6 +643,39 @@ export class NftItemService {
     this.logger.debug(
       `nft transfer ${nftAddress}: ${tokenId} from ${from} -> ${to} at - ${timestamp}`,
     );
+  }
+
+  async processNft1155UpdateMetadata(
+    log: LogsReturnValues,
+    chain: ChainDocument,
+    index: number,
+  ) {
+    const { from, to, tokenId, nftAddress, timestamp, value } =
+      log.returnValues as ERC1155TransferReturnValue;
+
+    const nftDocuments = await this.nftModel.find({
+      $or: [{ tokenId: Number(tokenId) }, { tokenId: tokenId }],
+      nftContract: nftAddress,
+    });
+
+    for (const document of nftDocuments) {
+      document.tokenId = tokenId;
+      await document.save();
+      await this.fetchMetadataQueue.add(JOB_QUEUE_NFT_METADATA, document._id);
+    }
+
+    await this.historyModel.updateMany(
+      {
+        nftContract: nftAddress,
+        tokenId: Number(tokenId),
+      },
+      {
+        $set: {
+          tokenId,
+        },
+      },
+    );
+    this.logger.debug(`nft update metadata ${nftAddress}: ${tokenId}`);
   }
 
   async processNft1155Minted(

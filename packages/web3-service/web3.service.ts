@@ -64,6 +64,12 @@ export class Web3Service {
     return block.timestamp;
   }
 
+  async getBlockNumber(rpc: string) {
+    const provider = this.getProvider(rpc);
+    const block = await provider.getBlockNumber();
+    return block;
+  }
+
   async getNftCollectionOwner(
     nftAddress: string,
     chain: ChainDocument,
@@ -116,7 +122,7 @@ export class Web3Service {
 
   async getErc1155Balance(
     nftAddress: string,
-    tokenId: number,
+    tokenId: string,
     userAddress: string,
     blockNumber: number,
     rpc: string,
