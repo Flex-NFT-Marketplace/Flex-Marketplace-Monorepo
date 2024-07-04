@@ -13,3 +13,4 @@ export * from './phase-drop-updated.processor';
 export * from './taker-ask.processor';
 export * from './taker-bid.processor';
 export * from './upgrade-contract.processor';
+export * from './erc721-update-metadata.processor';

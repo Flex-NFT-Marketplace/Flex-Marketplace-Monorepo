@@ -1,6 +1,8 @@
 import { InjectModel } from '@nestjs/mongoose';
 import { Injectable } from '@nestjs/common';
 import {
+  ChainDocument,
+  Chains,
   Histories,
   HistoryDocument,
   HistoryType,
@@ -9,16 +11,26 @@ import {
   Nfts,
 } from '@app/shared/models';
 import { Model } from 'mongoose';
-
 import { PaginationDto } from '@app/shared/types/pagination.dto';
 import { formattedContractAddress, isValidObjectId } from '@app/shared/utils';
 import { UserService } from '../user/user.service';
 import { NftCollectionQueryParams } from './dto/nftCollectionQuery.dto';
-import { BaseResult, BaseResultPagination } from '@app/shared/types';
+import {
+  BaseResult,
+  BaseResultPagination,
+  ONCHAIN_JOBS,
+  ONCHAIN_QUEUES,
+} from '@app/shared/types';
 import {
   TopNftCollectionDto,
   TopNftCollectionQueryDto,
 } from './dto/topNftCollection.dto';
+import { Web3Service } from '@app/web3-service/web3.service';
+import { InjectQueue } from '@nestjs/bull';
+import { Queue } from 'bull';
+import { EventType, LogsReturnValues } from '@app/web3-service/types';
+import { OnchainQueueService } from '@app/shared/utils/queue';
+
 @Injectable()
 export class NftCollectionsService {
   constructor(
@@ -27,7 +39,15 @@ export class NftCollectionsService {
     @InjectModel(Nfts.name) private readonly nftModel: Model<Nfts>,
     @InjectModel(Histories.name)
     private readonly historyModel: Model<HistoryDocument>,
+    @InjectModel(Chains.name)
+    private readonly chainModel: Model<ChainDocument>,
+    @InjectQueue(ONCHAIN_QUEUES.QUEUE_UPDATE_METADATA_721)
+    private readonly erc721UpdateMetadataQueue: Queue<LogsReturnValues>,
+    @InjectQueue(ONCHAIN_QUEUES.QUEUE_UPDATE_METADATA_1155)
+    private readonly erc1155UpdateMetadataQueue: Queue<LogsReturnValues>,
+    private readonly onchainQueueService: OnchainQueueService,
     private readonly userService: UserService,
+    private readonly web3Service: Web3Service,
   ) {}
   async getListNFTCollections(
     query: NftCollectionQueryParams,
@@ -350,6 +370,78 @@ export class NftCollectionsService {
     ]);
 
     return data;
+  }
+
+  async updateCollectionMetadatas(nftContract: string) {
+    const totalNFts = await this.nftModel.countDocuments({ nftContract });
+    const chainDocument = await this.chainModel.findOne();
+
+    const provider = this.web3Service.getProvider(chainDocument.rpc);
+
+    const size = 20;
+    const totalPages = Math.ceil((1.0 * totalNFts) / size);
+    let page = 1;
+    let txSet: string[] = [];
+    while (page <= totalPages) {
+      const histories = await this.historyModel.find(
+        {
+          nftContract,
+          type: HistoryType.Mint,
+        },
+        {},
+        { skip: size * (page - 1), limit: 20 },
+      );
+
+      for (const tx of histories) {
+        if (!txSet.includes(tx.txHash)) {
+          txSet.push(tx.txHash);
+        }
+      }
+
+      page++;
+    }
+
+    await Promise.all(
+      txSet.map(async tx => {
+        const trasactionReceipt = await provider.getTransactionReceipt(tx);
+
+        const block = await provider.getBlock(
+          (trasactionReceipt as any).block_number,
+        );
+
+        const eventWithTypes = this.web3Service.getReturnValuesEvent(
+          trasactionReceipt,
+          chainDocument,
+          block.timestamp,
+        );
+
+        let jobName = null;
+        let queue = null;
+
+        let index = 0;
+        for (const ev of eventWithTypes) {
+          ev.index = index;
+          if (
+            ev.eventType === EventType.MINT_1155 &&
+            ev.returnValues.nftAddress == nftContract
+          ) {
+            ev.eventType = EventType.UPDATE_METADATA_1155;
+            jobName = ONCHAIN_JOBS.JOB_UPDATE_METADATA_1155;
+            queue = this.erc1155UpdateMetadataQueue;
+            await this.onchainQueueService.add(queue, jobName, ev);
+          } else if (
+            ev.eventType === EventType.MINT_721 &&
+            ev.returnValues.nftAddress == nftContract
+          ) {
+            ev.eventType = EventType.UPDATE_METADATA_721;
+            jobName = ONCHAIN_JOBS.JOB_UPDATE_METADATA_721;
+            queue = this.erc721UpdateMetadataQueue;
+            await this.onchainQueueService.add(queue, jobName, ev);
+          }
+          index++;
+        }
+      }),
+    );
   }
 
   async getTotalOwners(nftContract: string) {

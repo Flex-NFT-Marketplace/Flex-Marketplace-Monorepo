@@ -1,9 +1,4 @@
 export const formattedContractAddress = (contractAddress: string) => {
-  const hexPattern = /^0x[0-9A-Fa-f]{64}$/;
-  if (!hexPattern.test(contractAddress)) {
-    throw new Error('Invalid contract address');
-  }
-
   while (contractAddress.trim().length < 66) {
     contractAddress = contractAddress.trim().replace('0x', '0x0');
   }

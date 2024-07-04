@@ -14,3 +14,4 @@ export * from './phase-drop-updated-queue.module';
 export * from './taker-ask-queue.module';
 export * from './taker-bid-queue.module';
 export * from './upgrade-contract-queue.module';
+export * from './erc721-update-metadata.module';
