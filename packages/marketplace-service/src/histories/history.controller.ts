@@ -55,7 +55,7 @@ export class HistoryController {
   })
   async getHistories(@Body() params: QueryHistoriesDto) {
     try {
-      await this.historyService.getHistories(params);
+      return await this.historyService.getHistories(params);
     } catch (error) {
       return new BadRequestException(error.message);
     }
