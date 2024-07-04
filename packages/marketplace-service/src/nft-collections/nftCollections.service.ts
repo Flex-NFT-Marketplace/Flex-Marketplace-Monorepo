@@ -14,7 +14,7 @@ import { PaginationDto } from '@app/shared/types/pagination.dto';
 import { formattedContractAddress, isValidObjectId } from '@app/shared/utils';
 import { UserService } from '../user/user.service';
 import { NftCollectionQueryParams } from './dto/nftCollectionQuery.dto';
-import { BaseResultPagination } from '@app/shared/types';
+import { BaseResult, BaseResultPagination } from '@app/shared/types';
 import {
   TopNftCollectionDto,
   TopNftCollectionQueryDto,
@@ -101,8 +101,10 @@ export class NftCollectionsService {
     const sevenDay = Date.now() - 7 * 86400000;
     const filter: any = { type: HistoryType.Sale };
     if (query.nftContract) {
-      filter.nftContract = query.nftContract;
+      filter.nftContract = formattedContractAddress(query.nftContract);
     }
+
+    const now = Date.now();
 
     const topNftCollection = await this.historyModel.aggregate([
       {
@@ -205,11 +207,50 @@ export class NftCollectionsService {
         $unwind: '$statistic',
       },
       {
+        $lookup: {
+          from: 'nfts',
+          let: { nftContract: '$_id' },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ['$$nftContract', '$nftContract'] },
+                    { $eq: ['$isBurned', false] },
+                  ],
+                },
+              },
+            },
+            {
+              $group: {
+                _id: '$owner',
+                totalNFT: {
+                  $sum: 1,
+                },
+              },
+            },
+            {
+              $group: {
+                _id: 0,
+                totalOwners: { $sum: 1 },
+                totalNfts: { $sum: '$totalNFT' },
+              },
+            },
+          ],
+          as: 'supply',
+        },
+      },
+      {
+        $unwind: '$supply',
+      },
+      {
         $project: {
           _id: 0,
           nftContract: '$_id',
           oneDayVol: '$statistic.vol1D',
           sevenDayVol: '$statistic.vol7D',
+          supply: '$supply.totalNfts',
+          owner: '$supply.totalOwners',
           oneDayChange: {
             $cond: {
               if: { $gt: ['$statistic.volPre1D', 0] },
@@ -277,6 +318,8 @@ export class NftCollectionsService {
       },
     ]);
 
+    console.log(`${Date.now() - now} ms`);
+
     const total = await this.nftCollectionModel.countDocuments(filter);
     result.data = new PaginationDto<TopNftCollectionDto>(
       topNftCollection,
@@ -307,5 +350,26 @@ export class NftCollectionsService {
     ]);
 
     return data;
+  }
+
+  async getTotalOwners(nftContract: string) {
+    const totalOwners = await this.nftModel.aggregate([
+      {
+        $match: {
+          nftContract,
+          isBurned: false,
+        },
+      },
+      {
+        $group: {
+          _id: '$owner',
+          totalNFT: {
+            $sum: 1,
+          },
+        },
+      },
+    ]);
+
+    return new BaseResult(0);
   }
 }

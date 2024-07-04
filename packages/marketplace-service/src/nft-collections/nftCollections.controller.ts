@@ -27,6 +27,7 @@ import {
   TopNftCollectionDto,
   TopNftCollectionQueryDto,
 } from './dto/topNftCollection.dto';
+import { isValidAddress } from '@app/shared/utils';
 
 @ApiTags('NFT Collections')
 @Controller('nft-collection')
@@ -108,7 +109,7 @@ export class NftCollectionsController {
   @Post('economic')
   @ApiOperation({
     summary:
-      'Get Top NFT Collection Base On Total Vol, If there is no nft contract in filter',
+      'Getting Top NFT Collection Base On Total Vol, If there is no nft contract in filter, else geting a statistic of specific Collection.',
   })
   @ApiOkResponse({
     schema: {
@@ -152,6 +153,26 @@ export class NftCollectionsController {
       return {
         success: false,
       };
+    }
+  }
+
+  @Get('total-owner/:nftContract')
+  async getTotalOwnerOfCollection(
+    @Param('nftContract') param: string,
+  ): Promise<BaseResult<number>> {
+    try {
+      if (!isValidAddress(param)) {
+        throw new Error('Invalid Nft Address');
+      }
+      const key = `total-owner - ${param}`;
+      let result: BaseResult<number> = await this.cacheManager.get(key);
+      if (!result) {
+        result = await this.nftCollectionService.getTotalOwners(param);
+      }
+
+      return new BaseResult(0);
+    } catch (error) {
+      throw new Error(error);
     }
   }
 }
