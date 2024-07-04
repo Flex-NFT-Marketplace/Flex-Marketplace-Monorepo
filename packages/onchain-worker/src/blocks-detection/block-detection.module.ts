@@ -32,7 +32,7 @@ import {
   ONCHAIN_QUEUES,
   QUEUE_METADATA,
 } from '@app/shared/types';
-import { OnchainQueueService } from './queue';
+import { OnchainQueueService } from '@app/shared/utils/queue';
 
 @Module({
   imports: [

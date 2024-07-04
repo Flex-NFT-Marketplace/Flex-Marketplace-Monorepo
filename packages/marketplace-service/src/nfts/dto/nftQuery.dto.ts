@@ -23,4 +23,7 @@ export class NftFilterQueryParams extends BaseQueryParams {
     example: [{ trait_type: 'string', value: 'value' }],
   })
   attributes?: Attribute[];
+
+  @ApiProperty({ type: Boolean, required: false })
+  isBurned?: boolean;
 }

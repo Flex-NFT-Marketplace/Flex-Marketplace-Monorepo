@@ -17,8 +17,8 @@ export class Histories extends BaseSchema {
   @Prop({ type: SchemaTypes.ObjectId, ref: 'Nfts' })
   nft: NftDocument;
 
-  @Prop()
-  tokenId: string;
+  @Prop({ type: SchemaTypes.Mixed })
+  tokenId: number | string;
 
   @Prop()
   nftContract: string;

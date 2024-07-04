@@ -8,6 +8,7 @@ import { NftModule } from './nfts/nfts.module';
 import { NftCollectionsModule } from './nft-collections/nftCollections.module';
 import { HistoryModule } from './histories/history.module';
 import { WalletModule } from './wallet/wallet.module';
+import { CacheModule } from '@nestjs/cache-manager';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { WalletModule } from './wallet/wallet.module';
     HistoryModule,
     WalletModule,
     NftCollectionsModule,
+    CacheModule.register({ isGlobal: true }),
   ],
   controllers: [],
   providers: [],

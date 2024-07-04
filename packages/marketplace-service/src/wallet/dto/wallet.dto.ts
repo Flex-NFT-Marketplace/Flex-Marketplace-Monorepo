@@ -21,3 +21,9 @@ export class CreateWalletResDTO extends CreateWalletReqDTO {
   @ApiProperty()
   creatorAddress: string;
 }
+
+export class WidthDrawDTO {
+  reciverAddress: string;
+  amount: number;
+  tokenType: TokenType;
+}

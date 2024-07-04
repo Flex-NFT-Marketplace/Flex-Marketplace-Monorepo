@@ -2,8 +2,12 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { Module } from '@nestjs/common';
 import { NftCollectionsService } from './nftCollections.service';
 import {
+  ChainSchema,
+  Chains,
   DropPhaseSchema,
   DropPhases,
+  Histories,
+  HistorySchema,
   NftCollectionSchema,
   NftCollections,
   NftSchema,
@@ -15,6 +19,10 @@ import {
 } from '@app/shared/models';
 import { NftCollectionsController } from './nftCollections.controller';
 import { UserService } from '../user/user.service';
+import { Web3Service } from '@app/web3-service/web3.service';
+import { BullModule } from '@nestjs/bull';
+import { MQ_JOB_DEFAULT_CONFIG, ONCHAIN_QUEUES } from '@app/shared/types';
+import { OnchainQueueService } from '@app/shared/utils/queue';
 
 @Module({
   imports: [
@@ -39,9 +47,29 @@ import { UserService } from '../user/user.service';
         name: DropPhases.name,
         schema: DropPhaseSchema,
       },
+      {
+        name: Histories.name,
+        schema: HistorySchema,
+      },
+      { name: Chains.name, schema: ChainSchema },
     ]),
+    BullModule.registerQueue(
+      {
+        name: ONCHAIN_QUEUES.QUEUE_UPDATE_METADATA_721,
+        defaultJobOptions: MQ_JOB_DEFAULT_CONFIG,
+      },
+      {
+        name: ONCHAIN_QUEUES.QUEUE_UPDATE_METADATA_1155,
+        defaultJobOptions: MQ_JOB_DEFAULT_CONFIG,
+      },
+    ),
   ],
   controllers: [NftCollectionsController],
-  providers: [NftCollectionsService, UserService],
+  providers: [
+    NftCollectionsService,
+    UserService,
+    Web3Service,
+    OnchainQueueService,
+  ],
 })
 export class NftCollectionsModule {}

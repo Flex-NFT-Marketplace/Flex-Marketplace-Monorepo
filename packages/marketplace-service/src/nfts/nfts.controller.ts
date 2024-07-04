@@ -3,16 +3,23 @@ import {
   ApiExtraModels,
   ApiOkResponse,
   getSchemaPath,
-  ApiInternalServerErrorResponse,
   ApiOperation,
 } from '@nestjs/swagger';
-import { Controller, Post, Body, HttpCode } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  HttpCode,
+  BadRequestException,
+  Inject,
+} from '@nestjs/common';
 import { NftService } from './nfts.service';
 import { PaginationDto } from '@app/shared/types/pagination.dto';
-
+import { CACHE_MANAGER, CacheTTL } from '@nestjs/cache-manager';
 import { ChainDto, NftDto, PaymentTokenDto, UserDto } from '@app/shared/models';
-import { BaseResult } from '@app/shared/types/base.result';
+import { Cache } from 'cache-manager';
 import { NftFilterQueryParams } from './dto/nftQuery.dto';
+import { BaseResultPagination } from '@app/shared/types';
 
 @ApiTags('NFTs')
 @Controller('nft')
@@ -25,7 +32,10 @@ import { NftFilterQueryParams } from './dto/nftQuery.dto';
   UserDto,
 )
 export class NftController {
-  constructor(private readonly nftsService: NftService) {}
+  constructor(
+    @Inject(CACHE_MANAGER) private cacheManager: Cache,
+    private readonly nftsService: NftService,
+  ) {}
   @Post('/get-nfts')
   @ApiOperation({
     summary: 'Get Nfts By Query params',
@@ -37,14 +47,14 @@ export class NftController {
     schema: {
       allOf: [
         {
-          $ref: getSchemaPath(BaseResult),
+          $ref: getSchemaPath(BaseResultPagination),
         },
         {
           properties: {
             data: {
               allOf: [
                 {
-                  $ref: getSchemaPath(PaginationDto),
+                  $ref: getSchemaPath(NftDto),
                 },
                 {
                   properties: {
@@ -63,33 +73,17 @@ export class NftController {
       ],
     },
   })
-  @ApiInternalServerErrorResponse({
-    description: '<b>Internal server error</b>',
-    schema: {
-      allOf: [
-        {
-          $ref: getSchemaPath(BaseResult),
-          properties: {
-            errors: {
-              example: 'Error Message',
-            },
-            success: {
-              example: false,
-            },
-          },
-        },
-      ],
-    },
-  })
   async getNfts(@Body() query: NftFilterQueryParams) {
     try {
-      const data = await this.nftsService.getNftsByQuery(query);
+      let key = `get-nfts - ${JSON.stringify(query)}`;
+      let data = await this.cacheManager.get(key);
+      if (!data) {
+        data = await this.nftsService.getNftsByQuery(query);
+        await this.cacheManager.set(key, data, 300000);
+      }
       return data;
     } catch (error) {
-      return new BaseResult({
-        success: false,
-        error: error.message,
-      });
+      return new BadRequestException(error.message);
     }
   }
 }

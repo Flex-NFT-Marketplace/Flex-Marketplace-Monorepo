@@ -14,6 +14,6 @@ export enum FLEX {
   PINATA_HUB = 'https://api.pinata.cloud/v3/farcaster',
 }
 export enum RPC_PROVIDER {
-  TESTNET = 'https://starknet-sepolia.public.blastapi.io',
+  TESTNET = 'https://free-rpc.nethermind.io/sepolia-juno',
   MAINNET = 'https://starknet-mainnet.public.blastapi.io',
 }

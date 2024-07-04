@@ -11,8 +11,8 @@ export type NftDocument = Nfts & Document;
 
 @Schema({ timestamps: true })
 export class Nfts extends BaseSchema {
-  @Prop()
-  tokenId: string;
+  @Prop({ type: SchemaTypes.Mixed })
+  tokenId: number | string;
 
   @Prop()
   nftContract: string;

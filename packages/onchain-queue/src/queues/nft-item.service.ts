@@ -96,6 +96,7 @@ export class NftItemService {
     process[EventType.CREATOR_PAYOUT_UPDATED] =
       this.processCreatorPayoutUpdated;
     process[EventType.PAYER_UPDATED] = this.processPayerUpdated;
+    process[EventType.UPDATE_METADATA_721] = this.processNft721UpdateMetadata;
 
     await process[log.eventType].call(this, log, chain, index);
   }
@@ -362,6 +363,93 @@ export class NftItemService {
 
     this.logger.debug(
       `nft minted ${nftAddress}: ${tokenId} ${from} -> ${to} - ${timestamp}`,
+    );
+
+    await this.fetchMetadataQueue.add(JOB_QUEUE_NFT_METADATA, nftDocument._id);
+  }
+
+  async processNft721UpdateMetadata(
+    log: LogsReturnValues,
+    chain: ChainDocument,
+    index: number,
+  ) {
+    const {
+      from,
+      to,
+      tokenId,
+      nftAddress,
+      timestamp,
+      price,
+      isFlexDropMinted,
+    } = log.returnValues as any;
+
+    const nftCollection = await this.getOrCreateNftCollection(
+      nftAddress,
+      chain,
+    );
+
+    if (!nftCollection) return;
+
+    const fromUser = await this.userService.getOrCreateUser(from);
+    const toUser = await this.userService.getOrCreateUser(to);
+
+    const existedNft = await this.nftModel.findOne({
+      nftContract: nftAddress,
+      $or: [{ tokenId: Number(tokenId) }, { tokenId: tokenId }],
+    });
+    let nftDocument: NftDocument = null;
+
+    let owner = await this.web3Service.getERC721Owner(
+      nftAddress,
+      tokenId,
+      chain.rpc,
+    );
+    let ownerDocument = await this.userService.getOrCreateUser(owner);
+    if (existedNft) {
+      existedNft.creator = toUser;
+      existedNft.tokenId = tokenId;
+      existedNft.owner = ownerDocument;
+      await existedNft.save();
+      nftDocument = existedNft;
+    } else {
+      const newNftEntity: Nfts = {
+        tokenId,
+        nftContract: nftAddress,
+        nftCollection: nftCollection._id,
+        chain,
+        royaltyRate: 0,
+        creator: toUser,
+        owner: ownerDocument,
+        amount: 1,
+        marketType: MarketType.NotForSale,
+        blockTime: timestamp,
+      };
+
+      nftDocument = await this.nftModel.findOneAndUpdate(
+        {
+          nftContract: nftAddress,
+          tokenId,
+          burnedAt: null,
+        },
+        { $set: newNftEntity },
+        { new: true, upsert: true },
+      );
+    }
+
+    await this.historyModel.updateMany(
+      {
+        nftContract: nftAddress,
+        tokenId: Number(tokenId),
+      },
+      {
+        $set: {
+          tokenId,
+        },
+      },
+    );
+
+    this.logger.debug(
+      `nft update metadata ${nftAddress}: ${String(tokenId)} ${timestamp}`,
     );
 
     await this.fetchMetadataQueue.add(JOB_QUEUE_NFT_METADATA, nftDocument._id);

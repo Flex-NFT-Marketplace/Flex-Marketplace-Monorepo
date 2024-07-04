@@ -2,13 +2,22 @@ import {
   ApiTags,
   ApiOperation,
   ApiExtraModels,
-  ApiInternalServerErrorResponse,
   getSchemaPath,
   ApiOkResponse,
 } from '@nestjs/swagger';
-import { Controller, Get, Body, Post, Param, HttpCode } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Body,
+  Post,
+  Param,
+  HttpCode,
+  BadRequestException,
+  Inject,
+} from '@nestjs/common';
 import { NftCollectionsService } from './nftCollections.service';
-
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Cache } from 'cache-manager';
 import { BaseResult } from '@app/shared/types/base.result';
 import { NftCollectionDto } from '@app/shared/models';
 import { NftCollectionQueryParams } from './dto/nftCollectionQuery.dto';
@@ -19,12 +28,22 @@ import {
   TopNftCollectionQueryDto,
 } from './dto/topNftCollection.dto';
 import { isValidAddress } from '@app/shared/utils';
+import { updateCollectionMetadataDto } from './dto/updateCollectionMetadata.dto';
+import { isHexadecimal } from 'class-validator';
 
 @ApiTags('NFT Collections')
 @Controller('nft-collection')
-@ApiExtraModels(NftCollectionQueryParams, NftCollectionDto)
+@ApiExtraModels(
+  NftCollectionQueryParams,
+  NftCollectionDto,
+  TopNftCollectionDto,
+  updateCollectionMetadataDto,
+)
 export class NftCollectionsController {
-  constructor(private readonly nftCollectionService: NftCollectionsService) {}
+  constructor(
+    @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
+    private readonly nftCollectionService: NftCollectionsService,
+  ) {}
   @Post('/get-collections')
   @ApiOperation({
     summary: 'Get List NFT Collections',
@@ -36,11 +55,11 @@ export class NftCollectionsController {
     schema: {
       allOf: [
         {
-          $ref: getSchemaPath(BaseResult),
+          $ref: getSchemaPath(PaginationDto),
         },
         {
           properties: {
-            data: {
+            items: {
               allOf: [
                 {
                   $ref: getSchemaPath(NftCollectionDto),
@@ -52,36 +71,12 @@ export class NftCollectionsController {
       ],
     },
   })
-  @ApiInternalServerErrorResponse({
-    description: '<b>Internal server error</b>',
-    schema: {
-      allOf: [
-        {
-          $ref: getSchemaPath(BaseResult),
-          properties: {
-            error: {
-              example: 'Error Message',
-            },
-            success: {
-              example: false,
-            },
-          },
-        },
-      ],
-    },
-  })
   async getListNFTCollections(@Body() query: NftCollectionQueryParams) {
     try {
       const data = await this.nftCollectionService.getListNFTCollections(query);
-      return new BaseResult({
-        success: true,
-        data: data,
-      });
+      return data;
     } catch (error) {
-      return new BaseResult({
-        success: false,
-        error: error.message,
-      });
+      return new BadRequestException(error.message);
     }
   }
   @Get('/:nftContract')
@@ -127,34 +122,44 @@ export class NftCollectionsController {
     schema: {
       allOf: [
         {
-          $ref: getSchemaPath(BaseResult),
+          $ref: getSchemaPath(BaseResultPagination),
+        },
+        {
           properties: {
-            errors: {
-              example: 'Error Message',
-            },
-            success: {
-              example: false,
+            data: {
+              allOf: [
+                {
+                  properties: {
+                    items: {
+                      type: 'array',
+                      items: {
+                        $ref: getSchemaPath(TopNftCollectionDto),
+                      },
+                    },
+                  },
+                },
+              ],
             },
           },
         },
       ],
     },
   })
-  async getNFTCollectionDetail(
-    @Param('nftContract') nftContract: string,
-  ): Promise<BaseResult<any>> {
+  async getTopCollection(
+    @Body() query: TopNftCollectionQueryDto,
+  ): Promise<BaseResultPagination<TopNftCollectionDto>> {
     try {
-      const data =
-        await this.nftCollectionService.getNFTCollectionDetail(nftContract);
-      return new BaseResult({
-        success: true,
-        data: data,
-      });
+      const key = `top-collection - ${JSON.stringify({ ...query })}`;
+      let data = await this.cacheManager.get(key);
+      if (!data) {
+        data = await this.nftCollectionService.getTopNFTCollection(query);
+        await this.cacheManager.set(key, data, 60 * 60 * 1e3);
+      }
+      return data;
     } catch (error) {
-      return new BaseResult({
+      return {
         success: false,
-        error: error.message,
-      });
+      };
     }
   }
 
@@ -173,6 +178,27 @@ export class NftCollectionsController {
       }
 
       return new BaseResult(0);
+    } catch (error) {
+      throw new Error(error);
+    }
+  }
+
+  @Post('update-collection-metadata')
+  @ApiOperation({
+    summary: 'update All NFTs metadata',
+  })
+  async updateCollectionMetadata(
+    @Body() body: updateCollectionMetadataDto,
+  ): Promise<BaseResult<boolean>> {
+    try {
+      if (!isHexadecimal(body.nftContract)) {
+        throw new Error('Invalid Address');
+      }
+      await this.nftCollectionService.updateCollectionMetadatas(
+        body.nftContract,
+      );
+
+      return new BaseResult(true);
     } catch (error) {
       throw new Error(error);
     }

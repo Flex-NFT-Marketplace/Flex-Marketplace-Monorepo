@@ -2,14 +2,12 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export class BaseResult<T> {
   @ApiProperty()
-  error?: string;
-  @ApiProperty()
   data?: T;
   @ApiProperty()
-  success = true;
+  success = 200;
 
   constructor(data: T) {
     this.data = data;
-    this.success = true;
+    this.success = 200;
   }
 }

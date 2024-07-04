@@ -437,6 +437,36 @@ export class Web3Service {
     return convertDataIntoString(tokenUri);
   }
 
+  async getERC721Owner(
+    address: string,
+    tokenId: string,
+    rpc: string,
+  ): Promise<string> {
+    const provider = this.getProvider(rpc);
+
+    const abi = ABIS.Erc721ABI;
+    const otherVerAbi = ABIS.OtherErc721ABI;
+    const oldVerAbi = ABIS.OldErc721ABI;
+
+    const contractInstance = new Contract(abi, address, provider);
+    const otherVerContract = new Contract(otherVerAbi, address, provider);
+    const oldVerContract = new Contract(oldVerAbi, address, provider);
+
+    const tokenOwnerOperations = [
+      () => contractInstance.owner_of(tokenId),
+      () => contractInstance.ownerOf(tokenId),
+      () => otherVerContract.owner_of(tokenId),
+      () => otherVerContract.ownerOf(tokenId),
+      () => oldVerContract.owner_of(tokenId),
+      () => oldVerContract.ownerOf(tokenId),
+    ];
+    const tokenOwner = await attemptOperations(tokenOwnerOperations);
+
+    if (!tokenOwner) return null;
+
+    return formattedContractAddress(num.toHex(tokenOwner as BigNumberish));
+  }
+
   async getNFTCollectionStandard(
     address: string,
     rpc: string,

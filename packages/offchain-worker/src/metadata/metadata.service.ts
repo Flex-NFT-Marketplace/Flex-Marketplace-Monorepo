@@ -46,7 +46,7 @@ export class MetadataService {
 
     const tokenURI = await this.web3Service.getNFTUri(
       nftContract,
-      tokenId,
+      tokenId as string,
       standard,
       chain.rpc,
     );
