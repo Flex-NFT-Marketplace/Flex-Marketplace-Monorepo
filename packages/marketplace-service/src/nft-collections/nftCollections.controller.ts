@@ -30,6 +30,7 @@ import {
 import { isValidAddress } from '@app/shared/utils';
 import { updateCollectionMetadataDto } from './dto/updateCollectionMetadata.dto';
 import { isHexadecimal } from 'class-validator';
+import { NFTCollectionSuply } from './dto/CollectionSupply.dto';
 
 @ApiTags('NFT Collections')
 @Controller('nft-collection')
@@ -163,21 +164,22 @@ export class NftCollectionsController {
     }
   }
 
-  @Get('total-owner/:nftContract')
+  @Get('total-suppply/:nftContract')
   async getTotalOwnerOfCollection(
     @Param('nftContract') param: string,
-  ): Promise<BaseResult<number>> {
+  ): Promise<BaseResult<NFTCollectionSuply>> {
     try {
-      if (!isValidAddress(param)) {
+      if (!isValidAddress(param.replace('0x', ''))) {
         throw new Error('Invalid Nft Address');
       }
       const key = `total-owner - ${param}`;
-      let result: BaseResult<number> = await this.cacheManager.get(key);
+      let result: NFTCollectionSuply = await this.cacheManager.get(key);
       if (!result) {
         result = await this.nftCollectionService.getTotalOwners(param);
+        await this.cacheManager.set(key, result, 60 * 60 * 1e3);
       }
 
-      return new BaseResult(0);
+      return new BaseResult(result);
     } catch (error) {
       throw new Error(error);
     }

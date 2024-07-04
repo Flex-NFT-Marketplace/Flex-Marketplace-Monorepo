@@ -30,6 +30,7 @@ import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bull';
 import { EventType, LogsReturnValues } from '@app/web3-service/types';
 import { OnchainQueueService } from '@app/shared/utils/queue';
+import { NFTCollectionSuply } from './dto/CollectionSupply.dto';
 
 @Injectable()
 export class NftCollectionsService {
@@ -227,50 +228,11 @@ export class NftCollectionsService {
         $unwind: '$statistic',
       },
       {
-        $lookup: {
-          from: 'nfts',
-          let: { nftContract: '$_id' },
-          pipeline: [
-            {
-              $match: {
-                $expr: {
-                  $and: [
-                    { $eq: ['$$nftContract', '$nftContract'] },
-                    { $eq: ['$isBurned', false] },
-                  ],
-                },
-              },
-            },
-            {
-              $group: {
-                _id: '$owner',
-                totalNFT: {
-                  $sum: 1,
-                },
-              },
-            },
-            {
-              $group: {
-                _id: 0,
-                totalOwners: { $sum: 1 },
-                totalNfts: { $sum: '$totalNFT' },
-              },
-            },
-          ],
-          as: 'supply',
-        },
-      },
-      {
-        $unwind: '$supply',
-      },
-      {
         $project: {
           _id: 0,
           nftContract: '$_id',
           oneDayVol: '$statistic.vol1D',
           sevenDayVol: '$statistic.vol7D',
-          supply: '$supply.totalNfts',
-          owner: '$supply.totalOwners',
           oneDayChange: {
             $cond: {
               if: { $gt: ['$statistic.volPre1D', 0] },
@@ -421,6 +383,7 @@ export class NftCollectionsService {
         let index = 0;
         for (const ev of eventWithTypes) {
           ev.index = index;
+
           if (
             ev.eventType === EventType.MINT_1155 &&
             ev.returnValues.nftAddress == nftContract
@@ -444,7 +407,8 @@ export class NftCollectionsService {
     );
   }
 
-  async getTotalOwners(nftContract: string) {
+  async getTotalOwners(nftContract: string): Promise<NFTCollectionSuply> {
+    const now = Date.now();
     const totalOwners = await this.nftModel.aggregate([
       {
         $match: {
@@ -460,8 +424,23 @@ export class NftCollectionsService {
           },
         },
       },
+      {
+        $group: {
+          _id: 0,
+          totalOwners: { $sum: 1 },
+          totalNfts: { $sum: '$totalNFT' },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          owners: '$totalOwners',
+          supply: '$totalNfts',
+        },
+      },
     ]);
+    console.log(`${Date.now() - now} ms`);
 
-    return new BaseResult(0);
+    return totalOwners[0];
   }
 }
