@@ -400,7 +400,7 @@ export class Web3Service {
 
   async getNFTUri(
     address: string,
-    tokenId: number,
+    tokenId: string,
     standard: NftCollectionStandard,
     rpc: string,
   ): Promise<string> {

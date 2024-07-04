@@ -12,6 +12,13 @@ import { NftCollectionsService } from './nftCollections.service';
 import { BaseResult } from '@app/shared/types/base.result';
 import { NftCollectionDto } from '@app/shared/models';
 import { NftCollectionQueryParams } from './dto/nftCollectionQuery.dto';
+import { BaseResultPagination } from '@app/shared/types';
+import { PaginationDto } from '@app/shared/types/pagination.dto';
+import {
+  TopNftCollectionDto,
+  TopNftCollectionQueryDto,
+} from './dto/topNftCollection.dto';
+import { isValidAddress } from '@app/shared/utils';
 
 @ApiTags('NFT Collections')
 @Controller('nft-collection')
@@ -101,8 +108,22 @@ export class NftCollectionsController {
       ],
     },
   })
-  @ApiInternalServerErrorResponse({
-    description: '<b>Internal server error</b>',
+  async getNFTCollectionDetail(@Param('nftContract') nftContract: string) {
+    try {
+      const data =
+        await this.nftCollectionService.getNFTCollectionDetail(nftContract);
+      return new BaseResult(data);
+    } catch (error) {
+      throw new BadRequestException(error.message);
+    }
+  }
+
+  @Post('economic')
+  @ApiOperation({
+    summary:
+      'Getting Top NFT Collection Base On Total Vol, If there is no nft contract in filter, else geting a statistic of specific Collection.',
+  })
+  @ApiOkResponse({
     schema: {
       allOf: [
         {
@@ -134,6 +155,26 @@ export class NftCollectionsController {
         success: false,
         error: error.message,
       });
+    }
+  }
+
+  @Get('total-owner/:nftContract')
+  async getTotalOwnerOfCollection(
+    @Param('nftContract') param: string,
+  ): Promise<BaseResult<number>> {
+    try {
+      if (!isValidAddress(param)) {
+        throw new Error('Invalid Nft Address');
+      }
+      const key = `total-owner - ${param}`;
+      let result: BaseResult<number> = await this.cacheManager.get(key);
+      if (!result) {
+        result = await this.nftCollectionService.getTotalOwners(param);
+      }
+
+      return new BaseResult(0);
+    } catch (error) {
+      throw new Error(error);
     }
   }
 }
