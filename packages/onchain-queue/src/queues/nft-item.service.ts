@@ -405,11 +405,14 @@ export class NftItemService {
       tokenId,
       chain.rpc,
     );
-    let ownerDocument = await this.userService.getOrCreateUser(owner);
+    let ownerDocument = owner
+      ? await this.userService.getOrCreateUser(owner)
+      : null;
     if (existedNft) {
       existedNft.creator = toUser;
       existedNft.tokenId = tokenId;
       existedNft.owner = ownerDocument;
+      existedNft.isBurned = ownerDocument ? false : true;
       await existedNft.save();
       nftDocument = existedNft;
     } else {
@@ -424,13 +427,13 @@ export class NftItemService {
         amount: 1,
         marketType: MarketType.NotForSale,
         blockTime: timestamp,
+        isBurned: ownerDocument ? false : true,
       };
 
       nftDocument = await this.nftModel.findOneAndUpdate(
         {
           nftContract: nftAddress,
           tokenId,
-          burnedAt: null,
         },
         { $set: newNftEntity },
         { new: true, upsert: true },

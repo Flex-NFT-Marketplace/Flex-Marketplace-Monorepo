@@ -69,6 +69,22 @@ export class NftService {
       .sort(query.sort)
       .skip(query.skipIndex)
       .limit(query.size)
+      .populate([
+        {
+          path: 'owner',
+          select: [
+            'address',
+            'username',
+            'isVerified',
+            'email',
+            'avatar',
+            'cover',
+            'about',
+            'socials',
+            'isVerified',
+          ],
+        },
+      ])
       .exec();
     result.data = new PaginationDto(items, count, query.page, query.size);
 
