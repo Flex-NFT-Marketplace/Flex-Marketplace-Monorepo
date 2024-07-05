@@ -14,6 +14,7 @@ import {
   HttpCode,
   BadRequestException,
   Inject,
+  UseGuards,
 } from '@nestjs/common';
 import { NftCollectionsService } from './nftCollections.service';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
@@ -31,6 +32,7 @@ import { isValidAddress } from '@app/shared/utils';
 import { updateCollectionMetadataDto } from './dto/updateCollectionMetadata.dto';
 import { isHexadecimal } from 'class-validator';
 import { NFTCollectionSuply } from './dto/CollectionSupply.dto';
+import { JwtAdminAuthGuard } from '@app/shared/modules';
 
 @ApiTags('NFT Collections')
 @Controller('nft-collection')
@@ -185,6 +187,7 @@ export class NftCollectionsController {
     }
   }
 
+  @UseGuards(JwtAdminAuthGuard)
   @Post('update-collection-metadata')
   @ApiOperation({
     summary: 'update All NFTs metadata',

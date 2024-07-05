@@ -17,3 +17,7 @@ export enum RPC_PROVIDER {
   TESTNET = 'https://free-rpc.nethermind.io/sepolia-juno',
   MAINNET = 'https://starknet-mainnet.public.blastapi.io',
 }
+
+export enum ROLE {
+  ADMIN = 'admin',
+}

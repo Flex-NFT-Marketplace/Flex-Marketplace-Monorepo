@@ -23,6 +23,8 @@ import { Web3Service } from '@app/web3-service/web3.service';
 import { BullModule } from '@nestjs/bull';
 import { MQ_JOB_DEFAULT_CONFIG, ONCHAIN_QUEUES } from '@app/shared/types';
 import { OnchainQueueService } from '@app/shared/utils/queue';
+import { PassportModule } from '@nestjs/passport';
+import { JwtAdminStrategy } from '@app/shared/modules';
 
 @Module({
   imports: [
@@ -63,6 +65,7 @@ import { OnchainQueueService } from '@app/shared/utils/queue';
         defaultJobOptions: MQ_JOB_DEFAULT_CONFIG,
       },
     ),
+    PassportModule.register({ defaultStrategy: 'jwt-admin' }),
   ],
   controllers: [NftCollectionsController],
   providers: [
@@ -70,6 +73,7 @@ import { OnchainQueueService } from '@app/shared/utils/queue';
     UserService,
     Web3Service,
     OnchainQueueService,
+    JwtAdminStrategy,
   ],
 })
 export class NftCollectionsModule {}

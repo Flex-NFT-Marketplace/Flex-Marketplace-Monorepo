@@ -345,6 +345,7 @@ export class NftCollectionsService {
     let page = 1;
     let txSet: string[] = [];
     while (page <= totalPages) {
+      const targetSet: string[] = [];
       const histories = await this.historyModel.find(
         {
           nftContract,
@@ -357,54 +358,55 @@ export class NftCollectionsService {
       for (const tx of histories) {
         if (!txSet.includes(tx.txHash)) {
           txSet.push(tx.txHash);
+          targetSet.push(tx.txHash);
         }
       }
 
+      await Promise.all(
+        targetSet.map(async tx => {
+          const trasactionReceipt = await provider.getTransactionReceipt(tx);
+
+          const block = await provider.getBlock(
+            (trasactionReceipt as any).block_number,
+          );
+
+          const eventWithTypes = this.web3Service.getReturnValuesEvent(
+            trasactionReceipt,
+            chainDocument,
+            block.timestamp,
+          );
+
+          let jobName = null;
+          let queue = null;
+
+          let index = 0;
+          for (const ev of eventWithTypes) {
+            ev.index = index;
+
+            if (
+              ev.eventType === EventType.MINT_1155 &&
+              ev.returnValues.nftAddress == nftContract
+            ) {
+              ev.eventType = EventType.UPDATE_METADATA_1155;
+              jobName = ONCHAIN_JOBS.JOB_UPDATE_METADATA_1155;
+              queue = this.erc1155UpdateMetadataQueue;
+              await this.onchainQueueService.add(queue, jobName, ev);
+            } else if (
+              ev.eventType === EventType.MINT_721 &&
+              ev.returnValues.nftAddress == nftContract
+            ) {
+              ev.eventType = EventType.UPDATE_METADATA_721;
+              jobName = ONCHAIN_JOBS.JOB_UPDATE_METADATA_721;
+              queue = this.erc721UpdateMetadataQueue;
+              await this.onchainQueueService.add(queue, jobName, ev);
+            }
+            index++;
+          }
+        }),
+      );
+
       page++;
     }
-
-    await Promise.all(
-      txSet.map(async tx => {
-        const trasactionReceipt = await provider.getTransactionReceipt(tx);
-
-        const block = await provider.getBlock(
-          (trasactionReceipt as any).block_number,
-        );
-
-        const eventWithTypes = this.web3Service.getReturnValuesEvent(
-          trasactionReceipt,
-          chainDocument,
-          block.timestamp,
-        );
-
-        let jobName = null;
-        let queue = null;
-
-        let index = 0;
-        for (const ev of eventWithTypes) {
-          ev.index = index;
-
-          if (
-            ev.eventType === EventType.MINT_1155 &&
-            ev.returnValues.nftAddress == nftContract
-          ) {
-            ev.eventType = EventType.UPDATE_METADATA_1155;
-            jobName = ONCHAIN_JOBS.JOB_UPDATE_METADATA_1155;
-            queue = this.erc1155UpdateMetadataQueue;
-            await this.onchainQueueService.add(queue, jobName, ev);
-          } else if (
-            ev.eventType === EventType.MINT_721 &&
-            ev.returnValues.nftAddress == nftContract
-          ) {
-            ev.eventType = EventType.UPDATE_METADATA_721;
-            jobName = ONCHAIN_JOBS.JOB_UPDATE_METADATA_721;
-            queue = this.erc721UpdateMetadataQueue;
-            await this.onchainQueueService.add(queue, jobName, ev);
-          }
-          index++;
-        }
-      }),
-    );
   }
 
   async getTotalOwners(nftContract: string): Promise<NFTCollectionSuply> {

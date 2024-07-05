@@ -75,7 +75,7 @@ export class NftController {
   })
   async getNfts(@Body() query: NftFilterQueryParams) {
     try {
-      const key = `get-nfts - ${JSON.stringify(query)}`;
+      const key = `get-nfts - ${JSON.stringify({ ...query })}`;
       let data = await this.cacheManager.get(key);
       if (!data) {
         data = await this.nftsService.getNftsByQuery(query);

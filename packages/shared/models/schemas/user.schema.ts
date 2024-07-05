@@ -1,6 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, SchemaTypes } from 'mongoose';
 import { BaseSchema } from './base.schema';
+import { ROLE } from '@app/shared/constants';
 
 export type UserDocument = Users & Document;
 
@@ -57,8 +58,8 @@ export class Users extends BaseSchema {
   @Prop({ type: SchemaTypes.ObjectId, ref: 'Users' })
   mappingAddress?: UserDocument;
 
-  @Prop()
-  roles: string[];
+  @Prop({ type: [SchemaTypes.String], enum: ROLE })
+  roles: ROLE[];
 }
 
 export const UserSchema = SchemaFactory.createForClass(Users);

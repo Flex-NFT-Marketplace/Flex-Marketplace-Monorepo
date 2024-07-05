@@ -24,7 +24,6 @@ export class FetchMetadataProcessor {
         }s`,
       );
     } catch (err) {
-      await this.queue.add(JOB_QUEUE_NFT_METADATA, job.data);
       this.logger.error(
         `Error while processing type ${job.name} with  id ${job.data} `,
         err,
