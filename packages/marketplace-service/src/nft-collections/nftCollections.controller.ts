@@ -196,11 +196,14 @@ export class NftCollectionsController {
     @Body() body: updateCollectionMetadataDto,
   ): Promise<BaseResult<boolean>> {
     try {
-      if (!isHexadecimal(body.nftContract)) {
+      const { nftContract, isNew } = body;
+
+      if (!isHexadecimal(nftContract)) {
         throw new Error('Invalid Address');
       }
       await this.nftCollectionService.updateCollectionMetadatas(
-        body.nftContract,
+        nftContract,
+        isNew,
       );
 
       return new BaseResult(true);
