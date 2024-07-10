@@ -63,7 +63,7 @@ export class Chains extends BaseSchema {
   transferSelectorNFT?: string;
 
   @Prop()
-  flexDropContract?: string;
+  flexDropContracts?: string[];
 
   @Prop()
   erc721FlexDropClassHash?: string;
