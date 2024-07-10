@@ -17,8 +17,15 @@ import { MetaDataDto } from './dtos/metadata.dto';
 import { isURL } from 'class-validator';
 import mime from 'mime';
 
-const getUrl = (url: string) =>
-  url?.replace('ipfs://', configuration().ipfs_gateway);
+const getUrl = (url: string) => {
+  if (url.startsWith('ipfs://')) {
+    return (
+      url?.replace('ipfs://', configuration().ipfs_gateway) +
+      `?pinataGatewayToken=${configuration().pinata_key}`
+    );
+  }
+  return url;
+};
 
 @Injectable()
 export class MetadataService {
@@ -30,7 +37,7 @@ export class MetadataService {
     private readonly web3Service: Web3Service,
   ) {
     this.client = axios.create({
-      timeout: 1000 * 5, // Wait for 5 seconds
+      timeout: 1000 * 60, // Wait for 5 seconds
     });
   }
   client: AxiosInstance;
@@ -38,7 +45,7 @@ export class MetadataService {
 
   async loadMetadata(id: string) {
     const nft = await this.nftModel
-      .findById(id)
+      .findById(id, { tokenUri: 0 })
       .populate(['nftCollection', 'chain']);
 
     const { nftContract, nftCollection, tokenId, chain } = nft;
@@ -72,7 +79,13 @@ export class MetadataService {
       }
       metadata = parsedDataBase64;
     } else {
-      metadata = (await this.client.get(httpUrl)).data;
+      try {
+        metadata = (await this.client.get(httpUrl)).data;
+      } catch (error) {
+        nft.tokenUri = tokenURI;
+        await nft.save();
+        throw new Error(error);
+      }
     }
 
     const attributes =
@@ -104,8 +117,8 @@ export class MetadataService {
       this.logger.warn(error);
     }
 
-    const rs = await this.nftModel.findByIdAndUpdate(
-      id,
+    await this.nftModel.updateOne(
+      { _id: id },
       {
         $set: {
           name: metadata.name,
@@ -119,12 +132,9 @@ export class MetadataService {
           animationPlayType: animationFileType,
         },
       },
-      {
-        new: true,
-      },
     );
     await this.reloadAttributeMap(nft.nftCollection, attributes);
-    return rs;
+    return true;
   }
 
   async reloadAttributeMap(

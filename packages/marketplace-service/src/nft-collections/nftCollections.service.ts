@@ -334,7 +334,7 @@ export class NftCollectionsService {
     return data;
   }
 
-  async updateCollectionMetadatas(nftContract: string) {
+  async updateCollectionMetadatas(nftContract: string, isNew: boolean) {
     const totalNFts = await this.nftModel.countDocuments({ nftContract });
     const chainDocument = await this.chainModel.findOne();
 
@@ -344,16 +344,66 @@ export class NftCollectionsService {
     const totalPages = Math.ceil((1.0 * totalNFts) / size);
     let page = 1;
     let txSet: string[] = [];
+    const filter = isNew
+      ? [
+          {
+            $match: {
+              nftContract,
+              type: HistoryType.Mint,
+            },
+          },
+        ]
+      : [
+          {
+            $match: {
+              nftContract,
+              type: HistoryType.Mint,
+            },
+          },
+          {
+            $lookup: {
+              from: 'nfts',
+              let: { nftContract: '$nftContract', tokenId: '$tokenId' },
+              pipeline: [
+                {
+                  $match: {
+                    $expr: {
+                      $and: [
+                        { $eq: ['$$nftContract', '$nftContract'] },
+                        { $eq: ['$$tokenId', '$tokenId'] },
+                      ],
+                    },
+                  },
+                },
+                {
+                  $project: {
+                    name: 1,
+                  },
+                },
+              ],
+              as: 'nft',
+            },
+          },
+          {
+            $unwind: '$nft',
+          },
+          {
+            $match: {
+              'nft.name': { $exists: false },
+            },
+          },
+        ];
     while (page <= totalPages) {
       const targetSet: string[] = [];
-      const histories = await this.historyModel.find(
+      const histories = await this.historyModel.aggregate([
+        ...filter,
         {
-          nftContract,
-          type: HistoryType.Mint,
+          $skip: size * (page - 1),
         },
-        {},
-        { skip: size * (page - 1), limit: 20 },
-      );
+        {
+          $limit: size,
+        },
+      ]);
 
       for (const tx of histories) {
         if (!txSet.includes(tx.txHash)) {
@@ -407,6 +457,33 @@ export class NftCollectionsService {
 
       page++;
     }
+
+    // const nfts = await this.nftModel.aggregate([
+    //   {
+    //     $match: {
+    //       nftContract,
+    //     },
+    //   },
+    //   {
+    //     $group: {
+    //       _id: '$tokenId',
+    //       count: {
+    //         $sum: 1,
+    //       },
+    //     },
+    //   },
+    //   {
+    //     $match: {
+    //       count: { $gt: 1 },
+    //     },
+    //   },
+    // ]);
+
+    // console.log(nfts);
+
+    // for(const nft of nfts) {
+    //   await this.nftModel.deleteOne({nftContract, tokenId: nft._id, image: { $exists: false }})
+    // }
   }
 
   async getTotalOwners(nftContract: string): Promise<NFTCollectionSuply> {
