@@ -317,7 +317,9 @@ export class Web3Service {
           });
         } else if (
           event.keys.includes(EventTopic.PHASE_DROP_UPDATED) &&
-          formattedContractAddress(event.from_address) == chain.flexDropContract
+          chain.flexDropContracts.includes(
+            formattedContractAddress(event.from_address),
+          )
         ) {
           eventWithTypes.push({
             ...txReceiptFilter,
@@ -330,7 +332,9 @@ export class Web3Service {
           });
         } else if (
           event.keys.includes(EventTopic.CREATOR_PAYOUT_UPDATED) &&
-          formattedContractAddress(event.from_address) == chain.flexDropContract
+          chain.flexDropContracts.includes(
+            formattedContractAddress(event.from_address),
+          )
         ) {
           eventWithTypes.push({
             ...txReceiptFilter,
@@ -339,7 +343,9 @@ export class Web3Service {
           });
         } else if (
           event.keys.includes(EventTopic.PAYER_UPDATED) &&
-          formattedContractAddress(event.from_address) == chain.flexDropContract
+          chain.flexDropContracts.includes(
+            formattedContractAddress(event.from_address),
+          )
         ) {
           eventWithTypes.push({
             ...txReceiptFilter,
@@ -348,7 +354,9 @@ export class Web3Service {
           });
         } else if (
           event.keys.includes(EventTopic.FLEX_DROP_MINTED) &&
-          formattedContractAddress(event.from_address) == chain.flexDropContract
+          chain.flexDropContracts.includes(
+            formattedContractAddress(event.from_address),
+          )
         ) {
           eventWithTypes.push({
             ...txReceiptFilter,

@@ -23,7 +23,7 @@ export class NftService {
     let filter: any = {};
     if (query.owner) {
       if (isValidObjectId(query.owner)) {
-        filter.owner = formattedContractAddress(query.owner);
+        filter.owner = query.owner;
       } else {
         const user = this.userService.getUser(
           formattedContractAddress(query.owner),
@@ -82,6 +82,18 @@ export class NftService {
             'about',
             'socials',
             'isVerified',
+          ],
+        },
+        {
+          path: 'nftCollection',
+          select: [
+            'name',
+            'symbol',
+            'verified',
+            'standard',
+            'description',
+            'avatar',
+            'key',
           ],
         },
       ])
