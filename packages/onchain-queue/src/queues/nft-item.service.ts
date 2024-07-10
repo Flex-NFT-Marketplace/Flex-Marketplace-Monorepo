@@ -391,13 +391,15 @@ export class NftItemService {
 
     if (!nftCollection) return;
 
-    const fromUser = await this.userService.getOrCreateUser(from);
     const toUser = await this.userService.getOrCreateUser(to);
 
-    const existedNft = await this.nftModel.findOne({
-      nftContract: nftAddress,
-      $or: [{ tokenId: Number(tokenId) }, { tokenId: tokenId }],
-    });
+    const existedNft = await this.nftModel.findOne(
+      {
+        nftContract: nftAddress,
+        $or: [{ tokenId: Number(tokenId) }, { tokenId: tokenId }],
+      },
+      { tokenUri: 0 },
+    );
     let nftDocument: NftDocument = null;
 
     let owner = await this.web3Service.getERC721Owner(
@@ -656,10 +658,13 @@ export class NftItemService {
     const { from, to, tokenId, nftAddress, timestamp, value } =
       log.returnValues as ERC1155TransferReturnValue;
 
-    const nftDocuments = await this.nftModel.find({
-      $or: [{ tokenId: Number(tokenId) }, { tokenId: tokenId }],
-      nftContract: nftAddress,
-    });
+    const nftDocuments = await this.nftModel.find(
+      {
+        $or: [{ tokenId: Number(tokenId) }, { tokenId: tokenId }],
+        nftContract: nftAddress,
+      },
+      { tokenUri: 0 },
+    );
 
     for (const document of nftDocuments) {
       document.tokenId = tokenId;
