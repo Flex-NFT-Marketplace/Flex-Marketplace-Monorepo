@@ -11,6 +11,7 @@ import accountAbi from '../abis/account.abi.json';
 import flexDrop from '../abis/flexdrop.abi.json';
 import proxyAbi from '../abis/proxy.abi.json';
 import src5Abi from '../abis/src5.abi.json';
+import unframedAbi from '../abis/unframed.abi.json';
 
 export enum EventTopic {
   CONTRACT_DEPLOYED = '0x26b160f10156dea0639bec90696772c640b9706a47f5b8c52ea1abe5858b34d',
@@ -22,6 +23,10 @@ export enum EventTopic {
   CANCEL_OFFER = '0xb792a85dbf71e2d3655418ca28e9946996c536760c97837abc48e81d429f79',
   TAKER_BID = '0x37fb5822d8beb7f626792d8080acbee2e1b8776c0eac7628ee8fdb0bb2fcdcf',
   TAKER_ASK = '0x2a0e6bb76d0d6b53d99a2ca5173c4c8bc0e1bce64817a9a9b15ef0b254bd92a',
+  ORDER_EXECUTED = '0xf10f06595d3d707241f604672ec4b6ae50eb82728ec2f3c65f6789e897760', // Unframed
+  LISTING_BOUGTHT = '0x1b43f40d55364e989b3a8674460f61ba8f327542298ee6240a54ee2bf7b55bb', // Ventory
+  OFFER_ACCEPTED = '0xe214ba50bf9d17a50de9ab9f433295bd671144999d5258dbc261cbf1e1c2cc', // Ventory
+  ELEMENT_SALE = '0x351e5a57ea6ca22e3e3cd212680ef7f3b57404609bda942a5e75ba4724b55e0', // element
   PHASE_DROP_UPDATED = '0x2047efdab90661b07d0183dda95130911f3145be46b75991d35ec3005ee22ff',
   FLEX_DROP_MINTED = '0x2e85c3cdcfa0ab436a9b3d9fe53b1d1fde30b9696afe98c4587dc5099ea5bb9',
   CREATOR_PAYOUT_UPDATED = '0x3110384dee490385b1868cfc2b61dfe6867622bd1471235785d10eca82a0766',
@@ -64,6 +69,7 @@ export type LogsReturnValues = SuccessfulTransactionReceiptResponse & {
 
 export const ABIS = {
   MarketplaceABI: marketplaceAbi,
+  UnframedABI: unframedAbi,
   ContractDeployerABI: contractDeployerABI,
   Erc721ABI: erc721Abi,
   OldErc721ABI: oldErc721Abi,
