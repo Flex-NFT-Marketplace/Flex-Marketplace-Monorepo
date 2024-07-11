@@ -25,7 +25,9 @@ import {
   decodeERC115Transfer,
   decodeERC115TransferBatch,
   decodeERC721Transfer,
+  decodeElementSale,
   decodeFlexDropMinted,
+  decodeOrderExecuted,
   decodePayerUpdated,
   decodePhaseDropUpdated,
   decodeTakerAsk,
@@ -295,9 +297,11 @@ export class Web3Service {
           });
         } else if (
           event.keys.includes(EventTopic.TAKER_BID) &&
-          chain.marketplaceContract.includes(
+          (chain.marketplaceContract.includes(
             formattedContractAddress(event.from_address),
-          )
+          ) ||
+            chain.pyramidContract ==
+              formattedContractAddress(event.from_address))
         ) {
           eventWithTypes.push({
             ...txReceiptFilter,
@@ -306,14 +310,42 @@ export class Web3Service {
           });
         } else if (
           event.keys.includes(EventTopic.TAKER_ASK) &&
-          chain.marketplaceContract.includes(
+          (chain.marketplaceContract.includes(
             formattedContractAddress(event.from_address),
-          )
+          ) ||
+            chain.pyramidContract ==
+              formattedContractAddress(event.from_address))
         ) {
           eventWithTypes.push({
             ...txReceiptFilter,
             eventType: EventType.TAKER_ASK,
             returnValues: decodeTakerAsk(txReceiptFilter, provider, timestamp),
+          });
+        } else if (
+          event.keys.includes(EventTopic.ORDER_EXECUTED) &&
+          chain.unframedContract == formattedContractAddress(event.from_address)
+        ) {
+          eventWithTypes.push({
+            ...txReceiptFilter,
+            eventType: EventType.TAKER_BID,
+            returnValues: decodeOrderExecuted(
+              txReceiptFilter,
+              provider,
+              timestamp,
+            ),
+          });
+        } else if (
+          event.keys.includes(EventTopic.ELEMENT_SALE) &&
+          chain.elementContract == formattedContractAddress(event.from_address)
+        ) {
+          eventWithTypes.push({
+            ...txReceiptFilter,
+            eventType: EventType.TAKER_BID,
+            returnValues: decodeElementSale(
+              txReceiptFilter,
+              provider,
+              timestamp,
+            ),
           });
         } else if (
           event.keys.includes(EventTopic.PHASE_DROP_UPDATED) &&

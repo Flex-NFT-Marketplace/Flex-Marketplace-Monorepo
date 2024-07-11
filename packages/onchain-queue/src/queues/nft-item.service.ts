@@ -1296,10 +1296,12 @@ export class NftItemService {
       owner: sellerUser,
     });
 
-    const sale = await this.saleModel.findOne({
-      signer: sellerUser,
-      saltNonce: orderNonce,
-    });
+    const sale = orderNonce
+      ? await this.saleModel.findOne({
+          signer: sellerUser,
+          saltNonce: orderNonce,
+        })
+      : null;
 
     await this.offerModel.updateMany(
       { seller: sellerUser, status: OfferStatus.pending },
@@ -1539,10 +1541,12 @@ export class NftItemService {
       owner: sellerUser,
     });
 
-    const offer = await this.offerModel.findOne({
-      signer: buyerUser,
-      saltNonce: orderNonce,
-    });
+    const offer = orderNonce
+      ? await this.offerModel.findOne({
+          signer: buyerUser,
+          saltNonce: orderNonce,
+        })
+      : null;
 
     if (sellerNft) {
       const history: Histories = {

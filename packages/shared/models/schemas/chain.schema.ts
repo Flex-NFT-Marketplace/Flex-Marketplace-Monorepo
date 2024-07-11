@@ -24,6 +24,15 @@ export class Chains extends BaseSchema {
   marketplaceContract: string[];
 
   @Prop()
+  pyramidContract: string;
+
+  @Prop()
+  elementContract: string;
+
+  @Prop()
+  unframedContract: string;
+
+  @Prop()
   currentMarketplaceContract: string;
 
   @Prop()
