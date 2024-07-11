@@ -347,24 +347,26 @@ export const decodeTakerBid = (
     provider,
   );
 
-  const parsedEvent = contractInstance.parseEvents(txReceipt)[0];
+  const parsedEvent = contractInstance.parseEvents(txReceipt)[0].TakerBid;
   const retrunValue: SaleReturnValue = {
-    orderNonce: Number((parsedEvent.TakerBid.order_nonce as bigint).toString()),
+    orderNonce: parsedEvent.order_nonce
+      ? Number((parsedEvent.order_nonce as bigint).toString())
+      : Number((parsedEvent.orderNonce as bigint).toString()),
     seller: formattedContractAddress(
-      num.toHex(parsedEvent.TakerBid.maker as BigNumberish),
+      num.toHex(parsedEvent.maker as BigNumberish),
     ),
     buyer: formattedContractAddress(
-      num.toHex(parsedEvent.TakerBid.taker as BigNumberish),
+      num.toHex(parsedEvent.taker as BigNumberish),
     ),
     currency: formattedContractAddress(
-      num.toHex(parsedEvent.TakerBid.currency as BigNumberish),
+      num.toHex(parsedEvent.currency as BigNumberish),
     ),
     collection: formattedContractAddress(
-      num.toHex(parsedEvent.TakerBid.collection as BigNumberish),
+      num.toHex(parsedEvent.collection as BigNumberish),
     ),
-    tokenId: (parsedEvent.TakerBid.token_id as bigint).toString(),
-    amount: Number((parsedEvent.TakerBid.amount as bigint).toString()),
-    price: Number((parsedEvent.TakerBid.price as bigint).toString()),
+    tokenId: (parsedEvent.token_id as bigint).toString(),
+    amount: Number((parsedEvent.amount as bigint).toString()),
+    price: Number((parsedEvent.price as bigint).toString()),
     timestamp,
   };
 
@@ -385,24 +387,104 @@ export const decodeTakerAsk = (
     provider,
   );
 
-  const parsedEvent = contractInstance.parseEvents(txReceipt)[0];
+  const parsedEvent = contractInstance.parseEvents(txReceipt)[0].TakerAsk;
   const retrunValue: SaleReturnValue = {
-    orderNonce: Number((parsedEvent.TakerAsk.order_nonce as bigint).toString()),
+    orderNonce: parsedEvent.order_nonce
+      ? Number((parsedEvent.order_nonce as bigint).toString())
+      : Number((parsedEvent.orderNonce as bigint).toString()),
     seller: formattedContractAddress(
-      num.toHex(parsedEvent.TakerAsk.taker as BigNumberish),
+      num.toHex(parsedEvent.taker as BigNumberish),
     ),
     buyer: formattedContractAddress(
-      num.toHex(parsedEvent.TakerAsk.maker as BigNumberish),
+      num.toHex(parsedEvent.maker as BigNumberish),
     ),
     currency: formattedContractAddress(
-      num.toHex(parsedEvent.TakerAsk.currency as BigNumberish),
+      num.toHex(parsedEvent.currency as BigNumberish),
     ),
     collection: formattedContractAddress(
-      num.toHex(parsedEvent.TakerAsk.collection as BigNumberish),
+      num.toHex(parsedEvent.collection as BigNumberish),
     ),
-    tokenId: (parsedEvent.TakerAsk.token_id as bigint).toString(),
-    amount: Number((parsedEvent.TakerAsk.amount as bigint).toString()),
-    price: Number((parsedEvent.TakerAsk.price as bigint).toString()),
+    tokenId: (parsedEvent.token_id as bigint).toString(),
+    amount: Number((parsedEvent.amount as bigint).toString()),
+    price: Number((parsedEvent.price as bigint).toString()),
+    timestamp,
+  };
+
+  return retrunValue;
+};
+
+export const decodeOrderExecuted = (
+  txReceipt: any,
+  provider: Provider,
+  timestamp: number,
+): SaleReturnValue => {
+  const marketplaceAddress = formattedContractAddress(
+    txReceipt.events[0].from_address,
+  );
+  const contractInstance = new Contract(
+    ABIS.UnframedABI,
+    marketplaceAddress,
+    provider,
+  );
+
+  const parsedEvent = contractInstance.parseEvents(txReceipt)[0];
+  const retrunValue: SaleReturnValue = {
+    orderNonce: null,
+    seller: formattedContractAddress(
+      num.toHex(parsedEvent.OrderExecuted.maker as BigNumberish),
+    ),
+    buyer: formattedContractAddress(
+      num.toHex(parsedEvent.OrderExecuted.taker as BigNumberish),
+    ),
+    currency: formattedContractAddress(
+      num.toHex(parsedEvent.OrderExecuted.currency as BigNumberish),
+    ),
+    collection: formattedContractAddress(
+      num.toHex(parsedEvent.OrderExecuted.collection as BigNumberish),
+    ),
+    tokenId: (parsedEvent.OrderExecuted.token_id as bigint).toString(),
+    amount: Number((parsedEvent.OrderExecuted.amount as bigint).toString()),
+    price: Number((parsedEvent.OrderExecuted.price as bigint).toString()),
+    timestamp,
+  };
+
+  return retrunValue;
+};
+
+export const decodeElementSale = (
+  txReceipt: any,
+  provider: Provider,
+  timestamp: number,
+): SaleReturnValue => {
+  const parsedEvent = txReceipt.events[0];
+  const type = Number((parsedEvent.keys[2] as bigint).toString());
+  const maker = parsedEvent.keys[3];
+  const taker = parsedEvent.data[0];
+  const currency = parsedEvent.data[1];
+  const price = parsedEvent.data[2];
+  const numberFeeRecepients = Number(
+    (parsedEvent.data[3] as bigint).toString(),
+  );
+  const collection = parsedEvent.data[4 + numberFeeRecepients * 2];
+  const tokenId = uint256.uint256ToBN({
+    low: parsedEvent.data[5 + numberFeeRecepients * 2],
+    high: parsedEvent.data[6 + numberFeeRecepients * 2],
+  });
+  const amount = parsedEvent.data[7 + numberFeeRecepients * 2];
+
+  const retrunValue: SaleReturnValue = {
+    orderNonce: null,
+    seller: formattedContractAddress(
+      num.toHex((type == 1 ? maker : taker) as BigNumberish),
+    ),
+    buyer: formattedContractAddress(
+      num.toHex((type == 1 ? taker : maker) as BigNumberish),
+    ),
+    currency: formattedContractAddress(num.toHex(currency as BigNumberish)),
+    collection: formattedContractAddress(num.toHex(collection as BigNumberish)),
+    tokenId: tokenId.toString(),
+    amount: Number((amount as bigint).toString()),
+    price: Number((price as bigint).toString()),
     timestamp,
   };
 
