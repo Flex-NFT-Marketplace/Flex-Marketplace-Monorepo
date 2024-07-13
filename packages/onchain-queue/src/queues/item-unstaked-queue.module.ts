@@ -35,7 +35,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { Web3Service } from '@app/web3-service/web3.service';
 import { NftItemService } from './nft-item.service';
 import { UserService } from '../users/user.service';
-import { CancelOfferProcessor } from './processors';
+import { ItemUnstakedProcessor } from './processors';
 
 @Module({
   imports: [
@@ -59,11 +59,11 @@ import { CancelOfferProcessor } from './processors';
         defaultJobOptions: MQ_JOB_DEFAULT_CONFIG,
       },
       {
-        name: ONCHAIN_QUEUES.QUEUE_CANCEL_OFFER,
+        name: ONCHAIN_QUEUES.QUEUE_ITEM_UNSTAKED,
         defaultJobOptions: MQ_JOB_DEFAULT_CONFIG,
       },
     ),
   ],
-  providers: [NftItemService, UserService, Web3Service, CancelOfferProcessor],
+  providers: [NftItemService, UserService, Web3Service, ItemUnstakedProcessor],
 })
-export class CancelOfferQueueModule {}
+export class ItemUnstakedQueueModule {}

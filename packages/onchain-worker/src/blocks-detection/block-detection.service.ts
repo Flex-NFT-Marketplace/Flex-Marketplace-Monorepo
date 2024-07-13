@@ -33,6 +33,8 @@ export class BlockDetectionService extends OnchainWorker {
     takerAskQueue: Queue<LogsReturnValues>,
     takerBidQueue: Queue<LogsReturnValues>,
     upgradeContractQueue: Queue<LogsReturnValues>,
+    itemStakedQueue: Queue<LogsReturnValues>,
+    itemUnstakedQueue: Queue<LogsReturnValues>,
     onchainQueue: OnchainQueueService,
     blockModel: Model<BlockDocument>,
     web3Service: Web3Service,
@@ -56,6 +58,8 @@ export class BlockDetectionService extends OnchainWorker {
     this.takerAskQueue = takerAskQueue;
     this.takerBidQueue = takerBidQueue;
     this.upgradeContractQueue = upgradeContractQueue;
+    this.itemStakedQueue = itemStakedQueue;
+    this.itemUnstakedQueue = itemUnstakedQueue;
     this.onchainQueue = onchainQueue;
     this.chain = chain;
     this.chainId = chain.id;
@@ -81,6 +85,8 @@ export class BlockDetectionService extends OnchainWorker {
   takerAskQueue: Queue<LogsReturnValues>;
   takerBidQueue: Queue<LogsReturnValues>;
   upgradeContractQueue: Queue<LogsReturnValues>;
+  itemStakedQueue: Queue<LogsReturnValues>;
+  itemUnstakedQueue: Queue<LogsReturnValues>;
   blockModel: Model<BlockDocument>;
 
   fetchLatestBlock: () => Promise<number> = async () => {
@@ -151,7 +157,7 @@ export class BlockDetectionService extends OnchainWorker {
       },
     );
 
-    const batchProcess = 250;
+    const batchProcess = 20;
     const maxRetry = 10;
     //batch process 10 txs, max retry 10 times
     await arraySliceProcess(
@@ -211,6 +217,18 @@ export class BlockDetectionService extends OnchainWorker {
         ev => ev.eventType === EventType.DEPLOY_CONTRACT,
       );
 
+      const claimPointEv = eventWithType.filter(
+        ev => ev.eventType === EventType.CLAIM_POINT,
+      );
+
+      const itemStakedEv = eventWithType.filter(
+        ev => ev.eventType === EventType.ITEM_STAKED,
+      );
+
+      const itemUnstakedEv = eventWithType.filter(
+        ev => ev.eventType === EventType.ITEM_UNSTAKED,
+      );
+
       // skip transfer event if it is sale or accept offer or flexdrop minted -> prevent duplicate event
       const eventlogs = eventWithType.filter(ev => {
         if (
@@ -219,10 +237,32 @@ export class BlockDetectionService extends OnchainWorker {
         ) {
           return (
             !matchTakerAskEv.find(
-              e => e.transaction_hash === ev.transaction_hash,
+              e =>
+                e.transaction_hash === ev.transaction_hash &&
+                e.returnValues.collection == ev.returnValues.nftAddress &&
+                e.returnValues.tokenId == ev.returnValues.tokenId &&
+                e.returnValues.seller == ev.returnValues.from,
             ) &&
             !matchTakerBidEv.find(
-              e => e.transaction_hash === ev.transaction_hash,
+              e =>
+                e.transaction_hash === ev.transaction_hash &&
+                e.returnValues.collection == ev.returnValues.nftAddress &&
+                e.returnValues.tokenId == ev.returnValues.tokenId &&
+                e.returnValues.seller == ev.returnValues.from,
+            ) &&
+            !itemStakedEv.find(
+              e =>
+                e.transaction_hash === ev.transaction_hash &&
+                e.returnValues.collection == ev.returnValues.nftAddress &&
+                e.returnValues.tokenId == ev.returnValues.tokenId &&
+                e.returnValues.owner == ev.returnValues.from,
+            ) &&
+            !itemUnstakedEv.find(
+              e =>
+                e.transaction_hash === ev.transaction_hash &&
+                e.returnValues.collection == ev.returnValues.nftAddress &&
+                e.returnValues.tokenId == ev.returnValues.tokenId &&
+                e.returnValues.owner == ev.returnValues.to,
             )
           );
         }
@@ -250,6 +290,17 @@ export class BlockDetectionService extends OnchainWorker {
             log.returnValues.isFlexDropMinted = true;
             log.returnValues.price =
               ev.returnValues.totalMintPrice / ev.returnValues.quantityMinted;
+          }
+        });
+      }
+
+      for (const ev of claimPointEv) {
+        eventlogs.map(log => {
+          if (
+            log.eventType === EventType.ITEM_UNSTAKED &&
+            log.returnValues.owner === ev.returnValues.user
+          ) {
+            log.returnValues.point = ev.returnValues.point;
           }
         });
       }
@@ -348,6 +399,14 @@ export class BlockDetectionService extends OnchainWorker {
             queue = this.upgradeContractQueue;
             jobName = ONCHAIN_JOBS.JOB_UPGRADE_CONTRACT;
             break;
+          case EventType.ITEM_STAKED:
+            queue = this.itemStakedQueue;
+            jobName = ONCHAIN_JOBS.JOB_ITEM_STAKED;
+            break;
+          case EventType.ITEM_UNSTAKED:
+            queue = this.itemUnstakedQueue;
+            jobName = ONCHAIN_JOBS.JOB_ITEM_UNSTAKED;
+            break;
         }
 
         if (queue && jobName) {
@@ -360,6 +419,7 @@ export class BlockDetectionService extends OnchainWorker {
       // await this.mailingSerivce.sendMail(
       //   `Failed to fetch data of tx hash - ${txHash}`,
       // );
+      console.log(error);
 
       throw new Error(`Failed to fetch data of tx Hash - ${txHash}`);
     }
