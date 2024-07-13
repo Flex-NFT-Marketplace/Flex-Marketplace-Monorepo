@@ -114,6 +114,14 @@ import { OnchainQueueService } from '@app/shared/utils/queue';
         name: ONCHAIN_QUEUES.QUEUE_UPGRADE_CONTRACT,
         defaultJobOptions: MQ_JOB_DEFAULT_CONFIG,
       },
+      {
+        name: ONCHAIN_QUEUES.QUEUE_ITEM_STAKED,
+        defaultJobOptions: MQ_JOB_DEFAULT_CONFIG,
+      },
+      {
+        name: ONCHAIN_QUEUES.QUEUE_ITEM_UNSTAKED,
+        defaultJobOptions: MQ_JOB_DEFAULT_CONFIG,
+      },
     ),
   ],
   providers: [OnchainQueueService, Web3Service],

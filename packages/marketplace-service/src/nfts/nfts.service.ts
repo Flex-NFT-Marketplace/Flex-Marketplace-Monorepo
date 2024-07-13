@@ -57,7 +57,7 @@ export class NftService {
     }
 
     filter.isBurned = query.isBurned ? query.isBurned : false;
-
+    filter.amount = { $gt: 0 };
     const count = await this.nftModel.countDocuments(filter);
     if (query.size === 0) {
       result.data = new PaginationDto([], count, query.page, query.size);

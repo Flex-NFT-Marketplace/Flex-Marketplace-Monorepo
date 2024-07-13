@@ -20,6 +20,7 @@ import {
   ERC721TransferReturnValue,
   decodeCancelAllOrders,
   decodeCancelOrder,
+  decodeClaimPoint,
   decodeContractDeployed,
   decodeCreatorPayoutUpdated,
   decodeERC115Transfer,
@@ -27,6 +28,8 @@ import {
   decodeERC721Transfer,
   decodeElementSale,
   decodeFlexDropMinted,
+  decodeItemStaked,
+  decodeItemUnstaked,
   decodeOrderExecuted,
   decodePayerUpdated,
   decodePhaseDropUpdated,
@@ -394,6 +397,51 @@ export class Web3Service {
             ...txReceiptFilter,
             eventType: EventType.FLEX_DROP_MINTED,
             returnValues: decodeFlexDropMinted(
+              txReceiptFilter,
+              provider,
+              timestamp,
+            ),
+          });
+        } else if (
+          event.keys.includes(EventTopic.ITEAM_STAKED) &&
+          chain.stakingContracts.includes(
+            formattedContractAddress(event.from_address),
+          )
+        ) {
+          eventWithTypes.push({
+            ...txReceiptFilter,
+            eventType: EventType.ITEM_STAKED,
+            returnValues: decodeItemStaked(
+              txReceiptFilter,
+              provider,
+              timestamp,
+            ),
+          });
+        } else if (
+          event.keys.includes(EventTopic.ITEM_UNSTAKED) &&
+          chain.stakingContracts.includes(
+            formattedContractAddress(event.from_address),
+          )
+        ) {
+          eventWithTypes.push({
+            ...txReceiptFilter,
+            eventType: EventType.ITEM_UNSTAKED,
+            returnValues: decodeItemUnstaked(
+              txReceiptFilter,
+              provider,
+              timestamp,
+            ),
+          });
+        } else if (
+          event.keys.includes(EventTopic.CLAIM_POINT) &&
+          chain.stakingContracts.includes(
+            formattedContractAddress(event.from_address),
+          )
+        ) {
+          eventWithTypes.push({
+            ...txReceiptFilter,
+            eventType: EventType.CLAIM_POINT,
+            returnValues: decodeClaimPoint(
               txReceiptFilter,
               provider,
               timestamp,

@@ -22,6 +22,7 @@ import {
   PhaseType,
   SaleDocument,
   Sales,
+  Staking,
 } from '@app/shared/models';
 import {
   CancelAllOrdersReturnValue,
@@ -30,6 +31,8 @@ import {
   CreatorPayoutUpdatedReturnValue,
   ERC1155TransferReturnValue,
   ERC721TransferReturnValue,
+  ItemStakedReturnValue,
+  ItemUnStakedReturnValue,
   PayerUpdatedReturnValue,
   PhaseDropUpdatedReturnValue,
   SaleReturnValue,
@@ -66,6 +69,8 @@ export class NftItemService {
     private readonly notificationModel: Model<NotificationDocument>,
     @InjectModel(DropPhases.name)
     private readonly dropPhaseModel: Model<DropPhaseDocument>,
+    @InjectModel(Staking.name)
+    private readonly stakingModel: Model<Staking>,
     @InjectQueue(QUEUE_METADATA)
     private readonly fetchMetadataQueue: Queue<string>,
     private readonly web3Service: Web3Service,
@@ -98,6 +103,8 @@ export class NftItemService {
     process[EventType.PAYER_UPDATED] = this.processPayerUpdated;
     process[EventType.UPDATE_METADATA_721] = this.processNft721UpdateMetadata;
     process[EventType.UPDATE_METADATA_1155] = this.processNft1155UpdateMetadata;
+    process[EventType.ITEM_STAKED] = this.processItemStaked;
+    process[EventType.ITEM_UNSTAKED] = this.processItemUnstaked;
 
     await process[log.eventType].call(this, log, chain, index);
   }
@@ -488,7 +495,7 @@ export class NftItemService {
           burnedAt: timestamp,
           isBurned: true,
           blockTime: timestamp,
-          sales: [],
+          sale: null,
           marketType: MarketType.NotForSale,
         },
       },
@@ -570,7 +577,7 @@ export class NftItemService {
       const updateNft = {
         blockTime: timestamp,
         owner: toUser,
-        sales: [],
+        sale: null,
         marketType: MarketType.NotForSale,
       };
       updateNfts.push({
@@ -1266,7 +1273,6 @@ export class NftItemService {
     index: number,
   ) {
     const {
-      orderNonce,
       seller,
       buyer,
       currency,
@@ -1276,6 +1282,8 @@ export class NftItemService {
       price,
       timestamp,
     } = log.returnValues as SaleReturnValue;
+
+    const orderNonce = log.returnValues.orderNonce;
 
     const nftCollection = await this.getOrCreateNftCollection(
       collection,
@@ -1407,12 +1415,13 @@ export class NftItemService {
       }
     } else {
       try {
-        const counterSignatureUsage =
-          await this.web3Service.getCounterUsageSignature(
-            seller,
-            orderNonce,
-            chain,
-          );
+        const counterSignatureUsage = orderNonce
+          ? await this.web3Service.getCounterUsageSignature(
+              seller,
+              orderNonce,
+              chain,
+            )
+          : null;
 
         const remainingUsage =
           sale && counterSignatureUsage
@@ -1511,7 +1520,6 @@ export class NftItemService {
     index: number,
   ) {
     const {
-      orderNonce,
       seller,
       buyer,
       currency,
@@ -1521,6 +1529,7 @@ export class NftItemService {
       price,
       timestamp,
     } = log.returnValues as SaleReturnValue;
+    const orderNonce = log.returnValues.orderNonce;
 
     const nftCollection = await this.getOrCreateNftCollection(
       collection,
@@ -1872,5 +1881,148 @@ export class NftItemService {
     }
 
     await nftCollection.save();
+  }
+
+  async processItemStaked(
+    log: LogsReturnValues,
+    chain: ChainDocument,
+    index: number,
+  ) {
+    const { collection, tokenId, owner, stakedAt } =
+      log.returnValues as ItemStakedReturnValue;
+
+    const nftCollection = await this.getOrCreateNftCollection(
+      collection,
+      chain,
+    );
+
+    const ownerUser = await this.userService.getOrCreateUser(owner);
+    const stakingUser = await this.userService.getOrCreateUser(
+      log.events[0].from_address,
+    );
+
+    const nftDocument = await this.nftModel.findOne({
+      nftContract: collection,
+      tokenId,
+      owner: ownerUser,
+    });
+
+    if (nftDocument) {
+      nftDocument.owner = stakingUser;
+      nftDocument.blockTime = stakedAt;
+      nftDocument.sale = null;
+      nftDocument.marketType = MarketType.NotForSale;
+      await nftDocument.save();
+    }
+
+    await this.stakingModel.findOneAndUpdate(
+      {
+        nftContract: collection,
+        tokenId,
+        user: ownerUser,
+      },
+      {
+        $set: {
+          nftContract: collection,
+          tokenId,
+          user: ownerUser,
+        },
+      },
+      { upsert: true },
+    );
+
+    const history: Histories = {
+      nft: nftDocument,
+      tokenId,
+      nftContract: collection,
+      nftCollection,
+      from: ownerUser,
+      to: stakingUser,
+      amount: 1,
+      price: 0,
+      priceInUsd: 0,
+      txHash: log.transaction_hash,
+      index,
+      timestamp: stakedAt,
+      chain,
+      type: HistoryType.Stake,
+    };
+
+    await this.historyModel.findOneAndUpdate(
+      {
+        nftContract: collection,
+        tokenId,
+        txHash: log.transaction_hash,
+        index,
+      },
+      { $set: history },
+      { upsert: true, new: true },
+    );
+  }
+
+  async processItemUnstaked(
+    log: LogsReturnValues,
+    chain: ChainDocument,
+    index: number,
+  ) {
+    const { collection, tokenId, owner, unstakedAt, point } =
+      log.returnValues as ItemUnStakedReturnValue;
+
+    const nftCollection = await this.getOrCreateNftCollection(
+      collection,
+      chain,
+    );
+
+    const ownerUser = await this.userService.getOrCreateUser(owner);
+    const stakingUser = await this.userService.getOrCreateUser(
+      log.events[0].from_address,
+    );
+
+    const nftDocument = await this.nftModel.findOne({
+      nftContract: collection,
+      tokenId,
+      owner: stakingUser,
+    });
+
+    if (nftDocument) {
+      nftDocument.owner = ownerUser;
+      nftDocument.blockTime = unstakedAt;
+      await nftDocument.save();
+    }
+
+    await this.stakingModel.findOneAndDelete({
+      nftContract: collection,
+      tokenId,
+      user: ownerUser,
+    });
+
+    const history: Histories = {
+      nft: nftDocument,
+      tokenId,
+      nftContract: collection,
+      nftCollection,
+      from: stakingUser,
+      to: ownerUser,
+      amount: 1,
+      price: 0,
+      priceInUsd: 0,
+      txHash: log.transaction_hash,
+      index,
+      timestamp: unstakedAt,
+      chain,
+      type: HistoryType.Unstake,
+      point,
+    };
+
+    await this.historyModel.findOneAndUpdate(
+      {
+        nftContract: collection,
+        tokenId,
+        txHash: log.transaction_hash,
+        index,
+      },
+      { $set: history },
+      { upsert: true, new: true },
+    );
   }
 }

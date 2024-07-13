@@ -12,3 +12,4 @@ export * from './sale.schema';
 export * from './offer.schema';
 export * from './history.schema';
 export * from './dropphase.schema';
+export * from './staking.schema';

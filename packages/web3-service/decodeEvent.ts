@@ -322,7 +322,7 @@ export const decodeCancelAllOrders = (
 };
 
 export type SaleReturnValue = {
-  orderNonce: number;
+  orderNonce: number | null;
   seller: string;
   buyer: string;
   currency: string;
@@ -349,9 +349,7 @@ export const decodeTakerBid = (
 
   const parsedEvent = contractInstance.parseEvents(txReceipt)[0].TakerBid;
   const retrunValue: SaleReturnValue = {
-    orderNonce: parsedEvent.order_nonce
-      ? Number((parsedEvent.order_nonce as bigint).toString())
-      : Number((parsedEvent.orderNonce as bigint).toString()),
+    orderNonce: Number((parsedEvent.order_nonce as bigint).toString()),
     seller: formattedContractAddress(
       num.toHex(parsedEvent.maker as BigNumberish),
     ),
@@ -369,6 +367,8 @@ export const decodeTakerBid = (
     price: Number((parsedEvent.price as bigint).toString()),
     timestamp,
   };
+
+  console.log(retrunValue);
 
   return retrunValue;
 };
@@ -389,9 +389,7 @@ export const decodeTakerAsk = (
 
   const parsedEvent = contractInstance.parseEvents(txReceipt)[0].TakerAsk;
   const retrunValue: SaleReturnValue = {
-    orderNonce: parsedEvent.order_nonce
-      ? Number((parsedEvent.order_nonce as bigint).toString())
-      : Number((parsedEvent.orderNonce as bigint).toString()),
+    orderNonce: Number((parsedEvent.order_nonce as bigint).toString()),
     seller: formattedContractAddress(
       num.toHex(parsedEvent.taker as BigNumberish),
     ),
@@ -658,4 +656,108 @@ export const decodeFlexDropMinted = (
   };
 
   return returnValue;
+};
+
+export type ItemStakedReturnValue = {
+  collection: string;
+  tokenId: string;
+  owner: string;
+  stakedAt: number;
+};
+
+export const decodeItemStaked = (
+  txReceipt: any,
+  provider: Provider,
+  timestamp: number,
+): ItemStakedReturnValue => {
+  const stakingContract = formattedContractAddress(
+    txReceipt.events[0].from_address,
+  );
+  const contractInstance = new Contract(
+    ABIS.StakingABI,
+    stakingContract,
+    provider,
+  );
+
+  const parsedEvent = contractInstance.parseEvents(txReceipt)[0].ItemStaked;
+  const returnValues: ItemStakedReturnValue = {
+    collection: formattedContractAddress(
+      num.toHex(parsedEvent.collection as BigNumberish),
+    ),
+    tokenId: (parsedEvent.tokenId as bigint).toString(),
+    owner: formattedContractAddress(
+      num.toHex(parsedEvent.owner as BigNumberish),
+    ),
+    stakedAt: Number((parsedEvent.stakedAt as bigint).toString()),
+  };
+
+  return returnValues;
+};
+
+export type ItemUnStakedReturnValue = {
+  collection: string;
+  tokenId: string;
+  owner: string;
+  unstakedAt: number;
+  point: string;
+};
+
+export const decodeItemUnstaked = (
+  txReceipt: any,
+  provider: Provider,
+  timestamp: number,
+): ItemUnStakedReturnValue => {
+  const stakingContract = formattedContractAddress(
+    txReceipt.events[0].from_address,
+  );
+  const contractInstance = new Contract(
+    ABIS.StakingABI,
+    stakingContract,
+    provider,
+  );
+
+  const parsedEvent = contractInstance.parseEvents(txReceipt)[0].ItemUnstaked;
+  const returnValues: ItemUnStakedReturnValue = {
+    collection: formattedContractAddress(
+      num.toHex(parsedEvent.collection as BigNumberish),
+    ),
+    tokenId: (parsedEvent.tokenId as bigint).toString(),
+    owner: formattedContractAddress(
+      num.toHex(parsedEvent.owner as BigNumberish),
+    ),
+    unstakedAt: Number((parsedEvent.unstakedAt as bigint).toString()),
+    point: '0',
+  };
+
+  return returnValues;
+};
+
+export type ClaimPointReturnValue = {
+  user: string;
+  point: string;
+};
+
+export const decodeClaimPoint = (
+  txReceipt: any,
+  provider: Provider,
+  timestamp: number,
+): ClaimPointReturnValue => {
+  const stakingContract = formattedContractAddress(
+    txReceipt.events[0].from_address,
+  );
+  const contractInstance = new Contract(
+    ABIS.StakingABI,
+    stakingContract,
+    provider,
+  );
+
+  const parsedEvent = contractInstance.parseEvents(txReceipt)[0].ClaimPoint;
+  const returnValues: ClaimPointReturnValue = {
+    user: formattedContractAddress(num.toHex(parsedEvent.user as BigNumberish)),
+    point: (parsedEvent.point as bigint).toString(),
+  };
+
+  console.log(returnValues);
+
+  return returnValues;
 };

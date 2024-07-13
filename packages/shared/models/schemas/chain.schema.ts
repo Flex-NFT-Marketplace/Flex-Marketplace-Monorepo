@@ -78,6 +78,9 @@ export class Chains extends BaseSchema {
   erc721FlexDropClassHash?: string;
 
   @Prop()
+  stakingContracts: string[];
+
+  @Prop()
   delayBlock: number;
 }
 

@@ -53,6 +53,10 @@ export class BlockDetectionController {
     private readonly takerBidQueue: Queue<LogsReturnValues>,
     @InjectQueue(ONCHAIN_QUEUES.QUEUE_UPGRADE_CONTRACT)
     private readonly upgradeContractQueue: Queue<LogsReturnValues>,
+    @InjectQueue(ONCHAIN_QUEUES.QUEUE_ITEM_STAKED)
+    private readonly itemStakedQueue: Queue<LogsReturnValues>,
+    @InjectQueue(ONCHAIN_QUEUES.QUEUE_ITEM_UNSTAKED)
+    private readonly itemUnstakedQueue: Queue<LogsReturnValues>,
     private readonly onchainQueueService: OnchainQueueService,
     private readonly web3Service: Web3Service,
   ) {
@@ -82,6 +86,8 @@ export class BlockDetectionController {
             this.takerAskQueue,
             this.takerBidQueue,
             this.upgradeContractQueue,
+            this.itemStakedQueue,
+            this.itemUnstakedQueue,
             this.onchainQueueService,
             this.blockModel,
             this.web3Service,

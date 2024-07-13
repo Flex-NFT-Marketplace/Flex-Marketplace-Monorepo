@@ -12,6 +12,7 @@ import flexDrop from '../abis/flexdrop.abi.json';
 import proxyAbi from '../abis/proxy.abi.json';
 import src5Abi from '../abis/src5.abi.json';
 import unframedAbi from '../abis/unframed.abi.json';
+import stakingAbi from '../abis/staking.abi.json';
 
 export enum EventTopic {
   CONTRACT_DEPLOYED = '0x26b160f10156dea0639bec90696772c640b9706a47f5b8c52ea1abe5858b34d',
@@ -31,6 +32,9 @@ export enum EventTopic {
   FLEX_DROP_MINTED = '0x2e85c3cdcfa0ab436a9b3d9fe53b1d1fde30b9696afe98c4587dc5099ea5bb9',
   CREATOR_PAYOUT_UPDATED = '0x3110384dee490385b1868cfc2b61dfe6867622bd1471235785d10eca82a0766',
   PAYER_UPDATED = '0x2c70140017209d30aaefd4a4c857d4c1fee5d63fea01c590069ca032cc1d11',
+  ITEAM_STAKED = '0x274d1271c850a2be85bad3edc8ed6f31cd6065b02bd477fcf5b50bfb8b54026',
+  ITEM_UNSTAKED = '0x303ee27f547520a00c69018a89934e75955cc560b82ccf2fc8b3a23dbca4036',
+  CLAIM_POINT = '0xc8ca6112db318b80e9f2761ac4d56b0d3c5a589fecd1edc97734247e2fff3c',
 }
 
 export enum InterfaceId {
@@ -60,6 +64,9 @@ export enum EventType {
   FLEX_DROP_MINTED = 'FLEX_DROP_MINTED',
   CREATOR_PAYOUT_UPDATED = 'CREATOR_PAYOUT_UPDATED',
   PAYER_UPDATED = 'PAYER_UPDATED',
+  ITEM_STAKED = 'ITEM_STAKED',
+  ITEM_UNSTAKED = 'ITEM_UNSTAKED',
+  CLAIM_POINT = 'CLAIM_POINT',
 }
 export type LogsReturnValues = SuccessfulTransactionReceiptResponse & {
   returnValues: any;
@@ -81,4 +88,5 @@ export const ABIS = {
   AccountABI: accountAbi,
   ProxyABI: proxyAbi,
   Src5ABI: src5Abi,
+  StakingABI: stakingAbi,
 };
