@@ -315,20 +315,52 @@ export class NftCollectionsService {
 
   async getNFTCollectionDetail(nftContract: string) {
     const formatedAddress = formattedContractAddress(nftContract);
-    const data = (
-      await this.nftCollectionModel.findOne({
-        nftContract: formatedAddress,
-      })
-    ).populate([
+    const data = await this.nftCollectionModel.aggregate([
       {
-        path: 'owner',
-        select: 'address username avatar cover isVerified',
+        $match: {
+          nftContract,
+        },
       },
       {
-        path: 'collaboratories',
-        select: 'address',
+        $lookup: {
+          from: 'nfts',
+          localField: 'nftContract',
+          foreignField: 'collection_address',
+          as: 'nfts',
+        },
       },
-      'paymentTokens',
+      {
+        $addFields: {
+          attributeCounts: {
+            $map: {
+              input: '$attributeMap',
+              as: 'attr',
+              in: {
+                attribute: '$$attr',
+                count: {
+                  $size: {
+                    $filter: {
+                      input: '$nfts',
+                      as: 'nft',
+                      cond: {
+                        $in: ['$$attr', '$$nft.attributes'],
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      {
+        $project: {
+          _id: 1,
+          nftContract: 1,
+          name: 1,
+          attributeCounts: 1,
+        },
+      },
     ]);
 
     return data;

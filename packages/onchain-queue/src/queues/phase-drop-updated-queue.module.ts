@@ -19,6 +19,8 @@ import {
   PaymentTokens,
   SaleSchema,
   Sales,
+  Staking,
+  StakingSchema,
   UserSchema,
   Users,
 } from '@app/shared/models';
@@ -49,6 +51,7 @@ import { PhaseDropUpdatedProcessor } from './processors';
       { name: Notifications.name, schema: NotificationSchema },
       { name: Histories.name, schema: HistorySchema },
       { name: DropPhases.name, schema: DropPhaseSchema },
+      { name: Staking.name, schema: StakingSchema },
     ]),
     BullModule.registerQueue(
       {

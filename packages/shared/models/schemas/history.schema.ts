@@ -64,12 +64,14 @@ export class Histories extends BaseSchema {
 
   @Prop({ type: SchemaTypes.ObjectId, ref: 'PaymentTokens' })
   paymentToken?: PaymentTokenDocument;
+
+  @Prop()
+  point?: string;
 }
 
 export const HistorySchema = SchemaFactory.createForClass(Histories);
 HistorySchema.index({ nftContract: 1 });
 HistorySchema.index({ nftContract: 1, tokenId: 1 });
-HistorySchema.index({ txHash: 1, index: 1 });
 HistorySchema.index(
   { nftContract: 1, tokenId: 1, txHash: 1, index: 1 },
   { unique: true },

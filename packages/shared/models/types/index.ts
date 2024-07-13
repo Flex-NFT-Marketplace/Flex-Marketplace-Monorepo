@@ -26,6 +26,8 @@ export enum HistoryType {
   CancelOffer = 'cancelOffer',
   Sale = 'sale',
   Burn = 'burn',
+  Stake = 'stake',
+  Unstake = 'unstake',
 }
 export enum ActivityType {
   CreateSale = 'createSale',

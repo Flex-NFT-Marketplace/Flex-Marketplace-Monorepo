@@ -15,3 +15,5 @@ export * from './taker-bid.processor';
 export * from './upgrade-contract.processor';
 export * from './erc721-update-metadata.processor';
 export * from './erc1155-update-metadata.processor';
+export * from './item-staked.processor';
+export * from './item-unstaked.processor';
