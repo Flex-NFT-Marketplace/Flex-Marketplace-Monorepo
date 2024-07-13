@@ -31,6 +31,10 @@ import { Queue } from 'bull';
 import { EventType, LogsReturnValues } from '@app/web3-service/types';
 import { OnchainQueueService } from '@app/shared/utils/queue';
 import { NFTCollectionSuply } from './dto/CollectionSupply.dto';
+import {
+  NftCollectionHolders,
+  NftCollectionHoldersQuery,
+} from './dto/CollectionHolders.dto';
 
 @Injectable()
 export class NftCollectionsService {
@@ -109,6 +113,89 @@ export class NftCollectionsService {
       .populate('paymentTokens')
       .exec();
     result.data = new PaginationDto(items, count, page, size);
+    return result;
+  }
+
+  async getTopHolders(
+    query: NftCollectionHoldersQuery,
+  ): Promise<BaseResultPagination<NftCollectionHolders>> {
+    const { page, size, skipIndex, nftContract } = query;
+    const result = new BaseResultPagination<NftCollectionHolders>();
+    const formattedAddress = formattedContractAddress(nftContract);
+    const totalSupply = await this.getTotalOwners(formattedAddress);
+
+    if (totalSupply.owners == 0) {
+      result.data = new PaginationDto<NftCollectionHolders>([], 0, page, size);
+    }
+
+    const topHolders = await this.nftModel.aggregate([
+      {
+        $match: {
+          nftContract: formattedAddress,
+          $or: [{ isBurned: false }, { amount: { $gt: 0 } }],
+        },
+      },
+      {
+        $group: {
+          _id: '$owner',
+          amount: { $sum: '$amount' },
+        },
+      },
+      {
+        $sort: { amount: -1 },
+      },
+      {
+        $skip: skipIndex,
+      },
+      {
+        $limit: size,
+      },
+      {
+        $lookup: {
+          from: 'users',
+          let: { user: '$_id' },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $eq: ['$$user', '$_id'],
+                },
+              },
+            },
+            {
+              $project: {
+                _id: 1,
+                username: 1,
+                address: 1,
+                isVerified: 1,
+              },
+            },
+          ],
+          as: 'owner',
+        },
+      },
+      {
+        $unwind: '$owner',
+      },
+      {
+        $project: {
+          _id: 0,
+          owner: 1,
+          amount: 1,
+          percentage: {
+            $divide: [{ $multiply: ['$amount', 100] }, totalSupply.supply],
+          },
+        },
+      },
+    ]);
+
+    result.data = new PaginationDto<NftCollectionHolders>(
+      topHolders,
+      totalSupply.owners,
+      page,
+      size,
+    );
+
     return result;
   }
 
@@ -315,53 +402,26 @@ export class NftCollectionsService {
 
   async getNFTCollectionDetail(nftContract: string) {
     const formatedAddress = formattedContractAddress(nftContract);
-    const data = await this.nftCollectionModel.aggregate([
-      {
-        $match: {
-          nftContract,
+    const data = await this.nftCollectionModel
+      .findOne({
+        nftContract: formatedAddress,
+      })
+      .populate([
+        {
+          path: 'owner',
+          select: [
+            'address',
+            'username',
+            'isVerified',
+            'email',
+            'avatar',
+            'cover',
+            'about',
+            'socials',
+            'isVerified',
+          ],
         },
-      },
-      {
-        $lookup: {
-          from: 'nfts',
-          localField: 'nftContract',
-          foreignField: 'collection_address',
-          as: 'nfts',
-        },
-      },
-      {
-        $addFields: {
-          attributeCounts: {
-            $map: {
-              input: '$attributeMap',
-              as: 'attr',
-              in: {
-                attribute: '$$attr',
-                count: {
-                  $size: {
-                    $filter: {
-                      input: '$nfts',
-                      as: 'nft',
-                      cond: {
-                        $in: ['$$attr', '$$nft.attributes'],
-                      },
-                    },
-                  },
-                },
-              },
-            },
-          },
-        },
-      },
-      {
-        $project: {
-          _id: 1,
-          nftContract: 1,
-          name: 1,
-          attributeCounts: 1,
-        },
-      },
-    ]);
+      ]);
 
     return data;
   }
@@ -524,14 +584,14 @@ export class NftCollectionsService {
       {
         $match: {
           nftContract,
-          isBurned: false,
+          $or: [{ isBurned: false }, { amount: { $gt: 0 } }],
         },
       },
       {
         $group: {
           _id: '$owner',
           totalNFT: {
-            $sum: 1,
+            $sum: '$amount',
           },
         },
       },
@@ -550,7 +610,13 @@ export class NftCollectionsService {
         },
       },
     ]);
-    console.log(`${Date.now() - now} ms`);
+
+    if (totalOwners.length == 0) {
+      return {
+        owners: 0,
+        supply: 0,
+      };
+    }
 
     return totalOwners[0];
   }

@@ -33,6 +33,10 @@ import { updateCollectionMetadataDto } from './dto/updateCollectionMetadata.dto'
 import { isHexadecimal } from 'class-validator';
 import { NFTCollectionSuply } from './dto/CollectionSupply.dto';
 import { JwtAdminAuthGuard } from '@app/shared/modules';
+import {
+  NftCollectionHolders,
+  NftCollectionHoldersQuery,
+} from './dto/CollectionHolders.dto';
 
 @ApiTags('NFT Collections')
 @Controller('nft-collection')
@@ -41,6 +45,7 @@ import { JwtAdminAuthGuard } from '@app/shared/modules';
   NftCollectionDto,
   TopNftCollectionDto,
   updateCollectionMetadataDto,
+  NftCollectionHolders,
 )
 export class NftCollectionsController {
   constructor(
@@ -116,6 +121,47 @@ export class NftCollectionsController {
     }
   }
 
+  @Post('holders')
+  @ApiOperation({
+    summary: 'List of holders of specific collection',
+  })
+  @ApiOkResponse({
+    schema: {
+      allOf: [
+        {
+          $ref: getSchemaPath(BaseResultPagination),
+        },
+        {
+          properties: {
+            data: {
+              allOf: [
+                {
+                  properties: {
+                    items: {
+                      type: 'array',
+                      items: {
+                        $ref: getSchemaPath(NftCollectionHolders),
+                      },
+                    },
+                  },
+                },
+              ],
+            },
+          },
+        },
+      ],
+    },
+  })
+  async topHolder(
+    @Body() query: NftCollectionHoldersQuery,
+  ): Promise<BaseResultPagination<NftCollectionHolders>> {
+    try {
+      return await this.nftCollectionService.getTopHolders(query);
+    } catch (error) {
+      throw new Error(error);
+    }
+  }
+
   @Post('economic')
   @ApiOperation({
     summary:
@@ -160,9 +206,7 @@ export class NftCollectionsController {
       }
       return data;
     } catch (error) {
-      return {
-        success: false,
-      };
+      throw new Error(error);
     }
   }
 
