@@ -368,8 +368,6 @@ export const decodeTakerBid = (
     timestamp,
   };
 
-  console.log(retrunValue);
-
   return retrunValue;
 };
 
