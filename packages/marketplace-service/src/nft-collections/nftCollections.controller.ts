@@ -37,6 +37,7 @@ import {
   NftCollectionHolders,
   NftCollectionHoldersQuery,
 } from './dto/CollectionHolders.dto';
+import { NftCollectionAttributeDto } from './dto/CollectionAttribute.dto';
 
 @ApiTags('NFT Collections')
 @Controller('nft-collection')
@@ -46,6 +47,7 @@ import {
   TopNftCollectionDto,
   updateCollectionMetadataDto,
   NftCollectionHolders,
+  NftCollectionAttributeDto,
 )
 export class NftCollectionsController {
   constructor(
@@ -157,6 +159,48 @@ export class NftCollectionsController {
   ): Promise<BaseResultPagination<NftCollectionHolders>> {
     try {
       return await this.nftCollectionService.getTopHolders(query);
+    } catch (error) {
+      throw new Error(error);
+    }
+  }
+
+  @Get('attributes/:nftContract')
+  @ApiOperation({
+    summary:
+      'Get total attributes and total items of each attribute of collection.',
+  })
+  @ApiOkResponse({
+    schema: {
+      allOf: [
+        {
+          $ref: getSchemaPath(BaseResult),
+        },
+        {
+          properties: {
+            data: {
+              allOf: [
+                {
+                  $ref: getSchemaPath(NftCollectionAttributeDto),
+                },
+              ],
+            },
+          },
+        },
+      ],
+    },
+  })
+  async getAttributes(
+    @Param('nftContract') nftContract: string,
+  ): Promise<BaseResult<NftCollectionAttributeDto[]>> {
+    try {
+      if (!isHexadecimal(nftContract)) {
+        throw new Error('Invalid Nft Contract');
+      }
+
+      const attributes =
+        await this.nftCollectionService.getAttributes(nftContract);
+
+      return new BaseResult(attributes);
     } catch (error) {
       throw new Error(error);
     }

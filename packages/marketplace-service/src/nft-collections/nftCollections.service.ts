@@ -35,6 +35,7 @@ import {
   NftCollectionHolders,
   NftCollectionHoldersQuery,
 } from './dto/CollectionHolders.dto';
+import { NftCollectionAttributeDto } from './dto/CollectionAttribute.dto';
 
 @Injectable()
 export class NftCollectionsService {
@@ -578,8 +579,56 @@ export class NftCollectionsService {
     // }
   }
 
+  async getAttributes(
+    nftContract: string,
+  ): Promise<NftCollectionAttributeDto[]> {
+    const formattedAddress = formattedContractAddress(nftContract);
+    const attributes = await this.nftModel.aggregate([
+      {
+        $match: {
+          nftContract: formattedAddress,
+          isBurned: false,
+        },
+      },
+      {
+        $unwind: {
+          path: '$attributes',
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $group: {
+          _id: {
+            trait_type: '$attributes.trait_type',
+            value: '$attributes.value',
+          },
+          count: { $sum: 1 },
+        },
+      },
+      {
+        $group: {
+          _id: '$_id.trait_type',
+          options: {
+            $push: {
+              value: '$_id.value',
+              total: '$count',
+            },
+          },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          trait_type: '$_id',
+          options: 1,
+        },
+      },
+    ]);
+
+    return attributes;
+  }
+
   async getTotalOwners(nftContract: string): Promise<NFTCollectionSuply> {
-    const now = Date.now();
     const totalOwners = await this.nftModel.aggregate([
       {
         $match: {
