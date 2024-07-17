@@ -12,8 +12,8 @@ export class NftFilterQueryParams extends BaseQueryParams {
   @ApiProperty()
   nftContract?: string;
 
-  @ApiProperty({ type: Number, required: false, minimum: 1 })
-  tokenId?: number;
+  @ApiProperty({ type: String, required: false, minimum: 1 })
+  tokenId?: string;
   @ApiProperty({ enum: MarketType, example: MarketType.NotForSale })
   marketType?: MarketType;
 
