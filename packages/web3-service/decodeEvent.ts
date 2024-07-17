@@ -202,7 +202,6 @@ export const decodeERC115TransferBatch = (
       provider,
     );
 
-    txReceipt.events[0].keys = [EventTopic.TRANSFER_BATCH];
     const parsedEvent = contractInstance.parseEvents(txReceipt)[0];
     const { from, to, ids, values } = parsedEvent.TransferBatch;
     const fromAddress = formattedContractAddress(
@@ -229,6 +228,7 @@ export const decodeERC115TransferBatch = (
         provider,
       );
 
+      txReceipt.events[0].keys = [EventTopic.TRANSFER_BATCH];
       const parsedEvent = contractInstance.parseEvents(txReceipt)[0];
       const { from, to, ids, values } = parsedEvent.TransferBatch;
       const fromAddress = formattedContractAddress(

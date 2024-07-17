@@ -24,6 +24,13 @@ const getUrl = (url: string) => {
       `?pinataGatewayToken=${configuration().pinata_key}`
     );
   }
+
+  if (url.startsWith('https://ipfs.io/ipfs/')) {
+    return (
+      url?.replace('https://ipfs.io/ipfs/', configuration().ipfs_gateway) +
+      `?pinataGatewayToken=${configuration().pinata_key}`
+    );
+  }
   return url;
 };
 
