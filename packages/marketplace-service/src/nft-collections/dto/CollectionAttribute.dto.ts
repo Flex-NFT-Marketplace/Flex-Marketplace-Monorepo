@@ -6,6 +6,9 @@ export class AttributeOptionsDto {
 
   @ApiProperty()
   total: number;
+
+  @ApiProperty()
+  rarity: number;
 }
 
 export class NftCollectionAttributeDto {

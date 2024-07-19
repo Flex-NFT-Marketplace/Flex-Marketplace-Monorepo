@@ -583,6 +583,11 @@ export class NftCollectionsService {
     nftContract: string,
   ): Promise<NftCollectionAttributeDto[]> {
     const formattedAddress = formattedContractAddress(nftContract);
+    const totalNfts = await this.nftModel.countDocuments({
+      nftContract: formattedAddress,
+      isBurned: false,
+    });
+
     const attributes = await this.nftModel.aggregate([
       {
         $match: {
@@ -625,6 +630,11 @@ export class NftCollectionsService {
       },
     ]);
 
+    for (const att of attributes) {
+      for (const op of att.options) {
+        op.rarity = 1 / (op.total / totalNfts);
+      }
+    }
     return attributes;
   }
 
