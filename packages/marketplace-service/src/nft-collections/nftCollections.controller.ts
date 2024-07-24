@@ -32,12 +32,14 @@ import { isValidAddress } from '@app/shared/utils';
 import { updateCollectionMetadataDto } from './dto/updateCollectionMetadata.dto';
 import { isHexadecimal } from 'class-validator';
 import { NFTCollectionSuply } from './dto/CollectionSupply.dto';
-import { JwtAdminAuthGuard } from '@app/shared/modules';
+import { JWT, JwtAdminAuthGuard, User } from '@app/shared/modules';
 import {
   NftCollectionHolders,
   NftCollectionHoldersQuery,
 } from './dto/CollectionHolders.dto';
 import { NftCollectionAttributeDto } from './dto/CollectionAttribute.dto';
+import { iInfoToken } from '@app/shared/modules/jwt/jwt.dto';
+import { UpdateCollectionDetailDto } from './dto/updateCollectionDetail.dto';
 
 @ApiTags('NFT Collections')
 @Controller('nft-collection')
@@ -48,6 +50,7 @@ import { NftCollectionAttributeDto } from './dto/CollectionAttribute.dto';
   updateCollectionMetadataDto,
   NftCollectionHolders,
   NftCollectionAttributeDto,
+  UpdateCollectionDetailDto,
 )
 export class NftCollectionsController {
   constructor(
@@ -275,8 +278,20 @@ export class NftCollectionsController {
     }
   }
 
+  @JWT()
+  @Post('update-collection-detail')
+  @ApiOperation({
+    summary: 'update NFT Collection detail',
+  })
+  async updateCollectionDetail(
+    @Body() body: UpdateCollectionDetailDto,
+    @User() user: iInfoToken,
+  ) {
+    await this.nftCollectionService.updateCollectionDetail(user.sub, body);
+  }
+
   @UseGuards(JwtAdminAuthGuard)
-  @Post('update-collection-metadata')
+  @Post('update-all-nfts-metadata')
   @ApiOperation({
     summary: 'update All NFTs metadata',
   })

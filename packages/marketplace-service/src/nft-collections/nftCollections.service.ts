@@ -1,5 +1,5 @@
 import { InjectModel } from '@nestjs/mongoose';
-import { Injectable } from '@nestjs/common';
+import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import {
   ChainDocument,
   Chains,
@@ -36,6 +36,7 @@ import {
   NftCollectionHoldersQuery,
 } from './dto/CollectionHolders.dto';
 import { NftCollectionAttributeDto } from './dto/CollectionAttribute.dto';
+import { UpdateCollectionDetailDto } from './dto/updateCollectionDetail.dto';
 
 @Injectable()
 export class NftCollectionsService {
@@ -636,6 +637,42 @@ export class NftCollectionsService {
       }
     }
     return attributes;
+  }
+
+  async updateCollectionDetail(
+    owner: string,
+    body: UpdateCollectionDetailDto,
+  ): Promise<BaseResult<string>> {
+    const ownerDocument = await this.userService.getOrCreateUser(owner);
+
+    const { nftContract, description, externalLink, avatar, cover } = body;
+    const nftCollection = await this.nftCollectionModel.findOne({
+      nftContract,
+      owner: ownerDocument,
+    });
+
+    if (!nftCollection) {
+      throw new HttpException(
+        'You are not the owner of the collecion.',
+        HttpStatus.UNAUTHORIZED,
+      );
+    }
+
+    await this.nftCollectionModel.findOneAndUpdate(
+      {
+        nftContract,
+      },
+      {
+        $set: {
+          avatar,
+          cover,
+          description,
+          externalLink,
+        },
+      },
+    );
+
+    return new BaseResult('Update Collection detail successful.');
   }
 
   async getTotalOwners(nftContract: string): Promise<NFTCollectionSuply> {

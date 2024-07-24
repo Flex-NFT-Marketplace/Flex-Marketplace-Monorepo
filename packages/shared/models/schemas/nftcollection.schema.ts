@@ -13,6 +13,13 @@ import { DropPhaseDocument } from './dropphase.schema';
 
 export type NftCollectionDocument = NftCollections & Document;
 
+export class ExternalLink {
+  discord?: string;
+  x?: string;
+  website?: string;
+  warpcastProfile?: string;
+}
+
 @Schema({ timestamps: true })
 export class NftCollections extends BaseSchema {
   @Prop()
@@ -84,6 +91,9 @@ export class NftCollections extends BaseSchema {
 
   @Prop({ type: [SchemaTypes.ObjectId], ref: 'DropPhases' })
   dropPhases?: DropPhaseDocument[];
+
+  @Prop({ type: ExternalLink })
+  externalLink?: ExternalLink;
 }
 
 export const NftCollectionSchema = SchemaFactory.createForClass(NftCollections);

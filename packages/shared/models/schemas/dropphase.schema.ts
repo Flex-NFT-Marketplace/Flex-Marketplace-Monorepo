@@ -61,11 +61,14 @@ export class DropPhases extends BaseSchema {
   @Prop()
   farcasterFid?: number;
 
-  @Prop()
+  @Prop({ default: [] })
   quests?: Quest[];
 
-  @Prop()
+  @Prop({ default: [] })
   whitelist?: WhitlistType[];
+
+  @Prop({ default: 0 })
+  totalWarpcastMint?: number;
 }
 
 export const DropPhaseSchema = SchemaFactory.createForClass(DropPhases);
