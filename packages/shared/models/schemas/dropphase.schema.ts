@@ -24,6 +24,11 @@ export type Quest = {
   selection?: string;
 };
 
+export type WhitlistType = {
+  address: string;
+  isUsed: boolean;
+};
+
 @Schema({ timestamps: true })
 export class DropPhases extends BaseSchema {
   @Prop({ type: SchemaTypes.ObjectId, ref: 'NftCollections' })
@@ -58,6 +63,9 @@ export class DropPhases extends BaseSchema {
 
   @Prop()
   quests?: Quest[];
+
+  @Prop()
+  whitelist?: WhitlistType[];
 }
 
 export const DropPhaseSchema = SchemaFactory.createForClass(DropPhases);

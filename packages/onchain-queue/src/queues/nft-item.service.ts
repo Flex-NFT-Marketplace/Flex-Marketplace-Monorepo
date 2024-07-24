@@ -294,6 +294,7 @@ export class NftItemService {
       timestamp,
       price,
       isFlexDropMinted,
+      isWarpcastMinted,
     } = log.returnValues as ERC721TransferReturnValue;
 
     const nftCollection = await this.getOrCreateNftCollection(
@@ -355,7 +356,11 @@ export class NftItemService {
       index,
       timestamp,
       chain,
-      type: isFlexDropMinted ? HistoryType.FlexDropMint : HistoryType.Mint,
+      type: isFlexDropMinted
+        ? HistoryType.FlexDropMint
+        : isWarpcastMinted
+          ? HistoryType.WarpcastMint
+          : HistoryType.Mint,
     };
 
     await this.historyModel.findOneAndUpdate(

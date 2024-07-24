@@ -334,6 +334,7 @@ export class BlockDetectionService extends OnchainWorker {
             log.returnValues.nftAddress === ev.returnValues.nftAddress
           ) {
             log.returnValues.isFlexDropMinted = true;
+            log.returnValues.isWarpcastMinted = ev.returnValues.isWarpcast;
             log.returnValues.price =
               ev.returnValues.totalMintPrice / ev.returnValues.quantityMinted;
           }
