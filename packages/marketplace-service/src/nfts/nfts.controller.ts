@@ -15,7 +15,7 @@ import {
 } from '@nestjs/common';
 import { NftService } from './nfts.service';
 import { PaginationDto } from '@app/shared/types/pagination.dto';
-import { CACHE_MANAGER, CacheTTL } from '@nestjs/cache-manager';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { ChainDto, NftDto, PaymentTokenDto, UserDto } from '@app/shared/models';
 import { Cache } from 'cache-manager';
 import { NftFilterQueryParams } from './dto/nftQuery.dto';
