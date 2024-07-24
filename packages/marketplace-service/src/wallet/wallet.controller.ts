@@ -25,7 +25,7 @@ export class WalletController {
   constructor(private readonly walletService: WalletService) {}
 
   @JWT()
-  @Post('/create')
+  @Post('/getOrCreateWallet')
   @HttpCode(200)
   @ApiOperation({
     summary: 'Create New Private Wallet From User Address',
@@ -70,13 +70,13 @@ export class WalletController {
       ],
     },
   })
-  async createWallet(
+  async getOrGenerateWallet(
     @Body() createWalletDto: CreateWalletReqDTO,
     @User() user: iInfoToken,
   ) {
     const { feeType } = createWalletDto;
     if (feeType == TokenType.ETH) {
-      const data = await this.walletService.createWalletByEth(user.sub);
+      const data = await this.walletService.getOrCreateWalletByEth(user.sub);
       return new BaseResult(data);
     }
     // Deploy Wallet By STRK
