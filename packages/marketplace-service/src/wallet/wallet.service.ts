@@ -32,17 +32,11 @@ export class WalletService {
     private readonly usersModel: Model<UserDocument>,
     private readonly userService: UserService,
   ) {}
-  async createWalletByEth(creatorAddress: string) {
+  async getOrCreateWalletByEth(creatorAddress: string) {
     const userExist = await this.userService.getUser(creatorAddress);
 
     const provider = new Provider({ nodeUrl: RPC_PROVIDER.TESTNET });
     if (userExist.mappingAddress) {
-      if (userExist.mappingAddress.deployHash) {
-        throw new BadRequestException(
-          `User Address argentx already deploy at: ${userExist.mappingAddress.deployHash}`,
-        );
-      }
-
       const payerAddress = userExist.mappingAddress.address;
 
       const decodePrivateKey = decryptData(userExist.mappingAddress.privateKey);
@@ -63,7 +57,9 @@ export class WalletService {
         payerAddress: payerAddress,
         creatorAddress: userExist.address,
         feeType: TokenType.ETH,
-        feeDeploy: parseFloat(formatBalance(dataFeeDeploy.feeDeploy, 18)),
+        feeDeploy: formatBalance(dataFeeDeploy.feeDeploy, 18),
+        privateKey: decodePrivateKey,
+        deployHash: userExist.mappingAddress.deployHash,
       };
     }
 
@@ -98,6 +94,7 @@ export class WalletService {
     const newPayer = await this.usersModel.create(newUser);
     newPayer.save();
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     await this.usersModel.findOneAndUpdate(
       {
         address: creatorAddress,
@@ -111,6 +108,7 @@ export class WalletService {
         new: true,
       },
     );
+
     const dataFeeDeploy = await this.calculateFeeDeployAccount(
       accountAX,
       AXConstructorCallData,
@@ -119,8 +117,9 @@ export class WalletService {
     return {
       payerAddress: newPayer.address,
       creatorAddress: userExist.address,
+      privateKey: privateKeyAX,
       feeType: TokenType.ETH,
-      feeDeploy: parseFloat(formatBalance(dataFeeDeploy.feeDeploy, 18)),
+      feeDeploy: formatBalance(dataFeeDeploy.feeDeploy, 18),
     };
   }
 
@@ -414,6 +413,7 @@ export class WalletService {
 
     const balanceEth = await this.getBalanceEth(accountAX, provider);
     const balanceStrk = await this.getBalanceStrk(accountAX, provider);
+
     return {
       payerAddress: payerAddress,
       balanceEth: formatBalance(balanceEth, 18),
@@ -423,24 +423,22 @@ export class WalletService {
   async withDrawEth(
     creatorAddress: string,
     reciverAddress: string,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     amount: number,
   ) {
     const userExist = await this.userService.getUser(creatorAddress);
-    if (!userExist.mappingAddress) {
-      throw new BadRequestException(`User Address argentx not created`);
-    }
-    if (userExist.mappingAddress.deployHash) {
-      throw new BadRequestException(
-        `User Address argentx already deploy at: ${userExist.mappingAddress.deployHash}`,
-      );
+
+    if (!userExist.mappingAddress || !userExist.mappingAddress.deployHash) {
+      // throw new BadRequestException(`User Address argentx not created`);
+      throw new BadRequestException('User Address argentx invalid ', {
+        cause: new Error(),
+        description: `User Address argentx not created or deployHash not found`,
+      });
     }
 
     const payerAddress = userExist.mappingAddress.address;
     const decodePrivateKey = decryptData(userExist.mappingAddress.privateKey);
     const provider = new Provider({ nodeUrl: RPC_PROVIDER.TESTNET });
     const accountAX = new Account(provider, payerAddress, decodePrivateKey);
-
     const balanceEth = await this.getBalanceEth(accountAX, provider);
     if (Number(formatBalance(balanceEth, 18)) < amount) {
       throw new BadRequestException(
@@ -453,7 +451,7 @@ export class WalletService {
       entrypoint: 'transfer',
       calldata: CallData.compile({
         recipient: reciverAddress,
-        amount: cairo.uint256(100000),
+        amount: cairo.uint256(amount * 1e18),
       }),
     });
     await provider.waitForTransaction(transaction_hash);
