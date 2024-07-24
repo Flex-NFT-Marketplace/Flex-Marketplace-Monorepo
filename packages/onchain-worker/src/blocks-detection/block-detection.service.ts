@@ -5,9 +5,11 @@ import {
   BlockDocument,
   BlockWorkerStatus,
   ChainDocument,
+  TransactionWorkerStatus,
+  TransactionWorkerType,
 } from '@app/shared/models/schemas';
 import { Web3Service } from '@app/web3-service/web3.service';
-import { BlockStatus, Block, Provider, RpcProvider } from 'starknet';
+import { BlockStatus, GetBlockResponse, Provider, RpcProvider } from 'starknet';
 import { arraySliceProcess } from '@app/shared/utils/arrayLimitProcess';
 import { retryUntil } from '@app/shared';
 import { EventType, LogsReturnValues } from '@app/web3-service/types';
@@ -15,6 +17,7 @@ import { ONCHAIN_JOBS } from '@app/shared/types';
 import { Queue } from 'bull';
 import { ERC721TransferReturnValue } from '@app/web3-service/decodeEvent';
 import { OnchainQueueService } from '@app/shared/utils/queue';
+import * as _ from 'lodash';
 
 export class BlockDetectionService extends OnchainWorker {
   constructor(
@@ -107,19 +110,24 @@ export class BlockDetectionService extends OnchainWorker {
   };
 
   fillBlockDataBuffer = async (
-    blocks: number[],
-  ): Promise<{ [k: number]: Block }> => {
+    blocks: (number | 'pending')[],
+  ): Promise<{ [k: number]: GetBlockResponse }> => {
     const dataBlocks = await Promise.all(
       blocks.map(async b => this.provider.getBlock(b)),
     );
 
-    const groupByBlock: { [k: number]: Block } = dataBlocks.reduce(
+    const groupByBlock: { [k: number]: GetBlockResponse } = dataBlocks.reduce(
       (acc, cur) => {
         if (
           cur.status == BlockStatus.ACCEPTED_ON_L2 ||
           cur.status == BlockStatus.ACCEPTED_ON_L1
         ) {
           acc[cur.block_number] = cur;
+          return acc;
+        }
+
+        if (cur.status == BlockStatus.PENDING) {
+          acc[this.pendingBlock] = cur;
           return acc;
         }
       },
@@ -129,39 +137,64 @@ export class BlockDetectionService extends OnchainWorker {
     return groupByBlock;
   };
 
-  process = async (block: Block): Promise<void> => {
+  process = async (block: GetBlockResponse): Promise<void> => {
     const beginTime = Date.now();
+    let blockNumber =
+      block.status == BlockStatus.ACCEPTED_ON_L2 ||
+      block.status == BlockStatus.ACCEPTED_ON_L1
+        ? block.block_number
+        : this.pendingBlock;
+
     this.logger.debug(
-      `begin process block ${Number(block.block_number)} ${
+      `begin process block ${Number(blockNumber)} ${
         block.transactions.length
       } txs`,
     );
-    //insert to db
-    const blockEntity = await this.blockModel.findOneAndUpdate(
-      {
-        blockNumber: block.block_number,
-        chain: this.chain.name,
-      },
-      {
-        $setOnInsert: {
-          blockNumber: block.block_number,
-          chain: this.chain.name,
-          transactions: block.transactions,
-          status: BlockWorkerStatus.PENDING,
-          timestamp: block.timestamp * 1e3,
-        },
-      },
-      {
-        upsert: true,
-        new: true,
+    let transactionWorker: TransactionWorkerType[] = block.transactions.map(
+      tx => {
+        return { txHash: tx, status: TransactionWorkerStatus.PENDING };
       },
     );
 
-    const batchProcess = 20;
+    let blockEntity = await this.blockModel.findOne({
+      blockNumber: blockNumber,
+      chain: this.chainId,
+    });
+
+    if (!blockEntity) {
+      //insert to db
+      blockEntity = await this.blockModel.findOneAndUpdate(
+        {
+          blockNumber: blockNumber,
+          chain: this.chainId,
+        },
+        {
+          $setOnInsert: {
+            blockNumber: blockNumber,
+            chain: this.chainId,
+            transactions: transactionWorker,
+            status: BlockWorkerStatus.PENDING,
+            timestamp: block.timestamp * 1e3,
+          },
+        },
+        {
+          upsert: true,
+          new: true,
+        },
+      );
+    } else {
+      transactionWorker = _.unionBy(
+        blockEntity.transactions,
+        transactionWorker,
+        'txHash',
+      );
+    }
+
+    const batchProcess = 10;
     const maxRetry = 10;
     //batch process 10 txs, max retry 10 times
     await arraySliceProcess(
-      block.transactions,
+      transactionWorker,
       async txs => {
         await Promise.all(
           txs.map(async tx => {
@@ -175,18 +208,31 @@ export class BlockDetectionService extends OnchainWorker {
       },
       batchProcess,
     );
-    blockEntity.status = BlockWorkerStatus.SUCCESS;
-    await blockEntity.save();
+
+    if (blockNumber !== this.pendingBlock) {
+      blockEntity.status = BlockWorkerStatus.SUCCESS;
+    }
+    blockEntity.transactions = transactionWorker;
+    await this.blockModel.findOneAndUpdate(
+      { blockNumber: blockEntity.blockNumber },
+      { $set: blockEntity },
+      { upsert: true },
+    );
 
     this.logger.debug(
-      `end process block ${Number(block.block_number)} ${block.transactions.length}txs in ${
+      `end process block ${Number(blockNumber)} ${block.transactions.length}txs in ${
         Date.now() - beginTime
       }ms`,
     );
   };
 
-  async processTx(txHash: string, timestamp: number) {
+  async processTx(tx: TransactionWorkerType, timestamp: number) {
     try {
+      const { status, txHash } = tx;
+      if (status == TransactionWorkerStatus.SUCCESS) {
+        return tx;
+      }
+
       const trasactionReceipt =
         await this.provider.getTransactionReceipt(txHash);
       if (!trasactionReceipt) {
@@ -414,14 +460,13 @@ export class BlockDetectionService extends OnchainWorker {
         }
         index++;
       }
-      return trasactionReceipt;
-    } catch (error) {
-      // await this.mailingSerivce.sendMail(
-      //   `Failed to fetch data of tx hash - ${txHash}`,
-      // );
-      console.log(error);
 
-      throw new Error(`Failed to fetch data of tx Hash - ${txHash}`);
+      tx.status = TransactionWorkerStatus.SUCCESS;
+      return tx;
+    } catch (error) {
+      throw new Error(
+        `get error when detect tx - ${tx.txHash} - error: ${error}`,
+      );
     }
   }
 }

@@ -1,31 +1,31 @@
-import { GatewayTimeoutException, Logger } from '@nestjs/common';
+import { Logger, GatewayTimeoutException } from '@nestjs/common';
 import { BlockedQueue } from '@app/shared/BlockedQueue';
+import { GetBlockResponse } from 'starknet';
 import { delay } from '@app/shared/utils/promise';
-import { Block } from 'starknet';
 
 export abstract class OnchainWorker {
   currentBlock: number;
-  blockNumberBuffer: BlockedQueue<number>;
-  blockDataBuffer: BlockedQueue<Block>;
+  pendingBlock: number;
+  blockNumberBuffer: BlockedQueue<number | 'pending'>;
+  blockDataBuffer: BlockedQueue<GetBlockResponse>;
   maxBlockSize: number;
   maxBatchSize: number;
   delayFetchBlock = 3;
   abstract init: () => Promise<void>;
   abstract fetchLatestBlock: () => Promise<number>;
   abstract fillBlockDataBuffer: (
-    blocks: number[],
-  ) => Promise<{ [k: number]: Block }>;
-  abstract process: (data: Block) => Promise<void>;
+    blocks: (number | 'pending')[],
+  ) => Promise<{ [k: number]: GetBlockResponse }>;
+
+  abstract process: (data: GetBlockResponse) => Promise<void>;
   shutdown = false;
   private running = false;
   get isRunning(): boolean {
     return this.running;
   }
   name: string;
-
   logger: Logger;
   processing = false;
-
   constructor(maxBlockSize: number, maxBatchSize: number, name: string) {
     this.maxBlockSize = maxBlockSize;
     this.maxBatchSize = maxBatchSize;
@@ -47,6 +47,7 @@ export abstract class OnchainWorker {
         ]);
         if (!latestBlock)
           throw new GatewayTimeoutException('fetchBlockNumber timeout');
+        this.pendingBlock = latestBlock + 1;
         for (
           this.currentBlock;
           this.currentBlock <= latestBlock;
@@ -54,6 +55,7 @@ export abstract class OnchainWorker {
         ) {
           this.blockNumberBuffer.put(this.currentBlock);
         }
+        this.blockNumberBuffer.put('pending');
       } catch (error) {
         this.logger.error(error, error.stack);
         this.logger.warn('Fail to fetchBlockNumber. Try again ...');
@@ -64,34 +66,17 @@ export abstract class OnchainWorker {
 
   async processBlocks() {
     while (!this.shutdown) {
-      // const data = await this.blockDataBuffer.take();
-      // let done = false;
-      // while (!done) {
-      //   try {
-      //     await this.process(data);
-      //     done = true;
-      //   } catch (error) {
-      //     this.logger.error(error, error.stack);
-      //     this.logger.error(JSON.stringify(data));
-      //     this.logger.warn('Fail of process block data. Try again ...');
-      //     await delay(1);
-      //   }
-      // }
-
-      const datas = await this.blockDataBuffer.takeAll(1);
+      const data = await this.blockDataBuffer.take();
       let done = false;
       while (!done) {
         try {
-          await Promise.all(
-            datas.map(async data => {
-              await this.process(data);
-            }),
-          );
+          await this.process(data);
           done = true;
         } catch (error) {
           this.logger.error(error, error.stack);
-          // this.logger.error(JSON.stringify(data));
+          this.logger.error(JSON.stringify(data));
           this.logger.warn('Fail of process block data. Try again ...');
+          await delay(1);
         }
       }
     }
@@ -112,7 +97,7 @@ export abstract class OnchainWorker {
           try {
             const begin = new Date();
             let data: {
-              [k: number]: Block;
+              [k: number]: GetBlockResponse;
             } | void = undefined;
 
             let dataKeys = {} as any;
