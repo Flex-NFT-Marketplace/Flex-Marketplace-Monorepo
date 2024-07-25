@@ -1,6 +1,8 @@
 import { MongooseModule } from '@nestjs/mongoose';
 import { Module } from '@nestjs/common';
 import {
+  ChainSchema,
+  Chains,
   DropPhaseSchema,
   DropPhases,
   NftCollectionSchema,
@@ -11,6 +13,7 @@ import {
 import { DropPhaseService } from './dropPhases.service';
 import { DropPhaseController } from './dropPhases.controller';
 import { UserService } from '../user/user.service';
+import { Web3Service } from '@app/web3-service/web3.service';
 
 @Module({
   imports: [
@@ -18,9 +21,10 @@ import { UserService } from '../user/user.service';
       { name: DropPhases.name, schema: DropPhaseSchema },
       { name: Users.name, schema: UserSchema },
       { name: NftCollections.name, schema: NftCollectionSchema },
+      { name: Chains.name, schema: ChainSchema },
     ]),
   ],
-  providers: [DropPhaseService, UserService],
+  providers: [DropPhaseService, UserService, Web3Service],
   controllers: [DropPhaseController],
 })
 export class DropPhaseModule {}

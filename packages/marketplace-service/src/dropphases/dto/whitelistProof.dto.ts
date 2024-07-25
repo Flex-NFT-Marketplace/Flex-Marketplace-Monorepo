@@ -12,7 +12,4 @@ export class WhitelistProofDto {
 
   @ApiProperty()
   proof: string[];
-
-  @ApiProperty()
-  isUsed: boolean;
 }

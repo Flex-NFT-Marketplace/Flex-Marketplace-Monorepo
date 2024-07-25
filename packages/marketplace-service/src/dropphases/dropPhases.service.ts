@@ -1,4 +1,6 @@
 import {
+  ChainDocument,
+  Chains,
   DropPhaseDocument,
   DropPhases,
   NftCollectionDocument,
@@ -11,7 +13,10 @@ import { Model } from 'mongoose';
 import { UpdateWarpcastDetailDto } from './dto/updateWarpcastDetail.dto';
 import { BaseResult, BaseResultPagination } from '@app/shared/types';
 import { UserService } from '../user/user.service';
-import { formattedContractAddress } from '@app/shared/utils';
+import {
+  formattedContractAddress,
+  getProofWhiteListMessage,
+} from '@app/shared/utils';
 import { retryUntil } from '@app/shared/index';
 import { UpdateWhitelistMintDto } from './dto/updateWhitelist.dto';
 import * as _ from 'lodash';
@@ -19,6 +24,12 @@ import { GetCollectionDropPhasesDto } from './dto/getCollectionDropPhases.dto';
 import { PaginationDto } from '@app/shared/types/pagination.dto';
 import { GetCollectionDropPhaseDto } from './dto/getCollectionDropPhase.dto';
 import { WhitelistProofDto } from './dto/whitelistProof.dto';
+import { Web3Service } from '@app/web3-service/web3.service';
+import configuration from '@app/shared/configuration';
+import { stark, CallData } from 'starknet';
+import { ClaimFrameDto } from './dto/claimFrame.dto';
+import { decryptData } from '@app/shared/utils/encode';
+import { FLEX } from '@app/shared/constants';
 
 @Injectable()
 export class DropPhaseService {
@@ -27,7 +38,10 @@ export class DropPhaseService {
     private readonly dropPhaseModel: Model<DropPhaseDocument>,
     @InjectModel(NftCollections.name)
     private readonly nftCollectionModel: Model<NftCollectionDocument>,
+    @InjectModel(Chains.name)
+    private readonly chainModel: Model<ChainDocument>,
     private readonly userService: UserService,
+    private readonly web3Service: Web3Service,
   ) {}
 
   async getDropPhases(
@@ -95,7 +109,7 @@ export class DropPhaseService {
     const formatedNftAddress = formattedContractAddress(nftContract);
 
     const nftCollection = await this.nftCollectionModel.findOne({
-      nftContract,
+      nftContract: formatedNftAddress,
     });
     if (!nftCollection) {
       throw new HttpException('Nft Contract not found', HttpStatus.NOT_FOUND);
@@ -106,8 +120,165 @@ export class DropPhaseService {
       phaseId,
     });
     if (!phaseDetail) {
+      throw new HttpException('Drop phase not found', HttpStatus.NOT_FOUND);
     }
-    return null;
+
+    const whitelistUser = phaseDetail.whitelist.find(
+      i => i.address === formatedUserAddress,
+    );
+    if (!whitelistUser) {
+      throw new HttpException(
+        'You are not in whitelist',
+        HttpStatus.NOT_ACCEPTABLE,
+      );
+    }
+
+    if (whitelistUser.isUsed) {
+      throw new HttpException('Proof already used', HttpStatus.NOT_ACCEPTABLE);
+    }
+
+    const proofMessage = getProofWhiteListMessage(
+      formatedNftAddress,
+      phaseId,
+      formatedUserAddress,
+    );
+    const chainDocument = await this.chainModel.findOne();
+
+    const validatorInstance = this.web3Service.getAccountInstance(
+      configuration().validator.address,
+      configuration().validator.privateKey,
+      chainDocument.rpc,
+    );
+
+    const proof = await validatorInstance.signMessage(proofMessage);
+    const formattedProof = stark.formatSignature(proof);
+    return new BaseResult({
+      userAddress: formatedUserAddress,
+      nftContract,
+      phaseId,
+      proof: formattedProof,
+    });
+  }
+
+  async updateWhitelistProof(
+    user: string,
+    query: GetCollectionDropPhaseDto,
+  ): Promise<BaseResult<string>> {
+    const { nftContract, phaseId } = query;
+
+    const formatedUserAddress = formattedContractAddress(user);
+    const formatedNftAddress = formattedContractAddress(nftContract);
+
+    const nftCollection = await this.nftCollectionModel.findOne({
+      nftContract: formatedNftAddress,
+    });
+    if (!nftCollection) {
+      throw new HttpException('Nft Contract not found', HttpStatus.NOT_FOUND);
+    }
+
+    const phaseDetail = await this.dropPhaseModel.findOne({
+      nftCollection,
+      phaseId,
+    });
+    if (!phaseDetail) {
+      throw new HttpException('Drop phase not found', HttpStatus.NOT_FOUND);
+    }
+
+    const whitelistUser = phaseDetail.whitelist.find(
+      i => i.address === formatedUserAddress,
+    );
+    if (!whitelistUser) {
+      throw new HttpException(
+        'You are not in whitelist',
+        HttpStatus.NOT_ACCEPTABLE,
+      );
+    }
+
+    if (whitelistUser.isUsed) {
+      throw new HttpException(
+        'Proof already updated',
+        HttpStatus.NOT_ACCEPTABLE,
+      );
+    }
+
+    const newWhitelist = phaseDetail.whitelist.map(i => {
+      if (i.address === formatedUserAddress) {
+        i.isUsed = true;
+      }
+    });
+
+    await this.dropPhaseModel.findOneAndUpdate(
+      { nftCollection, phaseId },
+      { $set: { whitelist: newWhitelist } },
+    );
+
+    return new BaseResult('Update whitelist proof successful.');
+  }
+
+  async claimFrame(query: ClaimFrameDto): Promise<BaseResult<string>> {
+    const { nftContract, phaseId, minter, quantity } = query;
+    const formattedNftAddress = formattedContractAddress(nftContract);
+    const formattedUserAddress = formattedContractAddress(minter);
+
+    const nftCollection = await this.nftCollectionModel
+      .findOne({
+        nftContract: formattedNftAddress,
+      })
+      .populate(['payers']);
+
+    if (!nftCollection) {
+      throw new HttpException('Nft Contract not found', HttpStatus.NOT_FOUND);
+    }
+
+    const phaseDetail = await this.dropPhaseModel.findOne({
+      nftCollection,
+      phaseId,
+    });
+    if (!phaseDetail) {
+      throw new HttpException('Drop phase not found', HttpStatus.NOT_FOUND);
+    }
+
+    if (Date.now() >= phaseDetail.endTime) {
+      throw new HttpException(
+        'Drop phase has ended',
+        HttpStatus.NOT_ACCEPTABLE,
+      );
+    }
+
+    const payerDocument = nftCollection.payers[0];
+    if (!payerDocument) {
+      throw new HttpException('Payer not found', HttpStatus.NOT_FOUND);
+    }
+
+    const decodePrivateKey = decryptData(payerDocument.privateKey);
+    const chainDocument = await this.chainModel.findOne();
+    const account = this.web3Service.getAccountInstance(
+      payerDocument.address,
+      decodePrivateKey,
+      chainDocument.rpc,
+    );
+
+    const provider = this.web3Service.getProvider(chainDocument.rpc);
+    const execute = await account.execute([
+      {
+        contractAddress: FLEX.FLEXDROP_MAINNET,
+        entrypoint: 'mint_public',
+        calldata: CallData.compile({
+          nft_address: formattedNftAddress,
+          phase_id: phaseId,
+          fee_recipient: FLEX.FLEX_RECIPT,
+          minter_if_not_payer: minter,
+          quantity,
+          is_warpcast: true,
+        }),
+      },
+    ]);
+
+    await provider.waitForTransaction(execute.transaction_hash);
+
+    return new BaseResult(
+      `Claim successful with transaction hash - ${execute.transaction_hash}`,
+    );
   }
 
   async editWarpcastDetail(
