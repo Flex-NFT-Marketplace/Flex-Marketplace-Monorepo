@@ -36,6 +36,16 @@ export class WalletService {
     const userExist = await this.userService.getUser(creatorAddress);
 
     const provider = new Provider({ nodeUrl: RPC_PROVIDER.MAINNET });
+    // Estimate Mint Fee Account
+    const randomAddress =
+      '0x05dcb49a8217eab5ed23e4a26df044edaf1428a5c7b30fa2324fa39a28288f6b';
+
+    const estimateMintFeeAccount = new Account(
+      provider,
+      '0x05a2F4c3BcbE542D6a655Fb31EcA2914F884dd8a1c23EA0B1b210746C28cfA3a',
+      '0x959810447aef763d4f14e951f5ddc3e7e3c237c47e30035c901e1b85758b0c',
+    );
+
     if (userExist.mappingAddress) {
       const payerAddress = userExist.mappingAddress.address;
 
@@ -52,13 +62,24 @@ export class WalletService {
         AXConstructorCallData,
         payerAddress,
       );
+      //Estimate Mint Fee
 
+      // TODO: 1 Openedition (Mainnet) to calculate fee
+      const { suggestedMaxFee: estimatedFee1 } =
+        await estimateMintFeeAccount.estimateInvokeFee({
+          contractAddress: FLEX.FLEXDROP_MAINNET,
+          entrypoint: 'mint_public',
+          calldata: [FLEX.ESTIMATE_NFT, 1, FLEX.FLEX_RECIPT, randomAddress, 1],
+        });
+
+      //femint = Protocal Fee + Gas Fee
       return {
         payerAddress: payerAddress,
         creatorAddress: userExist.address,
         feeType: TokenType.ETH,
         feeDeploy: formatBalance(dataFeeDeploy.feeDeploy, 18),
         privateKey: decodePrivateKey,
+        estimateMinFee: formatBalance(estimatedFee1, 18),
         deployHash: userExist.mappingAddress.deployHash,
       };
     }
@@ -114,12 +135,23 @@ export class WalletService {
       AXConstructorCallData,
       payerAddress,
     );
+
+    //Estimate Mint Fee
+
+    // TODO: 1 Openedition (Mainnet) to calculate fee
+    const { suggestedMaxFee: estimatedFee1 } =
+      await estimateMintFeeAccount.estimateInvokeFee({
+        contractAddress: FLEX.FLEXDROP_MAINNET,
+        entrypoint: 'mint_public',
+        calldata: [FLEX.ESTIMATE_NFT, 1, FLEX.FLEX_RECIPT, randomAddress, 1],
+      });
     return {
       payerAddress: newPayer.address,
       creatorAddress: userExist.address,
       privateKey: privateKeyAX,
       feeType: TokenType.ETH,
       feeDeploy: formatBalance(dataFeeDeploy.feeDeploy, 18),
+      estimateMinFee: formatBalance(estimatedFee1, 18),
     };
   }
 
