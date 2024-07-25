@@ -466,21 +466,24 @@ export class WalletService {
         `Insufficient ETH balance to withdraw, Your Balance: ${formatBalance(balanceEth, 18)} ETH`,
       );
     }
-
-    const { transaction_hash } = await accountAX.execute({
-      contractAddress: COMMON_CONTRACT_ADDRESS.ETH,
-      entrypoint: 'transfer',
-      calldata: CallData.compile({
-        recipient: reciverAddress,
-        amount: cairo.uint256(amount * 1e18),
-      }),
-    });
-    await provider.waitForTransaction(transaction_hash);
-    return {
-      payerAddress: payerAddress,
-      creatorAddress: creatorAddress,
-      transactionHash: transaction_hash,
-    };
+    try {
+      const { transaction_hash } = await accountAX.execute({
+        contractAddress: COMMON_CONTRACT_ADDRESS.ETH,
+        entrypoint: 'transfer',
+        calldata: CallData.compile({
+          recipient: reciverAddress,
+          amount: cairo.uint256(amount * 1e18),
+        }),
+      });
+      await provider.waitForTransaction(transaction_hash);
+      return {
+        payerAddress: payerAddress,
+        creatorAddress: creatorAddress,
+        transactionHash: transaction_hash,
+      };
+    } catch (error) {
+      throw new BadRequestException(error.message);
+    }
   }
 
   async withDrawStrk(
