@@ -25,6 +25,7 @@ import {
 import { v1 as uuidv1 } from 'uuid';
 
 import ABISErc20 from './abis/erc20OZ070.sierra.json';
+import configuration from '@app/shared/configuration';
 @Injectable()
 export class WalletService {
   constructor(
@@ -36,6 +37,23 @@ export class WalletService {
     const userExist = await this.userService.getUser(creatorAddress);
 
     const provider = new Provider({ nodeUrl: RPC_PROVIDER.MAINNET });
+    // Estimate Mint Fee Account
+    // TODO: 1 Openedition (Mainnet) to calculate fee
+    const randomAddress =
+      '0x05dcb49a8217eab5ed23e4a26df044edaf1428a5c7b30fa2324fa39a28288f6b';
+    /// Test Constant Account estimate Fee
+    const estimateMintFeeAccount = new Account(
+      provider,
+      configuration().account_payer_estimate_address,
+      configuration().account_payer_estimate_private_key,
+    );
+    const { suggestedMaxFee: estimatedFee1 } =
+      await estimateMintFeeAccount.estimateInvokeFee({
+        contractAddress: FLEX.FLEXDROP_MAINNET,
+        entrypoint: 'mint_public',
+        calldata: [FLEX.ESTIMATE_NFT, 1, FLEX.FLEX_RECIPT, randomAddress, 1, 1],
+      });
+
     if (userExist.mappingAddress) {
       const payerAddress = userExist.mappingAddress.address;
 
@@ -59,6 +77,7 @@ export class WalletService {
         feeType: TokenType.ETH,
         feeDeploy: formatBalance(dataFeeDeploy.feeDeploy, 18),
         privateKey: decodePrivateKey,
+        estimateMinFee: formatBalance(estimatedFee1, 18),
         deployHash: userExist.mappingAddress.deployHash,
       };
     }
@@ -114,12 +133,14 @@ export class WalletService {
       AXConstructorCallData,
       payerAddress,
     );
+
     return {
       payerAddress: newPayer.address,
       creatorAddress: userExist.address,
       privateKey: privateKeyAX,
       feeType: TokenType.ETH,
       feeDeploy: formatBalance(dataFeeDeploy.feeDeploy, 18),
+      estimateMinFee: formatBalance(estimatedFee1, 18),
     };
   }
 
@@ -157,7 +178,7 @@ export class WalletService {
     );
     if (balanceEth < deployFee.feeDeploy) {
       throw new BadRequestException(
-        `Insufficient ETH balance to deploy argentx wallet, required ${deployFee.feeDeploy} ETH`,
+        `Insufficient ETH balance to deploy argentx wallet, required ${formatBalance(deployFee.feeDeploy, 18)} ETH to ${payerAddress}`,
       );
     }
 
@@ -445,21 +466,24 @@ export class WalletService {
         `Insufficient ETH balance to withdraw, Your Balance: ${formatBalance(balanceEth, 18)} ETH`,
       );
     }
-
-    const { transaction_hash } = await accountAX.execute({
-      contractAddress: COMMON_CONTRACT_ADDRESS.ETH,
-      entrypoint: 'transfer',
-      calldata: CallData.compile({
-        recipient: reciverAddress,
-        amount: cairo.uint256(amount * 1e18),
-      }),
-    });
-    await provider.waitForTransaction(transaction_hash);
-    return {
-      payerAddress: payerAddress,
-      creatorAddress: creatorAddress,
-      transactionHash: transaction_hash,
-    };
+    try {
+      const { transaction_hash } = await accountAX.execute({
+        contractAddress: COMMON_CONTRACT_ADDRESS.ETH,
+        entrypoint: 'transfer',
+        calldata: CallData.compile({
+          recipient: reciverAddress,
+          amount: cairo.uint256(amount * 1e18),
+        }),
+      });
+      await provider.waitForTransaction(transaction_hash);
+      return {
+        payerAddress: payerAddress,
+        creatorAddress: creatorAddress,
+        transactionHash: transaction_hash,
+      };
+    } catch (error) {
+      throw new BadRequestException(error.message);
+    }
   }
 
   async withDrawStrk(
@@ -582,17 +606,14 @@ export class WalletService {
       provider,
     );
     // Approve ETH
-    // const approveETH = contractEth.populate('approve', [
-    //   FLEXDROP_MAINNET,
-    //   initialEth,
-    // ]);
-    const approveETH = await contractEth.approve(FLEX.FLEXDROP_MAINNET, amount);
+    const approveETH = contractEth.populate('approve', [
+      FLEX.FLEXDROP_MAINNET,
+      amount,
+    ]);
+    // const approveETH = await contractEth.approve(FLEX.FLEXDROP_MAINNET, amount);
     const { transaction_hash: txApproveHash } = await accountAx.execute(
       approveETH,
       undefined,
-      {
-        maxFee: suggestMaxFee * BigInt(2),
-      },
     );
     return txApproveHash;
   }
