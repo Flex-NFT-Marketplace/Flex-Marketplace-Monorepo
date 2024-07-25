@@ -139,19 +139,20 @@ export class WalletService {
     //Estimate Mint Fee
 
     // TODO: 1 Openedition (Mainnet) to calculate fee
-    const { suggestedMaxFee: estimatedFee1 } =
-      await estimateMintFeeAccount.estimateInvokeFee({
-        contractAddress: FLEX.FLEXDROP_MAINNET,
-        entrypoint: 'mint_public',
-        calldata: [FLEX.ESTIMATE_NFT, 1, FLEX.FLEX_RECIPT, randomAddress, 1],
-      });
+    // const { suggestedMaxFee: estimatedFee1 } =
+    //   await estimateMintFeeAccount.estimateInvokeFee({
+    //     contractAddress: FLEX.FLEXDROP_MAINNET,
+    //     entrypoint: 'mint_public',
+    //     calldata: [FLEX.ESTIMATE_NFT, 1, FLEX.FLEX_RECIPT, randomAddress, 1],
+    //   });
     return {
       payerAddress: newPayer.address,
       creatorAddress: userExist.address,
       privateKey: privateKeyAX,
       feeType: TokenType.ETH,
       feeDeploy: formatBalance(dataFeeDeploy.feeDeploy, 18),
-      estimateMinFee: formatBalance(estimatedFee1, 18),
+      // estimateMinFee: formatBalance(estimatedFee1, 18),
+      estimateMinFee: 0,
     };
   }
 
@@ -189,7 +190,7 @@ export class WalletService {
     );
     if (balanceEth < deployFee.feeDeploy) {
       throw new BadRequestException(
-        `Insufficient ETH balance to deploy argentx wallet, required ${deployFee.feeDeploy} ETH`,
+        `Insufficient ETH balance to deploy argentx wallet, required ${formatBalance(deployFee.feeDeploy, 18)} ETH to ${payerAddress}`,
       );
     }
 
@@ -614,17 +615,14 @@ export class WalletService {
       provider,
     );
     // Approve ETH
-    // const approveETH = contractEth.populate('approve', [
-    //   FLEXDROP_MAINNET,
-    //   initialEth,
-    // ]);
-    const approveETH = await contractEth.approve(FLEX.FLEXDROP_MAINNET, amount);
+    const approveETH = contractEth.populate('approve', [
+      FLEX.FLEXDROP_MAINNET,
+      amount,
+    ]);
+    // const approveETH = await contractEth.approve(FLEX.FLEXDROP_MAINNET, amount);
     const { transaction_hash: txApproveHash } = await accountAx.execute(
       approveETH,
       undefined,
-      {
-        maxFee: suggestMaxFee * BigInt(2),
-      },
     );
     return txApproveHash;
   }
