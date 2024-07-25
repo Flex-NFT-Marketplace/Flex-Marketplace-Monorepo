@@ -32,4 +32,9 @@ export default () => ({
     user: String(process.env.EMAIL_USERNAME),
     pass: String(process.env.EMAIL_PASS),
   },
+
+  validator: {
+    address: String(process.env.VALIDATOR_AD),
+    privateKey: String(process.env.VALIDATOR_PK),
+  },
 });

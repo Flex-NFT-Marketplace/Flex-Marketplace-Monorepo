@@ -16,6 +16,7 @@ import { DropPhaseDocument, DropPhases } from '@app/shared/models';
 import { GetCollectionDropPhasesDto } from './dto/getCollectionDropPhases.dto';
 import { GetCollectionDropPhaseDto } from './dto/getCollectionDropPhase.dto';
 import { WhitelistProofDto } from './dto/whitelistProof.dto';
+import { ClaimFrameDto } from './dto/claimFrame.dto';
 
 @ApiTags('OpenEdition')
 @Controller('open-edition')
@@ -95,9 +96,10 @@ export class DropPhaseController {
     return await this.dropPhaseService.getPhaseDetail(query);
   }
 
+  @JWT()
   @Post('get-whitelist-proof')
   @ApiOperation({
-    summary: 'Get the proof for Whitelist minting',
+    summary: 'Update the proof for Whitelist minting',
   })
   @ApiOkResponse({
     schema: {
@@ -121,8 +123,49 @@ export class DropPhaseController {
   })
   async getWhitelistProof(
     @Body() query: GetCollectionDropPhaseDto,
+    @User() user: iInfoToken,
   ): Promise<BaseResult<WhitelistProofDto>> {
-    return null;
+    return await this.dropPhaseService.getWhitelistProof(user.sub, query);
+  }
+
+  @Post('claim-frame')
+  @ApiOperation({
+    summary: 'Claim NFT from warpcast',
+  })
+  async claimFrame(@Body() query: ClaimFrameDto): Promise<BaseResult<string>> {
+    return await this.dropPhaseService.claimFrame(query);
+  }
+
+  @JWT()
+  @Post('update-whitelist-proof')
+  @ApiOperation({
+    summary: 'Get the proof for Whitelist minting',
+  })
+  @ApiOkResponse({
+    schema: {
+      allOf: [
+        {
+          $ref: getSchemaPath(BaseResult),
+        },
+        {
+          properties: {
+            data: {
+              allOf: [
+                {
+                  $ref: getSchemaPath(WhitelistProofDto),
+                },
+              ],
+            },
+          },
+        },
+      ],
+    },
+  })
+  async updateWhitelistProof(
+    @Body() query: GetCollectionDropPhaseDto,
+    @User() user: iInfoToken,
+  ): Promise<BaseResult<string>> {
+    return await this.dropPhaseService.updateWhitelistProof(user.sub, query);
   }
 
   @JWT()

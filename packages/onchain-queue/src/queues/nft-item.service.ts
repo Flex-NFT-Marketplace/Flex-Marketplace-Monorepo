@@ -134,19 +134,12 @@ export class NftItemService {
     const paymentTokens = await this.paymentTokenModel.find({
       isNative: true,
     });
-    const owner = await this.web3Service.getNftCollectionOwner(
-      nftAddress,
-      chain,
-    );
-    const ownerDocument = owner
-      ? await this.userService.getOrCreateUser(formattedContractAddress(owner))
-      : null;
     const nftCollectionEntity: NftCollections = {
       name,
       symbol,
       key: nftAddress,
       nftContract: nftAddress,
-      owner: ownerDocument,
+      owner: null,
       chain,
       standard,
       paymentTokens,
@@ -721,7 +714,6 @@ export class NftItemService {
       tokenId,
       nftContract: nftAddress,
       owner: toUser,
-      isBurned: false,
     });
 
     let amount = value;
@@ -746,7 +738,7 @@ export class NftItemService {
       {
         nftContract: nftAddress,
         tokenId,
-        burnedAt: null,
+        owner: toUser,
       },
       { $set: newNftEntity },
       { new: true, upsert: true },
@@ -1637,7 +1629,7 @@ export class NftItemService {
             update: {
               sale: null,
               price: 0,
-              owner: buyer,
+              owner: buyerUser,
               blockTime: timestamp,
               marketType: MarketType.NotForSale,
             },
@@ -1672,12 +1664,13 @@ export class NftItemService {
       }
     } else {
       try {
-        const counterSignatureUsage =
-          await this.web3Service.getCounterUsageSignature(
-            buyer,
-            orderNonce,
-            chain,
-          );
+        const counterSignatureUsage = orderNonce
+          ? await this.web3Service.getCounterUsageSignature(
+              buyer,
+              orderNonce,
+              chain,
+            )
+          : null;
 
         const remainingUsage =
           offer && counterSignatureUsage
@@ -1714,7 +1707,7 @@ export class NftItemService {
               filter: {
                 tokenId,
                 nftContract: collection,
-                owner: seller,
+                owner: sellerUser,
               },
               update: { $set: sellerNft },
             },
@@ -1724,7 +1717,7 @@ export class NftItemService {
         const buyerNft = await this.nftModel.findOne({
           tokenId,
           nftContract: collection,
-          owner: buyer,
+          owner: buyerUser,
         });
         if (buyerNft) {
           if (buyerNft.blockTime <= timestamp) {

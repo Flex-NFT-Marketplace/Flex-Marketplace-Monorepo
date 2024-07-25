@@ -6,6 +6,7 @@ import {
   num,
   BigNumberish,
   uint256,
+  Account,
 } from 'starknet';
 import { ChainDocument } from '@app/shared/models/schemas';
 import {
@@ -61,6 +62,12 @@ export class Web3Service {
     const provider = this.getProvider(rpc);
     const contractInstance = new Contract(abi, contractAddress, provider);
     return contractInstance;
+  }
+
+  getAccountInstance(address: string, privateKey: string, rpc: string) {
+    const provider = this.getProvider(rpc);
+    const accountInstance = new Account(provider, address, privateKey);
+    return accountInstance;
   }
 
   async getBlockTime(rpc: string) {
