@@ -1,11 +1,12 @@
 import { InjectModel } from '@nestjs/mongoose';
-import { Injectable } from '@nestjs/common';
+import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import {
   ChainDocument,
   Chains,
   Histories,
   HistoryDocument,
   HistoryType,
+  NftCollectionDocument,
   NftCollectionDto,
   NftCollections,
   Nfts,
@@ -36,6 +37,8 @@ import {
   NftCollectionHoldersQuery,
 } from './dto/CollectionHolders.dto';
 import { NftCollectionAttributeDto } from './dto/CollectionAttribute.dto';
+import { UpdateCollectionDetailDto } from './dto/updateCollectionDetail.dto';
+import { retryUntil } from '@app/shared/index';
 
 @Injectable()
 export class NftCollectionsService {
@@ -70,6 +73,7 @@ export class NftCollectionsService {
       sort,
       page,
       name,
+      isNonFungibleFlexDropToken,
     } = query;
 
     const filter: any = {};
@@ -87,6 +91,9 @@ export class NftCollectionsService {
     }
     if (name) {
       filter.name = { $regex: `${query.name}`, $options: 'i' };
+    }
+    if (isNonFungibleFlexDropToken !== null) {
+      filter.isNonFungibleFlexDropToken = isNonFungibleFlexDropToken;
     }
 
     if (owner) {
@@ -636,6 +643,52 @@ export class NftCollectionsService {
       }
     }
     return attributes;
+  }
+
+  async updateCollectionDetail(
+    owner: string,
+    body: UpdateCollectionDetailDto,
+  ): Promise<BaseResult<string>> {
+    const ownerDocument = await this.userService.getOrCreateUser(owner);
+
+    const { nftContract, description, externalLink, avatar, cover } = body;
+
+    const formatedAddress = formattedContractAddress(nftContract);
+    let nftCollection: NftCollectionDocument;
+    await retryUntil(
+      async () => {
+        nftCollection = await this.nftCollectionModel.findOne({
+          nftContract: formatedAddress,
+          owner: ownerDocument,
+        });
+      },
+      nftCollection => nftCollection !== null,
+      5,
+      2000, // delay 2s
+    );
+
+    if (!nftCollection) {
+      throw new HttpException(
+        'You are not the owner of the collecion.',
+        HttpStatus.UNAUTHORIZED,
+      );
+    }
+
+    await this.nftCollectionModel.findOneAndUpdate(
+      {
+        nftContract: formatedAddress,
+      },
+      {
+        $set: {
+          avatar,
+          cover,
+          description,
+          externalLink,
+        },
+      },
+    );
+
+    return new BaseResult('Update Collection detail successful.');
   }
 
   async getTotalOwners(nftContract: string): Promise<NFTCollectionSuply> {

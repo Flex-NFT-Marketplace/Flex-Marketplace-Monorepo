@@ -25,7 +25,7 @@ export class WalletController {
   constructor(private readonly walletService: WalletService) {}
 
   @JWT()
-  @Post('/getOrCreateWallet')
+  @Post('/get-or-create-wallet')
   @HttpCode(200)
   @ApiOperation({
     summary: 'Create New Private Wallet From User Address',

@@ -64,6 +64,7 @@ export type ERC721TransferReturnValue = {
   nftAddress: string;
   timestamp: number;
   isFlexDropMinted?: boolean;
+  isWarpcastMinted?: boolean;
   price?: number;
 };
 
@@ -128,6 +129,7 @@ export type ERC1155TransferReturnValue = {
   value: number;
   timestamp: number;
   isFlexDropMinted?: boolean;
+  isWarpcastMinted?: boolean;
   price?: number;
 };
 
@@ -613,6 +615,7 @@ export type FlexDropMintedReturnValue = {
   totalMintPrice: number;
   feeMint: number;
   timestamp: number;
+  isWarpcast: boolean;
 };
 
 export const decodeFlexDropMinted = (
@@ -651,6 +654,7 @@ export const decodeFlexDropMinted = (
     ),
     feeMint: Number((parsedEvent.FlexDropMinted.fee_mint as bigint).toString()),
     timestamp,
+    isWarpcast: parsedEvent.FlexDropMinted.is_warpcast as any,
   };
 
   return returnValue;

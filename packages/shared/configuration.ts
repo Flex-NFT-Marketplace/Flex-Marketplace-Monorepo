@@ -20,7 +20,12 @@ export default () => ({
   secret_iv_encrypt:
     String(process.env.SECRET_IV_ENCRYPT) || '12345678901234567890123456789012',
   secret_encrypt_method:
-    String(process.env.SECRET_ENCRYPT_METHOD) || 'aes-256-gcm',
+    String(process.env.SECRET_ENCRYPT_METHOD) || 'aes-256-ctr',
+  account_payer_estimate_private_key: String(
+    process.env.ACCOUNT_PAYER_PRIVATE_KEY,
+  ),
+  account_payer_estimate_address: String(process.env.ACCOUNT_PAYER_ADDRESS),
+
   mailer: {
     host: String(process.env.EMAIL_HOST),
     port: Number(process.env.EMAIL_PORT),

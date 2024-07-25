@@ -23,4 +23,7 @@ export class NftCollectionQueryParams extends BaseQueryParams {
   status?: NftCollectionStatus = NftCollectionStatus.Active;
   @ApiProperty()
   name?: string;
+
+  @ApiProperty()
+  isNonFungibleFlexDropToken?: boolean;
 }

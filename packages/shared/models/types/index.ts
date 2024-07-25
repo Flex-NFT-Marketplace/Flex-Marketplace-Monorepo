@@ -21,6 +21,7 @@ export enum NotificationStatus {
 export enum HistoryType {
   Mint = 'mint',
   FlexDropMint = 'flexDropMint',
+  WarpcastMint = 'warpcastMint',
   Transfer = 'transfer',
   CancelSale = 'cancelSale',
   CancelOffer = 'cancelOffer',
