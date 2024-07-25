@@ -6,6 +6,7 @@ import {
   Histories,
   HistoryDocument,
   HistoryType,
+  NftCollectionDocument,
   NftCollectionDto,
   NftCollections,
   Nfts,
@@ -37,6 +38,7 @@ import {
 } from './dto/CollectionHolders.dto';
 import { NftCollectionAttributeDto } from './dto/CollectionAttribute.dto';
 import { UpdateCollectionDetailDto } from './dto/updateCollectionDetail.dto';
+import { retryUntil } from '@app/shared/index';
 
 @Injectable()
 export class NftCollectionsService {
@@ -71,6 +73,7 @@ export class NftCollectionsService {
       sort,
       page,
       name,
+      isNonFungibleFlexDropToken,
     } = query;
 
     const filter: any = {};
@@ -88,6 +91,9 @@ export class NftCollectionsService {
     }
     if (name) {
       filter.name = { $regex: `${query.name}`, $options: 'i' };
+    }
+    if (isNonFungibleFlexDropToken !== null) {
+      filter.isNonFungibleFlexDropToken = isNonFungibleFlexDropToken;
     }
 
     if (owner) {
@@ -646,10 +652,20 @@ export class NftCollectionsService {
     const ownerDocument = await this.userService.getOrCreateUser(owner);
 
     const { nftContract, description, externalLink, avatar, cover } = body;
-    const nftCollection = await this.nftCollectionModel.findOne({
-      nftContract,
-      owner: ownerDocument,
-    });
+
+    const formatedAddress = formattedContractAddress(nftContract);
+    let nftCollection: NftCollectionDocument;
+    await retryUntil(
+      async () => {
+        nftCollection = await this.nftCollectionModel.findOne({
+          nftContract: formatedAddress,
+          owner: ownerDocument,
+        });
+      },
+      nftCollection => nftCollection !== null,
+      5,
+      2000, // delay 2s
+    );
 
     if (!nftCollection) {
       throw new HttpException(
@@ -660,7 +676,7 @@ export class NftCollectionsService {
 
     await this.nftCollectionModel.findOneAndUpdate(
       {
-        nftContract,
+        nftContract: formatedAddress,
       },
       {
         $set: {
