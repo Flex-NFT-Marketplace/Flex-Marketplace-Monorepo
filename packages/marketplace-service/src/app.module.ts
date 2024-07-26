@@ -10,6 +10,7 @@ import { HistoryModule } from './histories/history.module';
 import { WalletModule } from './wallet/wallet.module';
 import { CacheModule } from '@nestjs/cache-manager';
 import { DropPhaseModule } from './dropphases/dropPhases.module';
+import { WarpcastModule } from './warpcast/warpcast.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { DropPhaseModule } from './dropphases/dropPhases.module';
     WalletModule,
     NftCollectionsModule,
     DropPhaseModule,
+    WarpcastModule,
     CacheModule.register({ isGlobal: true }),
   ],
   controllers: [],
