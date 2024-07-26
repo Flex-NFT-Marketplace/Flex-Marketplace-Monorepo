@@ -78,23 +78,29 @@ export class WarpcastController {
     schema: {
       allOf: [
         {
-          $ref: getSchemaPath(BaseResult),
-        },
-        {
-          properties: {
-            data: {
-              allOf: [
-                {
-                  $ref: getSchemaPath(String),
-                },
-              ],
-            },
-          },
+          $ref: getSchemaPath(String),
         },
       ],
     },
   })
   async getStartFrame(@Body() query: GetStartFrameDto) {
     return await this.warpcastService.getStartFrame(query);
+  }
+
+  @Post('react-frame')
+  @ApiOperation({
+    summary: 'Get react frame',
+  })
+  @ApiOkResponse({
+    schema: {
+      allOf: [
+        {
+          $ref: getSchemaPath(String),
+        },
+      ],
+    },
+  })
+  async getReactFrame(@Body() query: GetStartFrameDto) {
+    return await this.warpcastService.getReactFrame(query);
   }
 }
