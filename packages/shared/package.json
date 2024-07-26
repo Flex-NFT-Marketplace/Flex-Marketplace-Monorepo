@@ -36,6 +36,7 @@
     "bull": "^4.12.2",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",
+    "frames.js": "^0.18.0",
     "mime": "^3.0.0",
     "mongoose": "^6.0.12",
     "passport": "^0.7.0",
@@ -46,7 +47,8 @@
     "reflect-metadata": "^0.2.0",
     "rxjs": "^7.8.1",
     "starknet": "^6.8.0",
-    "uuid": "^9.0.1"
+    "uuid": "^9.0.1",
+    "web3": "^4.11.1"
   },
   "devDependencies": {
     "@nestjs/cli": "^10.0.0",

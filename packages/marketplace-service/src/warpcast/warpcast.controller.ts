@@ -23,17 +23,18 @@ import { BaseResult } from '@app/shared/types';
 import { GetImageMessage } from './dto/getImageMessage.dto';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
+import { GetStartFrameDto } from './dto/getStartFrame.dto';
 
 @ApiTags('Warpcast')
 @Controller('warpcast')
-@ApiExtraModels()
+@ApiExtraModels(Buffer, String)
 export class WarpcastController {
   constructor(
     @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
     private readonly warpcastService: WarpcastService,
   ) {}
 
-  @Get('image-message/')
+  @Get('image-message')
   @Header('Content-Type', 'image/png')
   @ApiOperation({
     summary: 'Get Image message on warpcast',
@@ -67,5 +68,33 @@ export class WarpcastController {
       await this.cacheManager.set(key, data, 60 * 60 * 1e3);
     }
     return data;
+  }
+
+  @Post('start-frame')
+  @ApiOperation({
+    summary: 'Get start frame',
+  })
+  @ApiOkResponse({
+    schema: {
+      allOf: [
+        {
+          $ref: getSchemaPath(BaseResult),
+        },
+        {
+          properties: {
+            data: {
+              allOf: [
+                {
+                  $ref: getSchemaPath(String),
+                },
+              ],
+            },
+          },
+        },
+      ],
+    },
+  })
+  async getStartFrame(@Body() query: GetStartFrameDto) {
+    return await this.warpcastService.getStartFrame(query);
   }
 }

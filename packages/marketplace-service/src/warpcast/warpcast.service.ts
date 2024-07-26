@@ -11,7 +11,14 @@ import { GetImageMessage } from './dto/getImageMessage.dto';
 import { BaseResult } from '@app/shared/types';
 import { formattedContractAddress } from '@app/shared/utils';
 import puppeteer from 'puppeteer';
-import { getRenderedComponentString } from '@app/shared/helper';
+import {
+  getLinkFrame,
+  getRenderedComponentString,
+  isCurrentTimeWithinPhase,
+} from '@app/shared/helper';
+import { GetStartFrameDto } from './dto/getStartFrame.dto';
+import { validateFrameMessage, getFrameHtml } from 'frames.js';
+import { FLEX } from '@app/shared/constants';
 
 @Injectable()
 export class WarpcastService {
@@ -19,7 +26,7 @@ export class WarpcastService {
     @InjectModel(DropPhases.name)
     private readonly dropPhaseModel: Model<DropPhaseDocument>,
     @InjectModel(NftCollections.name)
-    private readonly nftCollectionService: Model<NftCollectionDocument>,
+    private readonly nftCollectionModel: Model<NftCollectionDocument>,
   ) {}
 
   browserPromise = puppeteer.launch({
@@ -32,7 +39,7 @@ export class WarpcastService {
 
     const headderMessage = message || 'Flex Starknet Marketplace';
 
-    const nftCollection = await this.nftCollectionService.findOne({
+    const nftCollection = await this.nftCollectionModel.findOne({
       nftContract: formattedAddress,
     });
 
@@ -71,5 +78,47 @@ export class WarpcastService {
     // Take a screenshot of only the image element
     const imageBuffer = await imageElement.screenshot();
     return new BaseResult(imageBuffer);
+  }
+
+  async getStartFrame(query: GetStartFrameDto): Promise<BaseResult<string>> {
+    const { nftContract, phaseId } = query;
+    const { isValid, message } = await validateFrameMessage(query, {
+      hubHttpUrl: `${FLEX.HUB_URL}`,
+    });
+
+    if (!isValid || !message) {
+      throw new HttpException('Invalid message', HttpStatus.BAD_REQUEST);
+    }
+
+    const formatAddress = formattedContractAddress(nftContract);
+    const nftCollection = await this.nftCollectionModel.findOne({
+      nftContract: formatAddress,
+    });
+    if (!nftCollection) {
+      throw new HttpException('Nft Contract not found', HttpStatus.NOT_FOUND);
+    }
+
+    const dropPhase = await this.dropPhaseModel.findOne({
+      nftCollection,
+      phaseId,
+    });
+    if (!dropPhase) {
+      throw new HttpException('Drop phase not found', HttpStatus.NOT_FOUND);
+    }
+
+    let frame;
+    const warpcastImage = dropPhase.warpcastImage || nftCollection.avatar;
+    if (!isCurrentTimeWithinPhase(dropPhase)) {
+      frame = getLinkFrame(
+        formatAddress,
+        warpcastImage,
+        `${FLEX.FLEX_DOMAIN}/open-edition/${formatAddress}`,
+        'Check event details on Flex',
+        'The event is not currently taking place.',
+      );
+
+      const html = getFrameHtml(frame);
+      return new BaseResult(html);
+    }
   }
 }
