@@ -2,10 +2,12 @@ import ReactDOMServer from 'react-dom/server';
 import React from 'react';
 import { Card } from './imageCard';
 import { DropPhaseDocument } from '@app/shared/models';
-import { formattedContractAddress } from '@app/shared/utils';
-import { FLEX } from '@app/shared/constants';
+import { formatBalance, formattedContractAddress } from '@app/shared/utils';
+import { COMMON_CONTRACT_ADDRESS, FLEX } from '@app/shared/constants';
 import axios from 'axios';
 import configuration from '@app/shared/configuration';
+import { Account, Contract, Provider, constants, uint256 } from 'starknet';
+import { ABIS } from '@app/web3-service/types';
 
 export async function getRenderedComponentString(
   image: string,
@@ -86,6 +88,108 @@ export function getStaticPostFrame(
   const frame = {
     version: 'vNext',
     image: `${image}`,
+    imageAspectRatio: '1:1',
+    buttons: [
+      {
+        label: label,
+        action: 'post',
+        target: `${FLEX.FLEX_URL}/warpcast/${formatAddress}/${target}`,
+      },
+    ],
+    ogImage: `${image}`,
+    postUrl: `${FLEX.FLEX_URL}/warpcast/${formatAddress}/${target}`,
+  };
+  return frame;
+}
+
+export async function hasFollowQuest(warpcast: DropPhaseDocument) {
+  try {
+    if (!warpcast) {
+      throw new Error('warpcast not found for the given contract address.');
+    }
+
+    const followQuestExists = warpcast.quests?.some(
+      quest => quest.option === 'Follow',
+    );
+    return !!followQuestExists;
+  } catch (error) {
+    console.error('Error:', error);
+    return false;
+  }
+}
+
+export async function checkPayerBalance(address: string, rpc: string) {
+  const provider = new Provider({ nodeUrl: rpc });
+  const ethContract = new Contract(
+    ABIS.Erc20ABI,
+    COMMON_CONTRACT_ADDRESS.ETH,
+    provider,
+  );
+
+  const estimateMintFeeAccount = new Account(
+    provider,
+    process.env.ESTIMATE_ACCOUNT_ADDRESS,
+    process.env.ESTIMATE_ACCOUNT_PRI,
+    undefined,
+    constants.TRANSACTION_VERSION.V3,
+  );
+
+  const randomAddress =
+    '0x05dcb49a8217eab5ed23e4a26df044edaf1428a5c7b30fa2324fa39a28288f6b';
+
+  // TODO: 1 Openedition (Mainnet) to calculate fee
+  const { suggestedMaxFee: estimatedFee1 } =
+    await estimateMintFeeAccount.estimateInvokeFee({
+      contractAddress: FLEX.FLEXDROP_MAINNET,
+      entrypoint: 'mint_public',
+      calldata: [FLEX.ESTIMATE_NFT, 1, FLEX.FLEX_RECIPT, randomAddress, 1],
+    });
+  let feeMint = formatBalance(estimatedFee1, 18);
+  // Interactions with the contract with call
+  const res1 = await ethContract.balanceOf(address);
+  const balance = BigInt(uint256.uint256ToBN(res1.balance));
+  const unsufficient = Number(balance) < Number(feeMint) ? true : false;
+
+  return unsufficient;
+}
+
+export function getMintFrame(
+  contractAddress: string,
+  image: string,
+  target: string,
+  message: string,
+) {
+  const formatAddress = formattedContractAddress(contractAddress);
+
+  const frame = {
+    version: 'vNext',
+    image: `${FLEX.FLEX_URL}/warpcast/${formatAddress}/image/message?message=${message}`,
+    imageAspectRatio: '1:1',
+    inputText: 'Enter your Starknet address',
+    buttons: [
+      {
+        label: `Mint`,
+        action: 'post',
+        target: `${FLEX.FLEX_URL}/warpcast/${formatAddress}/${target}`,
+      },
+    ],
+    ogImage: `${image}`,
+    postUrl: `${FLEX.FLEX_URL}/warpcast/${formatAddress}/${target}`,
+  };
+  return frame;
+}
+
+export function getPostFrame(
+  contractAddress: string,
+  image: string,
+  target: string,
+  label: string,
+  message: string,
+) {
+  const formatAddress = formattedContractAddress(contractAddress);
+  const frame = {
+    version: 'vNext',
+    image: `${FLEX.FLEX_URL}/warpcast/${formatAddress}/image/message?message=${message}`,
     imageAspectRatio: '1:1',
     buttons: [
       {

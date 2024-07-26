@@ -6,11 +6,11 @@ export enum COMMON_CONTRACT_ADDRESS {
 export enum FLEX {
   FLEX = '0x0172f731712c96a115814352cfb7765a303d48e959c96f864ac4b9c4f0efd321',
   FLEXDROP_TESTNET = '0x35a7a17994d25987ce371a2d0f7bd2139af038c0235986ed3b2e709344ceaf5',
-  FLEXDROP_MAINNET = '0x4660888bb1742b487b98e33cd69d6e6374a32ef2cfa7a3f81cab7604e99e091',
+  FLEXDROP_MAINNET = '0x68a6e16aa12c4b2f185965d7a811198934dcc786d424c5c97189f23e430b085',
   FLEX_RECIPT = '0x06b7e7d35c8dedc6f698053f6dd7e6a21180f1e4160c5656c2fb0a4b06da7e7a',
   FLEX_URL = 'https://beta-open-editions.hyperflex.services/api/v1',
 
-  ESTIMATE_NFT = '0x017d073de34a9f3144ad46d5c346668db87db26367e36268008b8549871bfbf6',
+  ESTIMATE_NFT = '0x3d1a6d306fc9b797138930a3ad2e5c9034738487e2ec7c24a7e64665d3a0da5',
 
   FLEXDROP_PROTOCOL_RECEIVER = '0x05dcb49a8217eab5ed23e4a26df044edaf1428a5c7b30fa2324fa39a28288f6b',
   FLEX_DOMAIN = 'https://hyperflex.market',
@@ -19,6 +19,7 @@ export enum FLEX {
 
   HUB_URL = 'http://37.60.252.232:2281',
 }
+
 export enum RPC_PROVIDER {
   TESTNET = 'https://free-rpc.nethermind.io/sepolia-juno',
   MAINNET = 'https://starknet-mainnet.public.blastapi.io',
