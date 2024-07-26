@@ -100,6 +100,7 @@ export class WarpcastService {
 
     // Take a screenshot of only the image element
     const imageBuffer = await imageElement.screenshot();
+    console.log(imageBuffer);
     return imageBuffer;
   }
 
