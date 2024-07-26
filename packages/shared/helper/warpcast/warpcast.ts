@@ -1,13 +1,23 @@
 import ReactDOMServer from 'react-dom/server';
 import React from 'react';
 import { Card } from './imageCard';
-import { DropPhaseDocument } from '@app/shared/models';
+import { DropPhaseDocument, UserDocument } from '@app/shared/models';
 import { formatBalance, formattedContractAddress } from '@app/shared/utils';
 import { COMMON_CONTRACT_ADDRESS, FLEX } from '@app/shared/constants';
 import axios from 'axios';
 import configuration from '@app/shared/configuration';
-import { Account, Contract, Provider, constants, uint256 } from 'starknet';
+import {
+  Account,
+  CallData,
+  Contract,
+  RpcProvider,
+  constants,
+  getChecksumAddress,
+  uint256,
+  validateChecksumAddress,
+} from 'starknet';
 import { ABIS } from '@app/web3-service/types';
+import { decryptData } from '@app/shared/utils/encode';
 
 export async function getRenderedComponentString(
   image: string,
@@ -119,7 +129,7 @@ export async function hasFollowQuest(warpcast: DropPhaseDocument) {
 }
 
 export async function checkPayerBalance(address: string, rpc: string) {
-  const provider = new Provider({ nodeUrl: rpc });
+  const provider = new RpcProvider({ nodeUrl: rpc });
   const ethContract = new Contract(
     ABIS.Erc20ABI,
     COMMON_CONTRACT_ADDRESS.ETH,
@@ -202,4 +212,112 @@ export function getPostFrame(
     postUrl: `${FLEX.FLEX_URL}/warpcast/${formatAddress}/${target}`,
   };
   return frame;
+}
+
+export function getTransactionFrame(
+  contractAddress: string,
+  image: string,
+  target: string,
+  label: string,
+  message: string,
+  transactionLabel: string,
+  transacionTarget: string,
+) {
+  const formatAddress = formattedContractAddress(contractAddress);
+
+  const frame = {
+    version: 'vNext',
+    image: `${FLEX.FLEX_URL}/warpcast/${formatAddress}/image/message?message=${message}`,
+    imageAspectRatio: '1:1',
+    buttons: [
+      {
+        label: label,
+        action: 'link',
+        target: `${target}`,
+      },
+      {
+        label: transactionLabel,
+        action: 'post',
+        target: `${FLEX.FLEX_URL}/warpcast/${formatAddress}/${transacionTarget}`,
+      },
+    ],
+    ogImage: `${image}`,
+    postUrl: `${target}`,
+  };
+  return frame;
+}
+
+export function validateAddress(address) {
+  try {
+    // Check address length
+    if (address.length !== 64 && address.length !== 66) {
+      return false;
+    }
+
+    const checksumAddr = getChecksumAddress(address);
+
+    const isValid = validateChecksumAddress(checksumAddr);
+
+    // Remove "0x" prefix if present
+    address = address.startsWith('0x') ? address.slice(2) : address;
+
+    const regex = /^[0-9a-fA-F]{64}$/;
+
+    // Check if address matches the format
+    if (!regex.test(address)) {
+      return false;
+    }
+
+    return isValid;
+  } catch (error) {
+    console.log(error);
+    return false;
+  }
+}
+
+export async function mintNft(
+  nftAddress: string,
+  rpc: string,
+  payer: UserDocument,
+  toAddress: string,
+  phaseId: number,
+  phaseType: number,
+): Promise<string> {
+  // Connect your account
+  const provider = new RpcProvider({ nodeUrl: rpc });
+  const decodePrivateKey = decryptData(payer.privateKey);
+  const account0Address = payer.address;
+  const payerAccount = new Account(provider, account0Address, decodePrivateKey);
+  const flexDropContract = new Contract(
+    ABIS.FlexDropABI,
+    FLEX.FLEXDROP_MAINNET,
+    provider,
+  );
+
+  flexDropContract.connect(payerAccount);
+  console.log('Invoke Tx - Minting 1 NFT to...' + toAddress);
+  if (phaseType == 1) {
+    try {
+      const result = await payerAccount.execute({
+        contractAddress: FLEX.FLEXDROP_MAINNET,
+        entrypoint: 'mint_public',
+        calldata: CallData.compile({
+          nft_address: nftAddress,
+          phase_id: phaseId,
+          fee_recipient: FLEX.FLEX_RECIPT,
+          minter_if_not_payer: toAddress,
+          quantity: 1,
+          is_warpcast: true,
+        }),
+      });
+
+      await provider.waitForTransaction(result.transaction_hash);
+      return result.transaction_hash;
+    } catch (error) {
+      console.log('Minting Failed ' + error);
+      return error;
+    }
+  } else if (phaseId == 2) {
+    // TODO: Mint other type
+  }
 }

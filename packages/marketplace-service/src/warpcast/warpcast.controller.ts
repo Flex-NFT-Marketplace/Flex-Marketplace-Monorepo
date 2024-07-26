@@ -103,4 +103,55 @@ export class WarpcastController {
   async getReactFrame(@Body() query: GetStartFrameDto) {
     return await this.warpcastService.getReactFrame(query);
   }
+
+  @Post('follow-frame')
+  @ApiOperation({
+    summary: 'Get follow frame',
+  })
+  @ApiOkResponse({
+    schema: {
+      allOf: [
+        {
+          $ref: getSchemaPath(String),
+        },
+      ],
+    },
+  })
+  async getFollowFrame(@Body() query: GetStartFrameDto) {
+    return await this.warpcastService.getFollowFrame(query);
+  }
+
+  @Post('mint-frame')
+  @ApiOperation({
+    summary: 'Mint frame',
+  })
+  @ApiOkResponse({
+    schema: {
+      allOf: [
+        {
+          $ref: getSchemaPath(String),
+        },
+      ],
+    },
+  })
+  async getMintFrame(@Body() query: GetStartFrameDto) {
+    return await this.warpcastService.getMintFrame(query);
+  }
+
+  @Post('minted-transaction')
+  @ApiOperation({
+    summary: 'Get Transaction of minting frame',
+  })
+  @ApiOkResponse({
+    schema: {
+      allOf: [
+        {
+          $ref: getSchemaPath(String),
+        },
+      ],
+    },
+  })
+  async getTransaction(@Body() query: GetStartFrameDto) {
+    return await this.warpcastService.getTxMintedFrame(query);
+  }
 }

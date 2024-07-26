@@ -8,6 +8,7 @@ import {
   HistoryType,
   NftCollectionDocument,
   NftCollections,
+  PhaseType,
   WarpcastUserDocument,
   WarpcastUsers,
 } from '@app/shared/models';
@@ -16,7 +17,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { GetImageMessage } from './dto/getImageMessage.dto';
 import { BaseResult } from '@app/shared/types';
-import { formattedContractAddress } from '@app/shared/utils';
+import { delay, formattedContractAddress } from '@app/shared/utils';
 import puppeteer from 'puppeteer';
 import {
   checkPayerBalance,
@@ -26,12 +27,15 @@ import {
   getPostFrame,
   getRenderedComponentString,
   getStaticPostFrame,
+  getTransactionFrame,
   hasFollowQuest,
   isCurrentTimeWithinPhase,
+  mintNft,
+  validateAddress,
 } from '@app/shared/helper';
 import { GetStartFrameDto } from './dto/getStartFrame.dto';
 import { validateFrameMessage, getFrameHtml, getFrameMessage } from 'frames.js';
-import { FLEX } from '@app/shared/constants';
+import { EXPLORER, FLEX } from '@app/shared/constants';
 
 @Injectable()
 export class WarpcastService {
@@ -165,6 +169,9 @@ export class WarpcastService {
   async getReactFrame(query: GetStartFrameDto): Promise<string> {
     const { nftContract, phaseId } = query;
 
+    const { isValid, message } = await validateFrameMessage(query, {
+      hubHttpUrl: `${FLEX.HUB_URL}`,
+    });
     const formatAddress = formattedContractAddress(nftContract);
     const nftCollection = await this.nftCollectionModel
       .findOne({
@@ -208,7 +215,7 @@ export class WarpcastService {
         return html;
       }
 
-      const warpcastUser = await this.warpcastUserModel.findOne({
+      const claimedUser = await this.warpcastUserModel.findOne({
         fid: userFid,
         dropPhase,
       });
@@ -239,7 +246,7 @@ export class WarpcastService {
         const html = getFrameHtml(frame);
         return html;
       }
-      if (!warpcastUser) {
+      if (!claimedUser) {
         frame = getMintFrame(
           formatAddress,
           warpcastImage,
@@ -264,6 +271,271 @@ export class WarpcastService {
         'Refresh if you have liked and recasted',
       );
     }
+    const html = getFrameHtml(frame);
+    return html;
+  }
+
+  async getFollowFrame(query: GetStartFrameDto): Promise<string> {
+    const { nftContract, phaseId } = query;
+    const { isValid, message } = await validateFrameMessage(query, {
+      hubHttpUrl: `${FLEX.HUB_URL}`,
+    });
+
+    const formatAddress = formattedContractAddress(nftContract);
+    const nftCollection = await this.nftCollectionModel
+      .findOne({
+        nftContract: formatAddress,
+      })
+      .populate(['payers']);
+    if (!nftCollection) {
+      throw new HttpException('Nft Contract not found', HttpStatus.NOT_FOUND);
+    }
+
+    const payerDocument = nftCollection.payers[0];
+    if (!payerDocument) {
+      throw new HttpException('Payer not found', HttpStatus.NOT_FOUND);
+    }
+
+    const dropPhase = await this.dropPhaseModel.findOne({
+      nftCollection,
+      phaseId,
+    });
+    if (!dropPhase) {
+      throw new HttpException('Drop phase not found', HttpStatus.NOT_FOUND);
+    }
+
+    const frameMessage = await getFrameMessage(query, {
+      hubHttpUrl: `${FLEX.HUB_URL}`,
+    });
+
+    let frame;
+    const warpcastImage = dropPhase.warpcastImage || nftCollection.avatar;
+
+    if (frameMessage.requesterFollowsCaster) {
+      const userFid = frameMessage.requesterFid;
+      const claimedUser = await this.warpcastUserModel.findOne({
+        fid: userFid,
+        dropPhase,
+      });
+
+      const chainDocument = await this.chainModel.findOne();
+      const payerBalance = await checkPayerBalance(
+        payerDocument.address,
+        chainDocument.rpc,
+      );
+
+      const totalWarpcastMinted = await this.getTotalWarpcastMinted(
+        formatAddress,
+        phaseId,
+      );
+
+      const warpcastBalance =
+        dropPhase.totalWarpcastMint - totalWarpcastMinted > 0 ? true : false;
+
+      if (payerBalance || !warpcastBalance) {
+        frame = getLinkFrame(
+          formatAddress,
+          warpcastImage,
+          `${FLEX.FLEX_DOMAIN}/open-edition/${formatAddress}`,
+          'Mint on Flex',
+          'Free Claim NFTs reached limits',
+        );
+
+        const html = getFrameHtml(frame);
+        return html;
+      }
+      if (!claimedUser) {
+        frame = getMintFrame(
+          formatAddress,
+          warpcastImage,
+          `mint/${phaseId}`,
+          "Congrats! You're eligible for the NFT",
+        );
+      } else {
+        frame = getLinkFrame(
+          formatAddress,
+          warpcastImage,
+          `${FLEX.FLEX_DOMAIN}/create-open-edition`,
+          'Learn How To Make This At Flex',
+          'You have claimed the NFT',
+        );
+      }
+    } else {
+      frame = getPostFrame(
+        formatAddress,
+        warpcastImage,
+        `follow/${phaseId}`,
+        'Refresh',
+        'Refresh if you have followed the Creator',
+      );
+    }
+
+    const html = getFrameHtml(frame);
+    return html;
+  }
+
+  async getMintFrame(query: GetStartFrameDto): Promise<string> {
+    const { nftContract, phaseId } = query;
+    const { isValid, message } = await validateFrameMessage(query, {
+      hubHttpUrl: `${FLEX.HUB_URL}`,
+    });
+
+    if (!isValid || !message) {
+      throw new HttpException('Invalid message', HttpStatus.BAD_REQUEST);
+    }
+
+    const formatAddress = formattedContractAddress(nftContract);
+    const nftCollection = await this.nftCollectionModel
+      .findOne({
+        nftContract: formatAddress,
+      })
+      .populate(['payers']);
+    if (!nftCollection) {
+      throw new HttpException('Nft Contract not found', HttpStatus.NOT_FOUND);
+    }
+
+    const payerDocument = nftCollection.payers[0];
+    if (!payerDocument) {
+      throw new HttpException('Payer not found', HttpStatus.NOT_FOUND);
+    }
+
+    const dropPhase = await this.dropPhaseModel.findOne({
+      nftCollection,
+      phaseId,
+    });
+    if (!dropPhase) {
+      throw new HttpException('Drop phase not found', HttpStatus.NOT_FOUND);
+    }
+
+    let frame;
+    const warpcastImage = dropPhase.warpcastImage || nftCollection.avatar;
+
+    const frameMessage = await getFrameMessage(query, {
+      hubHttpUrl: `${FLEX.HUB_URL}`,
+    });
+    const receiver = frameMessage.inputText;
+
+    if (!validateAddress(receiver)) {
+      frame = getMintFrame(
+        formatAddress,
+        warpcastImage,
+        `mint/${phaseId}`,
+        'Not a valid Starknet address',
+      );
+
+      const html = getFrameHtml(frame);
+      return html;
+    }
+
+    const fid = frameMessage.requesterFid;
+    const claimedUser = await this.warpcastUserModel.findOne({
+      fid,
+      dropPhase,
+    });
+
+    if (!claimedUser) {
+      try {
+        frame = getTransactionFrame(
+          formatAddress,
+          warpcastImage,
+          `${FLEX.FLEX_INVENTORY}/${receiver}`,
+          'Check Your NFT',
+          'Transaction submitted !!',
+          'See Transaction',
+          `transaction/${phaseId}`,
+        );
+        const html = getFrameHtml(frame);
+
+        const chainDocument = await this.chainModel.findOne();
+        const claimFrameResult = await mintNft(
+          nftContract,
+          chainDocument.rpc,
+          payerDocument,
+          receiver,
+          phaseId,
+          dropPhase.phaseType == PhaseType.PublicMint ? 1 : 2,
+        );
+
+        const warpcastUser: WarpcastUsers = {
+          fid,
+          dropPhase,
+          txHash: claimFrameResult,
+        };
+
+        await this.warpcastUserModel.create(warpcastUser);
+        return html;
+      } catch (error) {}
+    }
+  }
+
+  async getTxMintedFrame(query: GetStartFrameDto): Promise<string> {
+    const { nftContract, phaseId } = query;
+    const { isValid, message } = await validateFrameMessage(query, {
+      hubHttpUrl: `${FLEX.HUB_URL}`,
+    });
+
+    if (!isValid || !message) {
+      throw new HttpException('Invalid message', HttpStatus.BAD_REQUEST);
+    }
+
+    const formatAddress = formattedContractAddress(nftContract);
+    const nftCollection = await this.nftCollectionModel.findOne({
+      nftContract: formatAddress,
+    });
+    if (!nftCollection) {
+      throw new HttpException('Nft Contract not found', HttpStatus.NOT_FOUND);
+    }
+
+    const dropPhase = await this.dropPhaseModel.findOne({
+      nftCollection,
+      phaseId,
+    });
+    if (!dropPhase) {
+      throw new HttpException('Drop phase not found', HttpStatus.NOT_FOUND);
+    }
+    const frameMessage = await getFrameMessage(query, {
+      hubHttpUrl: `${FLEX.HUB_URL}`,
+    });
+
+    const fid = frameMessage.requesterFid;
+    const MAX_RETRIES = 3;
+    let attempts = 0;
+    let warpcastUser;
+    let transactionHash;
+    const warpcastImage = dropPhase.warpcastImage || nftCollection.avatar;
+
+    while (attempts < MAX_RETRIES) {
+      warpcastUser = await this.warpcastUserModel.findOne({
+        fid,
+        dropPhase,
+      });
+
+      if (warpcastUser && warpcastUser.transactionHash) {
+        transactionHash = warpcastUser.transactionHash;
+        break;
+      }
+
+      attempts += 1;
+
+      if (attempts < MAX_RETRIES) {
+        await delay(1); // wait 1 second before retrying
+      }
+    }
+
+    if (!transactionHash) {
+      throw new HttpException(
+        'User not found or transactionHash is undefined after multiple retries',
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    const frame: any = getLinkFrame(
+      formatAddress,
+      warpcastImage,
+      `${EXPLORER.VOYAGER_SCAN}/tx/${transactionHash}`,
+      'Transaction Link',
+      'Check Your Claim Transaction',
+    );
     const html = getFrameHtml(frame);
     return html;
   }
