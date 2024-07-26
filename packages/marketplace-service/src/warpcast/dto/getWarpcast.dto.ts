@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsHexadecimal, IsOptional, IsString, IsNumber } from 'class-validator';
 
-export class GetImageMessage {
+export class GetWarpcastDto {
   @IsHexadecimal()
   @ApiProperty()
   nftContract: string;

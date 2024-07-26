@@ -11,16 +11,12 @@ import {
   Body,
   Post,
   Query,
-  HttpException,
-  HttpStatus,
   Header,
   Inject,
 } from '@nestjs/common';
 import { WarpcastService } from './warpcast.service';
-import { JWT, User } from '@app/shared/modules';
-import { iInfoToken } from '@app/shared/modules/jwt/jwt.dto';
 import { BaseResult } from '@app/shared/types';
-import { GetImageMessage } from './dto/getImageMessage.dto';
+import { GetWarpcastDto } from './dto/getWarpcast.dto';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
 import { GetStartFrameDto } from './dto/getStartFrame.dto';
@@ -33,6 +29,14 @@ export class WarpcastController {
     @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
     private readonly warpcastService: WarpcastService,
   ) {}
+
+  @Get()
+  @ApiOperation({
+    summary: 'Get Warpcast Detail',
+  })
+  async getWarpcastDetail(@Query() query: GetWarpcastDto) {
+    return await this.warpcastService.getWarpcastDetail(query);
+  }
 
   @Get('image-message')
   @Header('Content-Type', 'image/png')
@@ -59,7 +63,7 @@ export class WarpcastController {
       ],
     },
   })
-  async getImageMessage(@Query() query: GetImageMessage) {
+  async getImageMessage(@Query() query: GetWarpcastDto) {
     const key = `image-message - ${JSON.stringify({ ...query })}`;
     let data = await this.cacheManager.get(key);
 
