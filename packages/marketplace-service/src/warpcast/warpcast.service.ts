@@ -15,11 +15,12 @@ import {
 import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { GetImageMessage } from './dto/getImageMessage.dto';
-import { BaseResult } from '@app/shared/types';
+import { GetWarpcastDto } from './dto/getWarpcast.dto';
+import ReactDOMServer from 'react-dom/server';
 import { delay, formattedContractAddress } from '@app/shared/utils';
 import puppeteer from 'puppeteer';
 import {
+  ImageWithText,
   checkPayerBalance,
   getFarcasterNameForFid,
   getLinkFrame,
@@ -56,7 +57,61 @@ export class WarpcastService {
     args: ['--no-sandbox', '--disable-setuid-sandbox'],
   });
 
-  async getImageMessage(query: GetImageMessage): Promise<Buffer> {
+  async getWarpcastDetail(query: GetWarpcastDto) {
+    const { message, nftContract, phaseId } = query;
+    const formattedAddress = formattedContractAddress(nftContract);
+
+    const nftCollection = await this.nftCollectionModel.findOne({
+      nftContract: formattedAddress,
+    });
+
+    if (!nftCollection) {
+      throw new HttpException('Nft contract not found', HttpStatus.NOT_FOUND);
+    }
+
+    const phaseDetail = await this.dropPhaseModel.findOne({
+      nftCollection,
+      phaseId,
+    });
+    if (!phaseDetail) {
+      throw new HttpException('Drop phase not found', HttpStatus.NOT_FOUND);
+    }
+
+    const creatorName = await getFarcasterNameForFid(phaseDetail.farcasterFid);
+
+    const warpcastImage = phaseDetail.warpcastImage || nftCollection.avatar;
+    const imageWithTextProps = {
+      imageUrl: warpcastImage,
+      nftName: nftCollection.name,
+      creator: creatorName,
+    };
+
+    const appHtml = ReactDOMServer.renderToString(
+      ImageWithText(imageWithTextProps),
+    );
+
+    const result = `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8">
+      <meta property="og:title" content="Flex Marketplace Openedition on Starknet" />
+      <meta property="og:image" content="${warpcastImage}" />
+      <meta name="fc:frame" content="vNext" />
+      <meta name="fc:frame:image" content="${warpcastImage}" />
+      <meta name="fc:frame:button:1" content="Get Started" />
+      <meta name="fc:frame:post_url" content="${FLEX.FLEX_URL}/warpcast/${formattedAddress}/start/${phaseId}" />
+    </head>
+    <body>
+      <div id="root">${appHtml}</div>
+    </body>
+    </html>
+  `;
+
+    return result;
+  }
+
+  async getImageMessage(query: GetWarpcastDto): Promise<Buffer> {
     const { message, nftContract, phaseId } = query;
     const formattedAddress = formattedContractAddress(nftContract);
 

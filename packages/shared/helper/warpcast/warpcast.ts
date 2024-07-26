@@ -138,8 +138,8 @@ export async function checkPayerBalance(address: string, rpc: string) {
 
   const estimateMintFeeAccount = new Account(
     provider,
-    process.env.ESTIMATE_ACCOUNT_ADDRESS,
-    process.env.ESTIMATE_ACCOUNT_PRI,
+    configuration().account_payer_estimate_address,
+    configuration().account_payer_estimate_private_key,
     undefined,
     constants.TRANSACTION_VERSION.V3,
   );
