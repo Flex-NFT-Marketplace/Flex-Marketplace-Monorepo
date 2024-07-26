@@ -2,17 +2,19 @@ import { Quest, QuestOption } from '@app/shared/models';
 import { ApiProperty } from '@nestjs/swagger';
 import {
   IsHexadecimal,
-  IsString,
   IsNumber,
-  IsOptional,
   IsEnum,
+  IsOptional,
+  IsString,
+  IsUrl,
 } from 'class-validator';
 
 export class QuestDto implements Quest {
-  @ApiProperty()
+  @ApiProperty({ enum: QuestOption })
   @IsEnum(QuestOption)
   option: QuestOption;
 
+  @ApiProperty()
   @IsString()
   @IsOptional()
   selection?: string;
@@ -28,13 +30,19 @@ export class UpdateWarpcastDetailDto {
   phaseId: number;
 
   @ApiProperty()
-  @IsString()
-  warpcastImage: string;
+  @IsNumber()
+  totalWarpcastMint: number;
 
   @ApiProperty()
-  quests: QuestDto;
+  @IsOptional()
+  quests?: QuestDto[];
 
   @ApiProperty()
   @IsNumber()
-  totalWarpcastMint: number;
+  farcasterFid: number;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsUrl()
+  warpcastImage?: string;
 }
