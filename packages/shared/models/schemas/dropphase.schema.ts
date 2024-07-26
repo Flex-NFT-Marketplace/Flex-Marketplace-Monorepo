@@ -42,7 +42,7 @@ export class DropPhases extends BaseSchema {
 
   @Prop()
   @ApiProperty()
-  mintPrice: number;
+  mintPrice: string;
 
   @Prop({ type: SchemaTypes.ObjectId, ref: 'PaymentTokens' })
   @ApiProperty()

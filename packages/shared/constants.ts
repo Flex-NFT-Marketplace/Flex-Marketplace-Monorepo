@@ -16,6 +16,8 @@ export enum FLEX {
   FLEX_DOMAIN = 'https://hyperflex.market',
 
   PINATA_HUB = 'https://api.pinata.cloud/v3/farcaster',
+
+  HUB_URL = 'http://37.60.252.232:2281',
 }
 export enum RPC_PROVIDER {
   TESTNET = 'https://free-rpc.nethermind.io/sepolia-juno',

@@ -8,6 +8,7 @@ import {
 } from 'starknet';
 import { formattedContractAddress } from '@app/shared/utils';
 import { ABIS, EventTopic } from './types';
+import * as web3 from 'web3';
 
 export type ContractDeployedReturnValue = {
   address: string;
@@ -492,7 +493,7 @@ export const decodeElementSale = (
 export type PhaseDropUpdatedReturnValue = {
   nftAddress: string;
   phaseDropId: number;
-  mintPrice: number;
+  mintPrice: string;
   currency: string;
   startTime: number;
   endTime: number;
@@ -525,7 +526,7 @@ export const decodePhaseDropUpdated = (
     phaseDropId: Number(
       (parsedEvent.PhaseDropUpdated.phase_drop_id as bigint).toString(),
     ),
-    mintPrice: Number((phaseDrop.mint_price as bigint).toString()) / 1e18,
+    mintPrice: web3.utils.fromWei(phaseDrop.mint_price as bigint, 'ether'),
     currency: formattedContractAddress(
       num.toHex(phaseDrop.currency as BigNumberish),
     ),
