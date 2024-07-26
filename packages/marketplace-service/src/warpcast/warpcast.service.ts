@@ -158,8 +158,11 @@ export class WarpcastService {
     return imageBuffer;
   }
 
-  async getStartFrame(query: GetStartFrameDto): Promise<string> {
-    const { nftContract, phaseId } = query;
+  async getStartFrame(
+    nftContract: string,
+    phaseId: number,
+    query: GetStartFrameDto,
+  ): Promise<string> {
     const { isValid, message } = await validateFrameMessage(query, {
       hubHttpUrl: `${FLEX.HUB_URL}`,
     });
@@ -221,9 +224,11 @@ export class WarpcastService {
     return html;
   }
 
-  async getReactFrame(query: GetStartFrameDto): Promise<string> {
-    const { nftContract, phaseId } = query;
-
+  async getReactFrame(
+    nftContract: string,
+    phaseId: number,
+    query: GetStartFrameDto,
+  ): Promise<string> {
     const { isValid, message } = await validateFrameMessage(query, {
       hubHttpUrl: `${FLEX.HUB_URL}`,
     });
@@ -330,8 +335,11 @@ export class WarpcastService {
     return html;
   }
 
-  async getFollowFrame(query: GetStartFrameDto): Promise<string> {
-    const { nftContract, phaseId } = query;
+  async getFollowFrame(
+    nftContract: string,
+    phaseId: number,
+    query: GetStartFrameDto,
+  ): Promise<string> {
     const { isValid, message } = await validateFrameMessage(query, {
       hubHttpUrl: `${FLEX.HUB_URL}`,
     });
@@ -429,8 +437,11 @@ export class WarpcastService {
     return html;
   }
 
-  async getMintFrame(query: GetStartFrameDto): Promise<string> {
-    const { nftContract, phaseId } = query;
+  async getMintFrame(
+    nftContract: string,
+    phaseId: number,
+    query: GetStartFrameDto,
+  ): Promise<string> {
     const { isValid, message } = await validateFrameMessage(query, {
       hubHttpUrl: `${FLEX.HUB_URL}`,
     });
@@ -523,8 +534,11 @@ export class WarpcastService {
     }
   }
 
-  async getTxMintedFrame(query: GetStartFrameDto): Promise<string> {
-    const { nftContract, phaseId } = query;
+  async getTxMintedFrame(
+    nftContract: string,
+    phaseId: number,
+    query: GetStartFrameDto,
+  ): Promise<string> {
     const { isValid, message } = await validateFrameMessage(query, {
       hubHttpUrl: `${FLEX.HUB_URL}`,
     });
