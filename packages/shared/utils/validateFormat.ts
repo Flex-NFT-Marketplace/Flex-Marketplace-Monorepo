@@ -3,5 +3,5 @@ export function isValidObjectId(str: string) {
 }
 
 export function isValidAddress(str: string) {
-  return /^[0-9A-Fa-f]+$/.test(str);
+  return /^[0-9A-Fa-f]+$/.test(str.replace('0x', ''));
 }
