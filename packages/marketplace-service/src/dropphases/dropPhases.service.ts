@@ -205,6 +205,7 @@ export class DropPhaseService {
       if (i.address === formatedUserAddress) {
         i.isUsed = true;
       }
+      return i;
     });
 
     await this.dropPhaseModel.findOneAndUpdate(
@@ -287,8 +288,14 @@ export class DropPhaseService {
   ): Promise<BaseResult<string>> {
     const ownerDocument = await this.userService.getOrCreateUser(owner);
 
-    const { nftContract, phaseId, warpcastImage, quests, totalWarpcastMint } =
-      body;
+    const {
+      nftContract,
+      phaseId,
+      warpcastImage,
+      quests,
+      totalWarpcastMint,
+      farcasterFid,
+    } = body;
 
     const formatedAddress = formattedContractAddress(nftContract);
     let nftCollection: NftCollectionDocument;
@@ -336,6 +343,7 @@ export class DropPhaseService {
       },
       {
         $set: {
+          farcasterFid,
           quests,
           warpcastImage,
           totalWarpcastMint,
