@@ -70,7 +70,6 @@ export class WarpcastController {
       await this.cacheManager.set(key, data, 60 * 60 * 1e3);
     }
     res.setHeader('Content-Type', 'image/png');
-
     res.end(data);
   }
 
