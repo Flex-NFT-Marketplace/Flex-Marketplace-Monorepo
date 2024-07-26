@@ -67,6 +67,7 @@ export type ERC721TransferReturnValue = {
   isFlexDropMinted?: boolean;
   isWarpcastMinted?: boolean;
   price?: number;
+  phaseId?: number;
 };
 
 export const decodeERC721Transfer = (
@@ -132,6 +133,7 @@ export type ERC1155TransferReturnValue = {
   isFlexDropMinted?: boolean;
   isWarpcastMinted?: boolean;
   price?: number;
+  phaseId?: number;
 };
 
 export const decodeERC115Transfer = (
@@ -617,6 +619,7 @@ export type FlexDropMintedReturnValue = {
   feeMint: number;
   timestamp: number;
   isWarpcast: boolean;
+  phaseId: number;
 };
 
 export const decodeFlexDropMinted = (
@@ -656,6 +659,7 @@ export const decodeFlexDropMinted = (
     feeMint: Number((parsedEvent.FlexDropMinted.fee_mint as bigint).toString()),
     timestamp,
     isWarpcast: parsedEvent.FlexDropMinted.is_warpcast as any,
+    phaseId: Number((parsedEvent.FlexDropMinted.phase_id as bigint).toString()),
   };
 
   return returnValue;
