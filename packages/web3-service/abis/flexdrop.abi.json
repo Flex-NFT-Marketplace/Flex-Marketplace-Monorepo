@@ -580,6 +580,11 @@
       },
       {
         "kind": "data",
+        "name": "phase_id",
+        "type": "core::integer::u64"
+      },
+      {
+        "kind": "data",
         "name": "minter",
         "type": "core::starknet::contract_address::ContractAddress"
       },

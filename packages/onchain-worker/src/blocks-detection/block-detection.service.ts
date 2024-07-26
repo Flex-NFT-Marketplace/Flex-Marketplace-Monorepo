@@ -337,6 +337,7 @@ export class BlockDetectionService extends OnchainWorker {
             log.returnValues.isWarpcastMinted = ev.returnValues.isWarpcast;
             log.returnValues.price =
               ev.returnValues.totalMintPrice / ev.returnValues.quantityMinted;
+            log.returnValues.phaseId = ev.returnValues.phaseId;
           }
         });
       }
