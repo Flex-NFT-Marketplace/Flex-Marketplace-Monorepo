@@ -12,8 +12,10 @@ import { BaseResult } from '@app/shared/types';
 import { formattedContractAddress } from '@app/shared/utils';
 import puppeteer from 'puppeteer';
 import {
+  getFarcasterNameForFid,
   getLinkFrame,
   getRenderedComponentString,
+  getStaticPostFrame,
   isCurrentTimeWithinPhase,
 } from '@app/shared/helper';
 import { GetStartFrameDto } from './dto/getStartFrame.dto';
@@ -33,7 +35,7 @@ export class WarpcastService {
     args: ['--no-sandbox', '--disable-setuid-sandbox'],
   });
 
-  async getImageMessage(query: GetImageMessage): Promise<BaseResult<Buffer>> {
+  async getImageMessage(query: GetImageMessage): Promise<Buffer> {
     const { message, nftContract, phaseId } = query;
     const formattedAddress = formattedContractAddress(nftContract);
 
@@ -77,10 +79,10 @@ export class WarpcastService {
 
     // Take a screenshot of only the image element
     const imageBuffer = await imageElement.screenshot();
-    return new BaseResult(imageBuffer);
+    return imageBuffer;
   }
 
-  async getStartFrame(query: GetStartFrameDto): Promise<BaseResult<string>> {
+  async getStartFrame(query: GetStartFrameDto): Promise<string> {
     const { nftContract, phaseId } = query;
     const { isValid, message } = await validateFrameMessage(query, {
       hubHttpUrl: `${FLEX.HUB_URL}`,
@@ -118,7 +120,28 @@ export class WarpcastService {
       );
 
       const html = getFrameHtml(frame);
-      return new BaseResult(html);
+      return html;
     }
+
+    const creatorName = await getFarcasterNameForFid(dropPhase.farcasterFid);
+    if (message?.data.frameActionBody.castId?.fid != dropPhase.farcasterFid) {
+      frame = getLinkFrame(
+        formatAddress,
+        warpcastImage,
+        `https://warpcast.com/${creatorName}`,
+        `Please go to the author @${creatorName} page to enroll in the event`,
+        'NFT Openedition on Flex Marketplace',
+      );
+    } else {
+      frame = getStaticPostFrame(
+        formatAddress,
+        warpcastImage,
+        `react/${phaseId}`,
+        'Like and Recast to claim the NFT',
+      );
+    }
+
+    const html = getFrameHtml(frame);
+    return html;
   }
 }
