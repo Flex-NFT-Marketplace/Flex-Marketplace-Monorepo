@@ -1,13 +1,9 @@
-import { GetCollectionDropPhaseDto } from '../../dropphases/dto/getCollectionDropPhase.dto';
 import { FrameActionPayload } from 'frames.js';
 import { ApiProperty } from '@nestjs/swagger';
 
 export type ActionIndex = (1 | 2 | 3 | 4) & number;
 
-export class GetStartFrameDto
-  extends GetCollectionDropPhaseDto
-  implements FrameActionPayload
-{
+export class GetStartFrameDto implements FrameActionPayload {
   @ApiProperty()
   trustedData: { messageBytes: string };
   @ApiProperty()

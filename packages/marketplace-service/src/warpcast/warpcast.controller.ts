@@ -14,6 +14,7 @@ import {
   Header,
   Inject,
   Res,
+  Param,
 } from '@nestjs/common';
 import { WarpcastService } from './warpcast.service';
 import { BaseResult } from '@app/shared/types';
@@ -77,7 +78,7 @@ export class WarpcastController {
     res.end(data);
   }
 
-  @Post('start-frame')
+  @Post('start-frame/:nftContract/:phaseId')
   @ApiOperation({
     summary: 'Get start frame',
   })
@@ -90,11 +91,19 @@ export class WarpcastController {
       ],
     },
   })
-  async getStartFrame(@Body() query: GetStartFrameDto) {
-    return await this.warpcastService.getStartFrame(query);
+  async getStartFrame(
+    @Param('nftContract') nftContract: string,
+    @Param('phaseId') phaseId: number,
+    @Body() query: GetStartFrameDto,
+  ) {
+    return await this.warpcastService.getStartFrame(
+      nftContract,
+      phaseId,
+      query,
+    );
   }
 
-  @Post('react-frame')
+  @Post('react-frame/:nftContract/:phaseId')
   @ApiOperation({
     summary: 'Get react frame',
   })
@@ -107,11 +116,19 @@ export class WarpcastController {
       ],
     },
   })
-  async getReactFrame(@Body() query: GetStartFrameDto) {
-    return await this.warpcastService.getReactFrame(query);
+  async getReactFrame(
+    @Param('nftContract') nftContract: string,
+    @Param('phaseId') phaseId: number,
+    @Body() query: GetStartFrameDto,
+  ) {
+    return await this.warpcastService.getReactFrame(
+      nftContract,
+      phaseId,
+      query,
+    );
   }
 
-  @Post('follow-frame')
+  @Post('follow-frame/:nftContract/:phaseId')
   @ApiOperation({
     summary: 'Get follow frame',
   })
@@ -124,11 +141,19 @@ export class WarpcastController {
       ],
     },
   })
-  async getFollowFrame(@Body() query: GetStartFrameDto) {
-    return await this.warpcastService.getFollowFrame(query);
+  async getFollowFrame(
+    @Param('nftContract') nftContract: string,
+    @Param('phaseId') phaseId: number,
+    @Body() query: GetStartFrameDto,
+  ) {
+    return await this.warpcastService.getFollowFrame(
+      nftContract,
+      phaseId,
+      query,
+    );
   }
 
-  @Post('mint-frame')
+  @Post('mint-frame/:nftContract/:phaseId')
   @ApiOperation({
     summary: 'Mint frame',
   })
@@ -141,11 +166,15 @@ export class WarpcastController {
       ],
     },
   })
-  async getMintFrame(@Body() query: GetStartFrameDto) {
-    return await this.warpcastService.getMintFrame(query);
+  async getMintFrame(
+    @Param('nftContract') nftContract: string,
+    @Param('phaseId') phaseId: number,
+    @Body() query: GetStartFrameDto,
+  ) {
+    return await this.warpcastService.getMintFrame(nftContract, phaseId, query);
   }
 
-  @Post('minted-transaction')
+  @Post('minted-transaction/:nftContract/:phaseId')
   @ApiOperation({
     summary: 'Get Transaction of minting frame',
   })
@@ -158,7 +187,15 @@ export class WarpcastController {
       ],
     },
   })
-  async getTransaction(@Body() query: GetStartFrameDto) {
-    return await this.warpcastService.getTxMintedFrame(query);
+  async getTransaction(
+    @Param('nftContract') nftContract: string,
+    @Param('phaseId') phaseId: number,
+    @Body() query: GetStartFrameDto,
+  ) {
+    return await this.warpcastService.getTxMintedFrame(
+      nftContract,
+      phaseId,
+      query,
+    );
   }
 }
