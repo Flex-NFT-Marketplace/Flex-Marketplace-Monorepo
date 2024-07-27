@@ -7,7 +7,10 @@ import {
   IsOptional,
   IsString,
   IsUrl,
+  ValidateNested,
+  IsArray,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class QuestDto implements Quest {
   @ApiProperty({ enum: QuestOption })
@@ -35,6 +38,9 @@ export class UpdateWarpcastDetailDto {
 
   @ApiProperty()
   @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => QuestDto)
   quests?: QuestDto[];
 
   @ApiProperty()
