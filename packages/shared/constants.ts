@@ -9,6 +9,7 @@ export enum FLEX {
   FLEXDROP_MAINNET = '0x68a6e16aa12c4b2f185965d7a811198934dcc786d424c5c97189f23e430b085',
   FLEX_RECIPT = '0x06b7e7d35c8dedc6f698053f6dd7e6a21180f1e4160c5656c2fb0a4b06da7e7a',
   FLEX_URL = 'https://beta-open-editions.hyperflex.services/api/v1',
+  // FLEX_URL = 'http://localhost:5010',
   FLEX_INVENTORY = 'https://hyperflex.market/user',
   ESTIMATE_NFT = '0x3d1a6d306fc9b797138930a3ad2e5c9034738487e2ec7c24a7e64665d3a0da5',
 
@@ -18,6 +19,7 @@ export enum FLEX {
   PINATA_HUB = 'https://api.pinata.cloud/v3/farcaster',
 
   HUB_URL = 'http://37.60.252.232:2281',
+  // HUB_URL = 'http://localhost:3010/hub',
 }
 
 export enum RPC_PROVIDER {
