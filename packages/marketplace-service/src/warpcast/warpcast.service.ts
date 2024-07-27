@@ -58,7 +58,7 @@ export class WarpcastService {
   });
 
   async getWarpcastDetail(query: GetWarpcastDto) {
-    const { message, nftContract, phaseId } = query;
+    const { nftContract, phaseId } = query;
     const formattedAddress = formattedContractAddress(nftContract);
 
     const nftCollection = await this.nftCollectionModel.findOne({
@@ -100,7 +100,7 @@ export class WarpcastService {
       <meta name="fc:frame" content="vNext" />
       <meta name="fc:frame:image" content="${warpcastImage}" />
       <meta name="fc:frame:button:1" content="Get Started" />
-      <meta name="fc:frame:post_url" content="${FLEX.FLEX_URL}/warpcast/${formattedAddress}/start/${phaseId}" />
+      <meta name="fc:frame:post_url" content="${FLEX.FLEX_URL}/warpcast/start-frame/${formattedAddress}/${phaseId}" />
     </head>
     <body>
       <div id="root">${appHtml}</div>
@@ -196,6 +196,7 @@ export class WarpcastService {
         `${FLEX.FLEX_DOMAIN}/open-edition/${formatAddress}`,
         'Check event details on Flex',
         'The event is not currently taking place.',
+        phaseId,
       );
 
       const html = getFrameHtml(frame);
@@ -210,13 +211,15 @@ export class WarpcastService {
         `https://warpcast.com/${creatorName}`,
         `Please go to the author @${creatorName} page to enroll in the event`,
         'NFT Openedition on Flex Marketplace',
+        phaseId,
       );
     } else {
       frame = getStaticPostFrame(
         formatAddress,
         warpcastImage,
-        `react/${phaseId}`,
+        `react-frame`,
         'Like and Recast to claim the NFT',
+        phaseId,
       );
     }
 
@@ -243,6 +246,7 @@ export class WarpcastService {
     }
 
     const payerDocument = nftCollection.payers[0];
+
     if (!payerDocument) {
       throw new HttpException('Payer not found', HttpStatus.NOT_FOUND);
     }
@@ -268,8 +272,9 @@ export class WarpcastService {
         frame = getStaticPostFrame(
           formatAddress,
           warpcastImage,
-          `follow/${phaseId}`,
+          `follow-frame`,
           'Follow to claim the NFT',
+          phaseId,
         );
         const html = getFrameHtml(frame);
         return html;
@@ -301,6 +306,7 @@ export class WarpcastService {
           `${FLEX.FLEX_DOMAIN}/open-edition/${formatAddress}`,
           'Mint on Flex',
           'Free Claim NFTs reached limits',
+          phaseId,
         );
 
         const html = getFrameHtml(frame);
@@ -310,8 +316,9 @@ export class WarpcastService {
         frame = getMintFrame(
           formatAddress,
           warpcastImage,
-          `mint/${phaseId}`,
+          `mint-frame`,
           "Congrats! You're eligible for the NFT",
+          phaseId,
         );
       } else {
         frame = getLinkFrame(
@@ -320,15 +327,17 @@ export class WarpcastService {
           `${FLEX.FLEX_DOMAIN}/create-open-edition`,
           'Learn How To Make This At Flex',
           'You have claimed the NFT',
+          phaseId,
         );
       }
     } else {
       frame = getPostFrame(
         formatAddress,
         warpcastImage,
-        `react/${phaseId}`,
+        `react-frame`,
         'Refresh',
         'Refresh if you have liked and recasted',
+        phaseId,
       );
     }
     const html = getFrameHtml(frame);
@@ -402,6 +411,7 @@ export class WarpcastService {
           `${FLEX.FLEX_DOMAIN}/open-edition/${formatAddress}`,
           'Mint on Flex',
           'Free Claim NFTs reached limits',
+          phaseId,
         );
 
         const html = getFrameHtml(frame);
@@ -413,6 +423,7 @@ export class WarpcastService {
           warpcastImage,
           `mint/${phaseId}`,
           "Congrats! You're eligible for the NFT",
+          phaseId,
         );
       } else {
         frame = getLinkFrame(
@@ -421,6 +432,7 @@ export class WarpcastService {
           `${FLEX.FLEX_DOMAIN}/create-open-edition`,
           'Learn How To Make This At Flex',
           'You have claimed the NFT',
+          phaseId,
         );
       }
     } else {
@@ -430,6 +442,7 @@ export class WarpcastService {
         `follow/${phaseId}`,
         'Refresh',
         'Refresh if you have followed the Creator',
+        phaseId,
       );
     }
 
@@ -487,6 +500,7 @@ export class WarpcastService {
         warpcastImage,
         `mint/${phaseId}`,
         'Not a valid Starknet address',
+        phaseId,
       );
 
       const html = getFrameHtml(frame);
@@ -508,7 +522,8 @@ export class WarpcastService {
           'Check Your NFT',
           'Transaction submitted !!',
           'See Transaction',
-          `transaction/${phaseId}`,
+          `minted-transaction`,
+          phaseId,
         );
         const html = getFrameHtml(frame);
 
@@ -604,6 +619,7 @@ export class WarpcastService {
       `${EXPLORER.VOYAGER_SCAN}/tx/${transactionHash}`,
       'Transaction Link',
       'Check Your Claim Transaction',
+      phaseId,
     );
     const html = getFrameHtml(frame);
     return html;

@@ -14,6 +14,7 @@ import src5Abi from '../abis/src5.abi.json';
 import unframedAbi from '../abis/unframed.abi.json';
 import stakingAbi from '../abis/staking.abi.json';
 import erc20Abi from '../abis/erc20.abi.json';
+import openeditionAbi from '../abis/openedition.abi.json';
 
 export enum EventTopic {
   CONTRACT_DEPLOYED = '0x26b160f10156dea0639bec90696772c640b9706a47f5b8c52ea1abe5858b34d',
@@ -91,4 +92,5 @@ export const ABIS = {
   Src5ABI: src5Abi,
   StakingABI: stakingAbi,
   Erc20ABI: erc20Abi,
+  OpeneditionABI: openeditionAbi,
 };
