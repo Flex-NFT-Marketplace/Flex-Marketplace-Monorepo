@@ -14,6 +14,7 @@ export default () => ({
   jwt_expire: String(process.env.JWT_EXPIRE) || '1d',
   ipfs_gateway: String(process.env.IPFS_GATEWAY) || 'https://ipfs.io/ipfs/',
   pinata_key: String(process.env.PINATA_API_KEY),
+  pinata_hub_key: String(process.env.PINATA_HUB_KEY),
   secret_key_encrypt:
     String(process.env.SECRET_KEY_ENCRYPT) ||
     '12345678901234567890123456789012', /// Key Encrypto privatekey

@@ -45,12 +45,13 @@ export function getLinkFrame(
   target: string,
   label: string,
   message: string,
+  phaseId: number,
 ) {
   const formatAddress = formattedContractAddress(contractAddress);
 
   const frame = {
     version: 'vNext',
-    image: `${FLEX.FLEX_URL}/warpcast/${formatAddress}/image/message?message=${message}`,
+    image: `${FLEX.FLEX_URL}/warpcast/image-message?nftContract=${formatAddress}&phaseId=${phaseId}&message=${message}`,
     imageAspectRatio: '1:1',
     buttons: [
       {
@@ -67,7 +68,7 @@ export function getLinkFrame(
 export async function getFarcasterNameForFid(fid: number) {
   try {
     const url = `${FLEX.PINATA_HUB}/users/${fid}`;
-    const apiKey = configuration().pinata_key;
+    const apiKey = configuration().pinata_hub_key;
 
     const res = await axios.get(url, {
       headers: {
@@ -92,6 +93,7 @@ export function getStaticPostFrame(
   image: string,
   target: string,
   label: string,
+  phaseId: number,
 ) {
   const formatAddress = formattedContractAddress(contractAddress);
 
@@ -103,11 +105,11 @@ export function getStaticPostFrame(
       {
         label: label,
         action: 'post',
-        target: `${FLEX.FLEX_URL}/warpcast/${formatAddress}/${target}`,
+        target: `${FLEX.FLEX_URL}/warpcast/${target}/${formatAddress}/${phaseId}`,
       },
     ],
     ogImage: `${image}`,
-    postUrl: `${FLEX.FLEX_URL}/warpcast/${formatAddress}/${target}`,
+    postUrl: `${FLEX.FLEX_URL}/warpcast/${target}/${formatAddress}/${phaseId}`,
   };
   return frame;
 }
@@ -140,8 +142,6 @@ export async function checkPayerBalance(address: string, rpc: string) {
     provider,
     configuration().account_payer_estimate_address,
     configuration().account_payer_estimate_private_key,
-    undefined,
-    constants.TRANSACTION_VERSION.V3,
   );
 
   const randomAddress =
@@ -152,12 +152,13 @@ export async function checkPayerBalance(address: string, rpc: string) {
     await estimateMintFeeAccount.estimateInvokeFee({
       contractAddress: FLEX.FLEXDROP_MAINNET,
       entrypoint: 'mint_public',
-      calldata: [FLEX.ESTIMATE_NFT, 1, FLEX.FLEX_RECIPT, randomAddress, 1],
+      calldata: [FLEX.ESTIMATE_NFT, 1, FLEX.FLEX_RECIPT, randomAddress, 1, 1],
     });
-  let feeMint = formatBalance(estimatedFee1, 18);
+  const feeMint = formatBalance(estimatedFee1, 18);
   // Interactions with the contract with call
+
   const res1 = await ethContract.balanceOf(address);
-  const balance = BigInt(uint256.uint256ToBN(res1.balance));
+  const balance = BigInt(uint256.uint256ToBN(res1));
   const unsufficient = Number(balance) < Number(feeMint) ? true : false;
 
   return unsufficient;
@@ -168,23 +169,24 @@ export function getMintFrame(
   image: string,
   target: string,
   message: string,
+  phaseId: number,
 ) {
   const formatAddress = formattedContractAddress(contractAddress);
 
   const frame = {
     version: 'vNext',
-    image: `${FLEX.FLEX_URL}/warpcast/${formatAddress}/image/message?message=${message}`,
+    image: `${FLEX.FLEX_URL}/warpcast/image-message?nftContract=${formatAddress}&phaseId=${phaseId}&message=${message}`,
     imageAspectRatio: '1:1',
     inputText: 'Enter your Starknet address',
     buttons: [
       {
         label: `Mint`,
         action: 'post',
-        target: `${FLEX.FLEX_URL}/warpcast/${formatAddress}/${target}`,
+        target: `${FLEX.FLEX_URL}/warpcast/${target}/${formatAddress}/${phaseId}`,
       },
     ],
     ogImage: `${image}`,
-    postUrl: `${FLEX.FLEX_URL}/warpcast/${formatAddress}/${target}`,
+    postUrl: `${FLEX.FLEX_URL}/warpcast/${target}/${formatAddress}/${phaseId}`,
   };
   return frame;
 }
@@ -195,21 +197,22 @@ export function getPostFrame(
   target: string,
   label: string,
   message: string,
+  phaseId: number,
 ) {
   const formatAddress = formattedContractAddress(contractAddress);
   const frame = {
     version: 'vNext',
-    image: `${FLEX.FLEX_URL}/warpcast/${formatAddress}/image/message?message=${message}`,
+    image: `${FLEX.FLEX_URL}/warpcast/image-message?nftContract=${formatAddress}&phaseId=${phaseId}&message=${message}`,
     imageAspectRatio: '1:1',
     buttons: [
       {
         label: label,
         action: 'post',
-        target: `${FLEX.FLEX_URL}/warpcast/${formatAddress}/${target}`,
+        target: `${FLEX.FLEX_URL}/warpcast/${target}/${formatAddress}/${phaseId}`,
       },
     ],
     ogImage: `${image}`,
-    postUrl: `${FLEX.FLEX_URL}/warpcast/${formatAddress}/${target}`,
+    postUrl: `${FLEX.FLEX_URL}/warpcast/${target}/${formatAddress}/${phaseId}`,
   };
   return frame;
 }
@@ -222,12 +225,13 @@ export function getTransactionFrame(
   message: string,
   transactionLabel: string,
   transacionTarget: string,
+  phaseId: number,
 ) {
   const formatAddress = formattedContractAddress(contractAddress);
 
   const frame = {
     version: 'vNext',
-    image: `${FLEX.FLEX_URL}/warpcast/${formatAddress}/image/message?message=${message}`,
+    image: `${FLEX.FLEX_URL}/warpcast/image-message?nftContract=${formatAddress}&phaseId=${phaseId}&message=${message}`,
     imageAspectRatio: '1:1',
     buttons: [
       {
@@ -238,7 +242,7 @@ export function getTransactionFrame(
       {
         label: transactionLabel,
         action: 'post',
-        target: `${FLEX.FLEX_URL}/warpcast/${formatAddress}/${transacionTarget}`,
+        target: `${FLEX.FLEX_URL}/warpcast/${transacionTarget}/${formatAddress}/${phaseId}`,
       },
     ],
     ogImage: `${image}`,
@@ -275,6 +279,46 @@ export function validateAddress(address) {
   }
 }
 
+export async function checkMintedAmount(
+  address: string,
+  openedition: string,
+  rpc: string,
+  phaseId: number,
+  limitPerWallet: number,
+) {
+  const provider = new RpcProvider({ nodeUrl: rpc });
+
+  try {
+    const OpeneditionContract = new Contract(
+      ABIS.OpeneditionABI,
+      openedition,
+      provider,
+    );
+
+    const minterMintedAmount = await OpeneditionContract.get_mint_state(
+      address,
+      phaseId,
+    );
+
+    console.log(minterMintedAmount);
+    console.log(minterMintedAmount[0]);
+
+    if (minterMintedAmount[0] < limitPerWallet) {
+      return true;
+    }
+    return false;
+  } catch (error) {
+    console.log(error);
+    return false;
+  }
+}
+// checkMintedAmount(
+//   '0x05dcb49a8217eab5ed23e4a26df044edaf1428a5c7b30fa2324fa39a28288f6b',
+//   '0x03d1a6d306fc9b797138930a3ad2e5c9034738487e2ec7c24a7e64665d3a0da5',
+//   'https://starknet-mainnet.public.blastapi.io/rpc/v0_7',
+//   1,
+//   1,
+// );
 export async function mintNft(
   nftAddress: string,
   rpc: string,

@@ -13,6 +13,7 @@ import {
   Query,
   Header,
   Inject,
+  Res,
   Param,
 } from '@nestjs/common';
 import { WarpcastService } from './warpcast.service';
@@ -21,6 +22,7 @@ import { GetWarpcastDto } from './dto/getWarpcast.dto';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
 import { GetStartFrameDto } from './dto/getStartFrame.dto';
+import { Response } from 'express';
 
 @ApiTags('Warpcast')
 @Controller('warpcast')
@@ -64,7 +66,7 @@ export class WarpcastController {
       ],
     },
   })
-  async getImageMessage(@Query() query: GetWarpcastDto) {
+  async getImageMessage(@Res() res: Response, @Query() query: GetWarpcastDto) {
     const key = `image-message - ${JSON.stringify({ ...query })}`;
     let data = await this.cacheManager.get(key);
 
@@ -72,7 +74,8 @@ export class WarpcastController {
       data = await this.warpcastService.getImageMessage(query);
       await this.cacheManager.set(key, data, 60 * 60 * 1e3);
     }
-    return data;
+    res.setHeader('Content-Type', 'image/png');
+    res.end(data);
   }
 
   @Post('start-frame/:nftContract/:phaseId')
