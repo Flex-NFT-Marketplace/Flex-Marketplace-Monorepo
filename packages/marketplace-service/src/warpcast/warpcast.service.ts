@@ -421,7 +421,7 @@ export class WarpcastService {
         frame = getMintFrame(
           formatAddress,
           warpcastImage,
-          `mint/${phaseId}`,
+          `mint-frame`,
           "Congrats! You're eligible for the NFT",
           phaseId,
         );
@@ -439,7 +439,7 @@ export class WarpcastService {
       frame = getPostFrame(
         formatAddress,
         warpcastImage,
-        `follow/${phaseId}`,
+        `follow-frame`,
         'Refresh',
         'Refresh if you have followed the Creator',
         phaseId,
@@ -498,7 +498,7 @@ export class WarpcastService {
       frame = getMintFrame(
         formatAddress,
         warpcastImage,
-        `mint/${phaseId}`,
+        `mint-frame`,
         'Not a valid Starknet address',
         phaseId,
       );
@@ -594,8 +594,8 @@ export class WarpcastService {
         dropPhase,
       });
 
-      if (warpcastUser && warpcastUser.transactionHash) {
-        transactionHash = warpcastUser.transactionHash;
+      if (warpcastUser && warpcastUser.txHash) {
+        transactionHash = warpcastUser.txHash;
         break;
       }
 
