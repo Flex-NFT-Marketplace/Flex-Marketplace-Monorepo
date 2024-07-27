@@ -33,6 +33,7 @@ import {
   isCurrentTimeWithinPhase,
   mintNft,
   validateAddress,
+  checkMintedAmount,
 } from '@app/shared/helper';
 import { GetStartFrameDto } from './dto/getStartFrame.dto';
 import { validateFrameMessage, getFrameHtml, getFrameMessage } from 'frames.js';
@@ -507,6 +508,27 @@ export class WarpcastService {
       return html;
     }
 
+    const chainDocument = await this.chainModel.findOne();
+    const mintedAvailable = await checkMintedAmount(
+      receiver,
+      nftContract,
+      chainDocument.rpc,
+      phaseId,
+      dropPhase.limitPerWallet,
+    );
+    if (!mintedAvailable) {
+      frame = getLinkFrame(
+        formatAddress,
+        warpcastImage,
+        `${FLEX.FLEX_DOMAIN}/create-open-edition`,
+        'Learn How To Make This At Flex',
+        'You have minted the NFT',
+        phaseId,
+      );
+
+      const html = getFrameHtml(frame);
+      return html;
+    }
     const fid = frameMessage.requesterFid;
     const claimedUser = await this.warpcastUserModel.findOne({
       fid,

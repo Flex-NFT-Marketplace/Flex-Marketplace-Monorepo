@@ -300,10 +300,7 @@ export async function checkMintedAmount(
       phaseId,
     );
 
-    console.log(minterMintedAmount);
-    console.log(minterMintedAmount[0]);
-
-    if (minterMintedAmount[0] < limitPerWallet) {
+    if (minterMintedAmount[0] < BigInt(limitPerWallet)) {
       return true;
     }
     return false;
