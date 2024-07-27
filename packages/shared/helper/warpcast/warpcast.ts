@@ -355,7 +355,6 @@ export async function mintNft(
         }),
       });
 
-      await provider.waitForTransaction(result.transaction_hash);
       return result.transaction_hash;
     } catch (error) {
       console.log('Minting Failed ' + error);
