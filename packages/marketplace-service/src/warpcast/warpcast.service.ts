@@ -54,10 +54,6 @@ export class WarpcastService {
     private readonly chainModel: Model<ChainDocument>,
   ) {}
 
-  browserPromise = puppeteer.launch({
-    args: ['--no-sandbox', '--disable-setuid-sandbox'],
-  });
-
   async getWarpcastDetail(query: GetWarpcastDto) {
     const { nftContract, phaseId } = query;
     const formattedAddress = formattedContractAddress(nftContract);
@@ -138,25 +134,41 @@ export class WarpcastService {
       throw new HttpException('Image not found', HttpStatus.NOT_FOUND);
     }
 
-    const browser = await this.browserPromise; // Reuse the global browser instance
-    const page = await browser.newPage();
+    let browser;
+    try {
+      browser = await puppeteer.launch({
+        args: ['--no-sandbox', '--disable-setuid-sandbox'],
+        // executablePath: '/usr/bin/chromium-browser',
+      });
+      const page = await browser.newPage();
 
-    // Set viewport size
-    await page.setViewport({ width: 800, height: 800 });
+      // Set viewport size
+      await page.setViewport({ width: 800, height: 800 });
 
-    // Set the HTML content of the page to the rendered React component
-    const image = phaseDetail.warpcastImage || nftCollection.avatar;
-    const componentString = await getRenderedComponentString(
-      image,
-      headderMessage,
-    ); // Function to retrieve rendered HTML content (cached if available)
-    await page.setContent(componentString);
+      // Set the HTML content of the page to the rendered React component
+      const image = phaseDetail.warpcastImage || nftCollection.avatar;
+      const componentString = await getRenderedComponentString(
+        image,
+        headderMessage,
+      ); // Function to retrieve rendered HTML content (cached if available)
+      await page.setContent(componentString);
 
-    const imageElement = await page.$('img');
+      const imageElement = await page.$('img');
 
-    // Take a screenshot of only the image element
-    const imageBuffer = await imageElement.screenshot();
-    return imageBuffer;
+      // Take a screenshot of only the image element
+      const imageBuffer = await imageElement.screenshot();
+      await page.close();
+      return imageBuffer;
+    } catch (error) {
+      throw new HttpException(
+        'Error Get generating image',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    } finally {
+      if (browser) {
+        await browser.close();
+      }
+    }
   }
 
   async getStartFrame(
