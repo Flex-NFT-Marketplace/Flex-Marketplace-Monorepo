@@ -20,7 +20,10 @@ import {
 import { retryUntil } from '@app/shared/index';
 import { UpdateWhitelistMintDto } from './dto/updateWhitelist.dto';
 import * as _ from 'lodash';
-import { GetCollectionDropPhasesDto } from './dto/getCollectionDropPhases.dto';
+import {
+  DropPhaseType,
+  GetCollectionDropPhasesDto,
+} from './dto/getCollectionDropPhases.dto';
 import { PaginationDto } from '@app/shared/types/pagination.dto';
 import { GetCollectionDropPhaseDto } from './dto/getCollectionDropPhase.dto';
 import { WhitelistProofDto } from './dto/whitelistProof.dto';
@@ -47,29 +50,130 @@ export class DropPhaseService {
   async getDropPhases(
     query: GetCollectionDropPhasesDto,
   ): Promise<BaseResultPagination<DropPhaseDocument>> {
-    const { nftContract, page, size, skipIndex } = query;
+    const { page, size, skipIndex } = query;
     const result: BaseResultPagination<DropPhaseDocument> =
       new BaseResultPagination();
+    const filter: any = {};
 
-    const formatedAddress = formattedContractAddress(nftContract);
-    const nftCollection = await this.nftCollectionModel.findOne({
-      nftContract: formatedAddress,
-    });
+    if (query.nftContract) {
+      const formatedAddress = formattedContractAddress(query.nftContract);
+      const nftCollection = await this.nftCollectionModel.findOne({
+        nftContract: formatedAddress,
+      });
 
-    if (!nftCollection) {
-      throw new HttpException('Nft Contract not found', HttpStatus.NOT_FOUND);
+      if (!nftCollection) {
+        throw new HttpException('Nft Contract not found', HttpStatus.NOT_FOUND);
+      }
+
+      filter.nftCollection = nftCollection;
     }
-    const total = await this.dropPhaseModel.countDocuments({ nftCollection });
+
+    if (query.dropPhaseType) {
+      const now = Date.now();
+      switch (query.dropPhaseType) {
+        case DropPhaseType.LiveNow:
+          filter.startTime = { $lte: now };
+          filter.endTime = { $gt: now };
+          break;
+        case DropPhaseType.UpComming:
+          filter.startTime = { $gt: now };
+          break;
+        case DropPhaseType.Ended:
+          filter.endTime = { $lte: now };
+          break;
+      }
+    }
+
+    const total = await this.dropPhaseModel.countDocuments(filter);
     if (total == 0) {
       result.data = new PaginationDto([], 0, page, size);
       return result;
     }
 
-    const items = await this.dropPhaseModel.find(
-      { nftCollection },
-      {},
-      { sort: { phaseId: -1 }, skip: skipIndex, limit: size },
-    );
+    const items = await this.dropPhaseModel.aggregate([
+      {
+        $match: filter,
+      },
+      { $sort: { startTime: -1 } },
+      { $skip: skipIndex },
+      { $limit: size },
+      {
+        $lookup: {
+          from: 'nftcollections',
+          localField: 'nftCollection',
+          foreignField: '_id',
+          as: 'nftCollection',
+        },
+      },
+      {
+        $unwind: '$nftCollection',
+      },
+      {
+        $lookup: {
+          from: 'nfts',
+          let: { nftCollection: '$nftCollection._id' },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ['$$nftCollection', '$nftCollection'] },
+                    { $eq: ['$isBurned', false] },
+                  ],
+                },
+              },
+            },
+            {
+              $group: {
+                _id: 0,
+                totalNfts: { $sum: '$amount' },
+              },
+            },
+            {
+              $project: {
+                _id: 0,
+                supply: '$totalNfts',
+              },
+            },
+          ],
+          as: 'supply',
+        },
+      },
+      {
+        $unwind: {
+          path: '$supply',
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $project: {
+          // Include all fields from the root document
+          root: '$$ROOT',
+          // Add or modify specific fields
+          updatedNftCollection: {
+            $mergeObjects: [
+              '$nftCollection', // The original nftCollection object
+              { supply: { $ifNull: ['$supply.supply', 0] } }, // Updated or new supply field
+            ],
+          },
+        },
+      },
+      {
+        $replaceRoot: {
+          newRoot: {
+            $mergeObjects: [
+              '$root',
+              { nftCollection: '$updatedNftCollection' },
+            ],
+          },
+        },
+      },
+      {
+        $project: {
+          supply: 0,
+        },
+      },
+    ]);
 
     result.data = new PaginationDto(items, total, page, size);
     return result;

@@ -82,5 +82,6 @@ export const NftSchema = SchemaFactory.createForClass(Nfts);
 NftSchema.index({ nftContract: 1, tokenId: 1 });
 NftSchema.index({ owner: 1 });
 NftSchema.index({ nftContract: 1, isBurned: 1 });
+NftSchema.index({ nftCollection: 1, isBurned: 1 });
 NftSchema.index({ nftContract: 1, tokenId: 1, isBurned: 1 });
 NftSchema.index({ nftContract: 1, tokenId: 1, owner: 1 }, { unique: true });
