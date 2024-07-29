@@ -29,7 +29,7 @@ import { ClaimFrameDto } from './dto/claimFrame.dto';
 export class DropPhaseController {
   constructor(private readonly dropPhaseService: DropPhaseService) {}
 
-  @Post('all-phases/')
+  @Post('drop-phases/')
   @ApiOperation({
     summary: 'Get all phase of NFT collection.',
   })
