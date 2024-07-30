@@ -86,12 +86,8 @@ export class NftCollectionsController {
     },
   })
   async getListNFTCollections(@Body() query: NftCollectionQueryParams) {
-    try {
-      const data = await this.nftCollectionService.getListNFTCollections(query);
-      return data;
-    } catch (error) {
-      return new BadRequestException(error.message);
-    }
+    const data = await this.nftCollectionService.getListNFTCollections(query);
+    return data;
   }
   @Get('/:nftContract')
   @ApiOperation({
@@ -118,16 +114,12 @@ export class NftCollectionsController {
     },
   })
   async getNFTCollectionDetail(@Param('nftContract') nftContract: string) {
-    try {
-      if (!isHexadecimal(nftContract)) {
-        throw new HttpException('Invalid Nft Contract', HttpStatus.BAD_REQUEST);
-      }
-      const data =
-        await this.nftCollectionService.getNFTCollectionDetail(nftContract);
-      return new BaseResult(data);
-    } catch (error) {
-      throw new BadRequestException(error.message);
+    if (!isHexadecimal(nftContract)) {
+      throw new HttpException('Invalid Nft Contract', HttpStatus.BAD_REQUEST);
     }
+    const data =
+      await this.nftCollectionService.getNFTCollectionDetail(nftContract);
+    return new BaseResult(data);
   }
 
   @Post('holders')
@@ -199,18 +191,14 @@ export class NftCollectionsController {
   async getAttributes(
     @Param('nftContract') nftContract: string,
   ): Promise<BaseResult<NftCollectionAttributeDto[]>> {
-    try {
-      if (!isHexadecimal(nftContract)) {
-        throw new Error('Invalid Nft Contract');
-      }
-
-      const attributes =
-        await this.nftCollectionService.getAttributes(nftContract);
-
-      return new BaseResult(attributes);
-    } catch (error) {
-      throw new Error(error);
+    if (!isHexadecimal(nftContract)) {
+      throw new Error('Invalid Nft Contract');
     }
+
+    const attributes =
+      await this.nftCollectionService.getAttributes(nftContract);
+
+    return new BaseResult(attributes);
   }
 
   @Post('economic')
@@ -248,17 +236,13 @@ export class NftCollectionsController {
   async getTopCollection(
     @Body() query: TopNftCollectionQueryDto,
   ): Promise<BaseResultPagination<TopNftCollectionDto>> {
-    try {
-      const key = `top-collection - ${JSON.stringify({ ...query })}`;
-      let data = await this.cacheManager.get(key);
-      if (!data) {
-        data = await this.nftCollectionService.getTopNFTCollection(query);
-        await this.cacheManager.set(key, data, 60 * 60 * 1e3);
-      }
-      return data;
-    } catch (error) {
-      throw new Error(error);
+    const key = `top-collection - ${JSON.stringify({ ...query })}`;
+    let data = await this.cacheManager.get(key);
+    if (!data) {
+      data = await this.nftCollectionService.getTopNFTCollection(query);
+      await this.cacheManager.set(key, data, 60 * 60 * 1e3);
     }
+    return data;
   }
 
   @Get('total-suppply/:nftContract')
