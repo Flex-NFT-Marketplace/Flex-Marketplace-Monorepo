@@ -1,8 +1,11 @@
 import { BaseQueryParams } from '@app/shared/types';
 import { ApiProperty } from '@nestjs/swagger';
+import { IsHexadecimal, IsOptional } from 'class-validator';
 
 export class TopNftCollectionQueryDto extends BaseQueryParams {
   @ApiProperty()
+  @IsHexadecimal()
+  @IsOptional()
   nftContract?: string;
 }
 

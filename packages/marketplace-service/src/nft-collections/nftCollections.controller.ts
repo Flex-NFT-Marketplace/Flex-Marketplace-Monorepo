@@ -14,6 +14,8 @@ import {
   HttpCode,
   BadRequestException,
   Inject,
+  HttpException,
+  HttpStatus,
   UseGuards,
 } from '@nestjs/common';
 import { NftCollectionsService } from './nftCollections.service';
@@ -28,7 +30,6 @@ import {
   TopNftCollectionDto,
   TopNftCollectionQueryDto,
 } from './dto/topNftCollection.dto';
-import { isValidAddress } from '@app/shared/utils';
 import { updateCollectionMetadataDto } from './dto/updateCollectionMetadata.dto';
 import { isHexadecimal } from 'class-validator';
 import { NFTCollectionSuply } from './dto/CollectionSupply.dto';
@@ -118,6 +119,9 @@ export class NftCollectionsController {
   })
   async getNFTCollectionDetail(@Param('nftContract') nftContract: string) {
     try {
+      if (!isHexadecimal(nftContract)) {
+        throw new HttpException('Invalid Nft Contract', HttpStatus.BAD_REQUEST);
+      }
       const data =
         await this.nftCollectionService.getNFTCollectionDetail(nftContract);
       return new BaseResult(data);
@@ -262,7 +266,7 @@ export class NftCollectionsController {
     @Param('nftContract') param: string,
   ): Promise<BaseResult<NFTCollectionSuply>> {
     try {
-      if (!isValidAddress(param.replace('0x', ''))) {
+      if (!isHexadecimal(param.replace('0x', ''))) {
         throw new Error('Invalid Nft Address');
       }
       const key = `total-owner - ${param}`;

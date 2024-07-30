@@ -1,6 +1,7 @@
 import { ExternalLink } from '@app/shared/models';
 import { ApiProperty } from '@nestjs/swagger';
 import { IsHexadecimal, IsString, IsUrl, IsOptional } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class ExternalLinkDto implements ExternalLink {
   @IsUrl()
@@ -31,16 +32,21 @@ export class UpdateCollectionDetailDto {
 
   @ApiProperty()
   @IsUrl()
+  @IsOptional()
   cover?: string;
 
   @ApiProperty()
   @IsUrl()
+  @IsOptional()
   avatar?: string;
 
   @ApiProperty()
   @IsString()
+  @IsOptional()
   description?: string;
 
   @ApiProperty()
+  @IsOptional()
+  @Type(() => ExternalLinkDto)
   externalLink?: ExternalLinkDto;
 }

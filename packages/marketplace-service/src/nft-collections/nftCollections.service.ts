@@ -109,7 +109,7 @@ export class NftCollectionsService {
       }
     }
     const count = await this.nftCollectionModel.countDocuments(filter);
-    if (size === 0) {
+    if (count === 0 || size === 0) {
       result.data = new PaginationDto<NftCollectionDto>([], count, page, size);
       return result;
     }
