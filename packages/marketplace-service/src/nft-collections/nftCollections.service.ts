@@ -92,7 +92,7 @@ export class NftCollectionsService {
     if (name) {
       filter.name = { $regex: `${query.name}`, $options: 'i' };
     }
-    if (isNonFungibleFlexDropToken !== null) {
+    if (isNonFungibleFlexDropToken && isNonFungibleFlexDropToken !== null) {
       filter.isNonFungibleFlexDropToken = isNonFungibleFlexDropToken;
     }
 
@@ -113,6 +113,7 @@ export class NftCollectionsService {
       result.data = new PaginationDto<NftCollectionDto>([], count, page, size);
       return result;
     }
+
     const items = await this.nftCollectionModel
       .find(filter)
       .sort(sort)
