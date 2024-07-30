@@ -98,7 +98,7 @@ export class NftCollectionsService {
 
     if (owner) {
       if (isValidObjectId(owner)) {
-        filter.owner = formattedContractAddress(owner);
+        filter.owner = owner;
       } else {
         const user = await this.userService.getUser(
           formattedContractAddress(owner),

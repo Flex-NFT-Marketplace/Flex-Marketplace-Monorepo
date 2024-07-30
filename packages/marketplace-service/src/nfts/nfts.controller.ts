@@ -74,16 +74,12 @@ export class NftController {
     },
   })
   async getNfts(@Body() query: NftFilterQueryParams) {
-    try {
-      const key = `get-nfts - ${JSON.stringify({ ...query })}`;
-      let data = await this.cacheManager.get(key);
-      if (!data) {
-        data = await this.nftsService.getNftsByQuery(query);
-        await this.cacheManager.set(key, data, 300000);
-      }
-      return data;
-    } catch (error) {
-      return new BadRequestException(error.message);
+    const key = `get-nfts - ${JSON.stringify({ ...query })}`;
+    let data = await this.cacheManager.get(key);
+    if (!data) {
+      data = await this.nftsService.getNftsByQuery(query);
+      await this.cacheManager.set(key, data, 300000);
     }
+    return data;
   }
 }
