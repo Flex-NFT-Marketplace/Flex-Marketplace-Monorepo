@@ -84,4 +84,5 @@ NftSchema.index({ owner: 1 });
 NftSchema.index({ nftContract: 1, isBurned: 1 });
 NftSchema.index({ nftCollection: 1, isBurned: 1 });
 NftSchema.index({ nftContract: 1, tokenId: 1, isBurned: 1 });
+NftSchema.index({ 'attributes.value': 1, 'attributes.trait_type': 1 });
 NftSchema.index({ nftContract: 1, tokenId: 1, owner: 1 }, { unique: true });
