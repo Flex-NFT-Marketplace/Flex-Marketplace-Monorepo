@@ -81,6 +81,7 @@ export class WarpcastService {
       imageUrl: warpcastImage,
       nftName: nftCollection.name,
       creator: creatorName,
+      nftAddress: formattedAddress,
     };
 
     const appHtml = ReactDOMServer.renderToString(

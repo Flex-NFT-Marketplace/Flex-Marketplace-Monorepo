@@ -1,6 +1,7 @@
 import React from 'react';
+import { FLEX } from '@app/shared/constants';
 
-export function ImageWithText({ imageUrl, nftName, creator }) {
+export function ImageWithText({ imageUrl, nftName, creator, nftAddress }) {
   return (
     <div
       style={{
@@ -86,8 +87,7 @@ export function ImageWithText({ imageUrl, nftName, creator }) {
             <span style={{ color: 'white', fontSize: '24px' }}>{creator}</span>
           </div>
           <a
-            href="https://hyperflex.market/" // mainnet
-            // href="http://warpcast.hyperflex.market/open-edition/{}" // testnet
+            href={`${FLEX.FLEX_OPENEDITION}/${nftAddress}`}
             style={{ textDecoration: 'none' }}
           >
             <button className="button">Mint on Flex</button>

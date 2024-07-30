@@ -11,6 +11,7 @@ export enum FLEX {
   FLEX_URL = 'https://api-staging.hyperflex.services',
   // FLEX_URL = 'http://localhost:5010',
   FLEX_INVENTORY = 'https://hyperflex.market/user',
+  FLEX_OPENEDITION = 'https://beta-open-editions.hyperflex.market/open-edition',
   ESTIMATE_NFT = '0x3d1a6d306fc9b797138930a3ad2e5c9034738487e2ec7c24a7e64665d3a0da5',
 
   FLEXDROP_PROTOCOL_RECEIVER = '0x05dcb49a8217eab5ed23e4a26df044edaf1428a5c7b30fa2324fa39a28288f6b',
