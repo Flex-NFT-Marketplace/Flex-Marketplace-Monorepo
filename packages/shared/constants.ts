@@ -10,12 +10,12 @@ export enum FLEX {
   FLEX_RECIPT = '0x06b7e7d35c8dedc6f698053f6dd7e6a21180f1e4160c5656c2fb0a4b06da7e7a',
   FLEX_URL = 'https://api-staging.hyperflex.services',
   // FLEX_URL = 'http://localhost:5010',
-  FLEX_INVENTORY = 'https://hyperflex.market/user',
+  FLEX_INVENTORY = 'https://hyperflex.market/account',
   FLEX_OPENEDITION = 'https://beta-open-editions.hyperflex.market/open-edition',
   ESTIMATE_NFT = '0x3d1a6d306fc9b797138930a3ad2e5c9034738487e2ec7c24a7e64665d3a0da5',
 
   FLEXDROP_PROTOCOL_RECEIVER = '0x05dcb49a8217eab5ed23e4a26df044edaf1428a5c7b30fa2324fa39a28288f6b',
-  FLEX_DOMAIN = 'https://hyperflex.market',
+  FLEX_DOMAIN = 'https://beta-open-editions.hyperflex.market',
 
   PINATA_HUB = 'https://api.pinata.cloud/v3/farcaster',
 
