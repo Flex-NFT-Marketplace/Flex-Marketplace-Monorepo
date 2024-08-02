@@ -528,7 +528,10 @@ export const decodePhaseDropUpdated = (
     phaseDropId: Number(
       (parsedEvent.PhaseDropUpdated.phase_drop_id as bigint).toString(),
     ),
-    mintPrice: web3.utils.fromWei(phaseDrop.mint_price as bigint, 'ether'),
+    mintPrice:
+      (phaseDrop.mint_price as bigint).toString() !== '0'
+        ? web3.utils.fromWei(phaseDrop.mint_price as bigint, 'ether')
+        : '0',
     currency: formattedContractAddress(
       num.toHex(phaseDrop.currency as BigNumberish),
     ),
