@@ -11,6 +11,8 @@ import {
   Users,
 } from '@app/shared/models';
 import { UsersModule } from '../user/user.module';
+import { Web3Service } from '@app/web3-service/web3.service';
+import { MetadataService } from '@app/offchain-worker/src/metadata/metadata.service';
 
 @Module({
   imports: [
@@ -28,6 +30,6 @@ import { UsersModule } from '../user/user.module';
     UsersModule,
   ],
   controllers: [NftController],
-  providers: [NftService],
+  providers: [NftService, Web3Service, MetadataService],
 })
 export class NftModule {}

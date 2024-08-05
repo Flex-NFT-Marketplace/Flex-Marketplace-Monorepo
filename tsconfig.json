@@ -24,7 +24,9 @@
       "@app/shared": ["shared/"],
       "@app/shared/*": ["shared/*"],
       "@app/web3-service": ["web3-service/"],
-      "@app/web3-service/*": ["web3-service/*"]
+      "@app/web3-service/*": ["web3-service/*"],
+      "@app/offchain-worker": ["offchain-worker"],
+      "@app/offchain-worker/*": ["offchain-worker/*"]
     }
   }
 }

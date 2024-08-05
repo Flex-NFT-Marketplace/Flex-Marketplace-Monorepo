@@ -5,15 +5,21 @@ import { PaginationDto } from '@app/shared/types/pagination.dto';
 import { Injectable } from '@nestjs/common';
 import { Model } from 'mongoose';
 import { UserService } from '../user/user.service';
-import { isValidObjectId, formattedContractAddress } from '@app/shared/utils';
+import {
+  isValidObjectId,
+  formattedContractAddress,
+  arraySliceProcess,
+} from '@app/shared/utils';
 import { NftFilterQueryParams } from './dto/nftQuery.dto';
 import { BaseResultPagination } from '@app/shared/types';
+import { MetadataService } from '@app/offchain-worker/src/metadata/metadata.service';
 @Injectable()
 export class NftService {
   constructor(
     @InjectModel(Nfts.name)
     private readonly nftModel: Model<NftDocument>,
     private readonly userService: UserService,
+    private readonly metadataService: MetadataService,
   ) {}
 
   async getNftsByQuery(
@@ -64,6 +70,7 @@ export class NftService {
       result.data = new PaginationDto([], count, query.page, query.size);
       return result;
     }
+    const now = Date.now();
 
     const items = await this.nftModel
       .find(filter)
@@ -99,7 +106,38 @@ export class NftService {
         },
       ])
       .exec();
-    result.data = new PaginationDto(items, count, query.page, query.size);
+
+    const afterAlterItem = [];
+    await arraySliceProcess(
+      items,
+      async slicedItems => {
+        await Promise.all(
+          slicedItems.map(async item => {
+            if (!item.image) {
+              try {
+                const newItem = await this.metadataService.loadMetadata(
+                  item._id,
+                );
+                afterAlterItem.push(newItem);
+              } catch (error) {
+                afterAlterItem.push(item);
+              }
+            } else {
+              afterAlterItem.push(item);
+            }
+          }),
+        );
+      },
+      20,
+    );
+
+    result.data = new PaginationDto(
+      afterAlterItem,
+      count,
+      query.page,
+      query.size,
+    );
+    console.log(`finish in ${Date.now() - now} ms`);
 
     return result;
   }

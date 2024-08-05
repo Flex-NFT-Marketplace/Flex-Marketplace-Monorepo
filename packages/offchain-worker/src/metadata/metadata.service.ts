@@ -44,7 +44,7 @@ export class MetadataService {
     private readonly web3Service: Web3Service,
   ) {
     this.client = axios.create({
-      timeout: 1000 * 60, // Wait for 5 seconds
+      timeout: 1000 * 3, // Wait for 5 seconds
     });
   }
   client: AxiosInstance;
@@ -124,7 +124,7 @@ export class MetadataService {
       this.logger.warn(error);
     }
 
-    await this.nftModel.updateOne(
+    const newNft = await this.nftModel.findOneAndUpdate(
       { _id: id },
       {
         $set: {
@@ -139,9 +139,10 @@ export class MetadataService {
           animationPlayType: animationFileType,
         },
       },
+      { new: true },
     );
     await this.reloadAttributeMap(nft.nftCollection, attributes);
-    return true;
+    return newNft;
   }
 
   async reloadAttributeMap(
