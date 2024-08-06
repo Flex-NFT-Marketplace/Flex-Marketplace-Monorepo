@@ -13,7 +13,11 @@ import {
 } from '@app/shared/models';
 import { Model } from 'mongoose';
 import { PaginationDto } from '@app/shared/types/pagination.dto';
-import { formattedContractAddress, isValidObjectId } from '@app/shared/utils';
+import {
+  arraySliceProcess,
+  formattedContractAddress,
+  isValidObjectId,
+} from '@app/shared/utils';
 import { UserService } from '../user/user.service';
 import { NftCollectionQueryParams } from './dto/nftCollectionQuery.dto';
 import {
@@ -39,6 +43,8 @@ import {
 import { NftCollectionAttributeDto } from './dto/CollectionAttribute.dto';
 import { UpdateCollectionDetailDto } from './dto/updateCollectionDetail.dto';
 import { retryUntil } from '@app/shared/index';
+import axios from 'axios';
+import * as _ from 'lodash';
 
 @Injectable()
 export class NftCollectionsService {
@@ -113,6 +119,7 @@ export class NftCollectionsService {
       result.data = new PaginationDto<NftCollectionDto>([], count, page, size);
       return result;
     }
+    const now = Date.now();
 
     const items = await this.nftCollectionModel
       .find(filter)
@@ -121,7 +128,31 @@ export class NftCollectionsService {
       .limit(size)
       .populate('paymentTokens')
       .exec();
-    result.data = new PaginationDto(items, count, page, size);
+
+    const afterAlterItem: NftCollectionDocument[] = [];
+    await arraySliceProcess(
+      items,
+      async slicedItems => {
+        await Promise.all(
+          slicedItems.map(async item => {
+            if (item.avatar === undefined) {
+              try {
+                const newItem = await this.getCollectionImage(item);
+                afterAlterItem.push(newItem);
+              } catch (error) {
+                afterAlterItem.push(item);
+              }
+            } else {
+              afterAlterItem.push(item);
+            }
+          }),
+        );
+      },
+      20,
+    );
+    result.data = new PaginationDto(afterAlterItem, count, page, size);
+    console.log(`finish in ${Date.now() - now} ms`);
+
     return result;
   }
 
@@ -732,5 +763,45 @@ export class NftCollectionsService {
     }
 
     return totalOwners[0];
+  }
+  async getCollectionImage(
+    collection: NftCollectionDocument,
+  ): Promise<NftCollectionDocument> {
+    const formattedAddress = (address: string) => {
+      while (address.startsWith('0x0')) {
+        address = address.replace('0x0', '0x');
+      }
+
+      return address;
+    };
+    const url = `https://api2.pyramid.market/api/collection/${formattedAddress(collection.nftContract)}`;
+    const data = await axios.get(url);
+    const collectionDetail = data.data.data;
+
+    let avatar: string = null;
+    let cover: string = null;
+    let description: string = null;
+    if (collectionDetail.image !== 'https://pyramid.market/not-available.png') {
+      avatar = collectionDetail.image;
+    }
+
+    if (
+      collectionDetail.bannerImage !==
+      'https://cdn.pyramid.market/external/assets/collections/default/banner.png'
+    ) {
+      cover = collectionDetail.bannerImage;
+    }
+
+    if (collectionDetail.description) {
+      description = collectionDetail.description;
+    }
+
+    const newCollection = await this.nftCollectionModel.findOneAndUpdate(
+      { _id: collection._id },
+      { $set: { avatar, cover, description } },
+      { new: true },
+    );
+
+    return newCollection;
   }
 }

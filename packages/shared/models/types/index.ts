@@ -93,7 +93,7 @@ export type AttributeMap = {
   type: AttributesMapType;
   min?: number;
   max?: number;
-  options?: string[];
+  options?: any[];
 };
 
 export enum AttributesMapType {
@@ -101,6 +101,7 @@ export enum AttributesMapType {
   Number = 'number',
   Boolean = 'boolean',
   Object = 'object',
+  Array = 'array',
 }
 
 export const BURN_ADDRESS =
