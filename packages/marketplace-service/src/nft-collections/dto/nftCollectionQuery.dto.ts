@@ -7,12 +7,14 @@ import {
   IsOptional,
   IsEnum,
   IsBoolean,
+  IsNotEmpty,
 } from 'class-validator';
 
 export class NftCollectionQueryParams extends BaseQueryParams {
   @ApiProperty()
   @IsHexadecimal()
   @IsOptional()
+  @IsNotEmpty()
   nftContract?: string;
 
   @IsOptional()
@@ -31,6 +33,7 @@ export class NftCollectionQueryParams extends BaseQueryParams {
   @IsOptional()
   @ApiProperty()
   @IsHexadecimal()
+  @IsNotEmpty()
   owner?: string;
 
   @IsOptional()
@@ -44,10 +47,12 @@ export class NftCollectionQueryParams extends BaseQueryParams {
   @IsOptional()
   @ApiProperty()
   @IsString()
+  @IsNotEmpty()
   name?: string;
 
   @IsOptional()
   @ApiProperty()
   @IsBoolean()
+  @IsNotEmpty()
   isNonFungibleFlexDropToken?: boolean;
 }

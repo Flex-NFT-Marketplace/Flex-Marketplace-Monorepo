@@ -16,6 +16,7 @@ import configuration from '@app/shared/configuration';
 import { MetaDataDto } from './dtos/metadata.dto';
 import { isURL } from 'class-validator';
 import mime from 'mime';
+import * as _ from 'lodash';
 
 const getUrl = (url: string) => {
   if (url.startsWith('ipfs://')) {
@@ -167,6 +168,13 @@ export class MetadataService {
             attributeMap.options.push(attr.value);
           }
         }
+        if (valType == 'array') {
+          if (
+            !_.some(attributeMap.options, item => _.isEqual(item, attr.value))
+          ) {
+            attributeMap.options.push(attr.value);
+          }
+        }
       } else {
         const newAttrMap: AttributeMap = {
           trait_type: attr.trait_type,
@@ -177,7 +185,7 @@ export class MetadataService {
           newAttrMap.min = 0;
           newAttrMap.max = attr.value;
         }
-        if (valType == 'string') {
+        if (valType == 'string' || valType == 'array') {
           newAttrMap.options = [attr.value];
         }
         attributesMap.push(newAttrMap);

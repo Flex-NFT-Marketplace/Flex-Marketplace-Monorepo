@@ -44,6 +44,7 @@ import { NftCollectionAttributeDto } from './dto/CollectionAttribute.dto';
 import { UpdateCollectionDetailDto } from './dto/updateCollectionDetail.dto';
 import { retryUntil } from '@app/shared/index';
 import axios from 'axios';
+import * as _ from 'lodash';
 
 @Injectable()
 export class NftCollectionsService {
@@ -128,13 +129,13 @@ export class NftCollectionsService {
       .populate('paymentTokens')
       .exec();
 
-    const afterAlterItem = [];
+    const afterAlterItem: NftCollectionDocument[] = [];
     await arraySliceProcess(
       items,
       async slicedItems => {
         await Promise.all(
           slicedItems.map(async item => {
-            if (!item.avatar) {
+            if (item.avatar === undefined) {
               try {
                 const newItem = await this.getCollectionImage(item);
                 afterAlterItem.push(newItem);

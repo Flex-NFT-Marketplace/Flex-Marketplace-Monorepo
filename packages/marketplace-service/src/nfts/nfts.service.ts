@@ -31,7 +31,7 @@ export class NftService {
       if (isValidObjectId(query.owner)) {
         filter.owner = query.owner;
       } else {
-        const user = this.userService.getUser(
+        const user = this.userService.getOrCreateUser(
           formattedContractAddress(query.owner),
         );
         if (user) {
@@ -113,7 +113,7 @@ export class NftService {
       async slicedItems => {
         await Promise.all(
           slicedItems.map(async item => {
-            if (!item.image) {
+            if (item.image === undefined) {
               try {
                 const newItem = await this.metadataService.loadMetadata(
                   item._id,
