@@ -43,7 +43,10 @@ export class NftService {
       filter.nftContract = formattedContractAddress(query.nftContract);
     }
     if (query.tokenId) {
-      filter.tokenId = query.tokenId;
+      filter['$or'] = [
+        { tokenId: query.tokenId },
+        { tokenId: Number(query.tokenId) },
+      ];
     }
     if (query.name) {
       filter.name = { $regex: `${query.name}`, $options: 'i' };
