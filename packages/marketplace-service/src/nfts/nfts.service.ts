@@ -1,5 +1,11 @@
 import { InjectModel } from '@nestjs/mongoose';
-import { NftDocument, NftDto, Nfts } from '@app/shared/models';
+import {
+  Histories,
+  HistoryDocument,
+  NftDocument,
+  NftDto,
+  Nfts,
+} from '@app/shared/models';
 
 import { PaginationDto } from '@app/shared/types/pagination.dto';
 import { Injectable } from '@nestjs/common';
@@ -131,6 +137,11 @@ export class NftService {
               }
             } else {
               afterAlterItem.push(item);
+            }
+
+            if (typeof item.tokenId === 'number') {
+              item.tokenId = String(item.tokenId);
+              await item.save();
             }
           }),
         );

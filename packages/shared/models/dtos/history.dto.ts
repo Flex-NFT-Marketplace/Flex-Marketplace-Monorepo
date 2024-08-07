@@ -1,14 +1,20 @@
 import { Transform } from 'class-transformer';
-import { IsEnum, IsHexadecimal, IsNumber, Length } from 'class-validator';
+import {
+  IsEnum,
+  IsHexadecimal,
+  IsNumber,
+  IsString,
+  Length,
+} from 'class-validator';
 import { HistoryType } from '../types';
 import { ApiProperty } from '@nestjs/swagger';
 import { UserDto } from './user.dto';
 import { PaymentTokenDto } from './paymentToken.dto';
 
 export class HistoryDto {
-  @IsNumber()
+  @IsString()
   @ApiProperty()
-  tokenId: number;
+  tokenId: string;
 
   @IsHexadecimal()
   @Length(66, 66)

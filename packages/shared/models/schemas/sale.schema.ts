@@ -18,7 +18,7 @@ export class Sales extends BaseSchema {
   signer: UserDocument;
 
   @Prop()
-  tokenId: number;
+  tokenId: string;
 
   @Prop()
   nftContract: string;

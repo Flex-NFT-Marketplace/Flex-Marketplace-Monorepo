@@ -15,9 +15,9 @@ import { NftCollectionDto } from './nftCollection.dto';
 import { UserDto } from './user.dto';
 
 export class NftDto {
-  @IsNumber()
+  @IsString()
   @ApiProperty()
-  tokenId: number;
+  tokenId: string;
 
   @IsHexadecimal()
   @Length(66, 66)
