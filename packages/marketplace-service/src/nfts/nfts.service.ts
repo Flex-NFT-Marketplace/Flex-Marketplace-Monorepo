@@ -121,7 +121,11 @@ export class NftService {
                 const newItem = await this.metadataService.loadMetadata(
                   item._id,
                 );
-                afterAlterItem.push(newItem);
+                if (newItem) {
+                  afterAlterItem.push(newItem);
+                } else {
+                  afterAlterItem.push(item);
+                }
               } catch (error) {
                 afterAlterItem.push(item);
               }
