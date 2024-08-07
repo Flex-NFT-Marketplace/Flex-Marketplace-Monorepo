@@ -13,7 +13,7 @@ export class QueryHistoriesDto extends BaseQueryParams {
   @ApiProperty({ required: false, nullable: true })
   @IsOptional()
   @IsNumber()
-  tokenId: number;
+  tokenId: string;
 
   @ApiProperty({ required: false, nullable: true })
   @IsOptional()

@@ -10,7 +10,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { QueryHistoriesDto } from './dtos/queryHistory.dto';
 import { BaseResultPagination } from '@app/shared/types';
-import { formattedContractAddress } from '@app/shared/utils';
+import { arraySliceProcess, formattedContractAddress } from '@app/shared/utils';
 import { PaginationDto } from '@app/shared/types/pagination.dto';
 
 @Injectable()
@@ -38,7 +38,7 @@ export class HistoryService {
     } = params;
 
     const query: any = {};
-    if (tokenId) query.tokenId = tokenId;
+    if (tokenId) query['$or'] = [{ tokenId }, { tokenId: Number(tokenId) }];
     if (nftContract) query.nftContract = nftContract;
     if (userAddress) {
       const userDocument = await this.userModel.findOne({
@@ -91,6 +91,16 @@ export class HistoryService {
         },
         'paymentToken',
       ]);
+    await arraySliceProcess(items, async slicedItems => {
+      await Promise.all(
+        slicedItems.map(async item => {
+          if (typeof item.tokenId === 'number') {
+            item.tokenId = String(tokenId);
+            await item.save();
+          }
+        }),
+      );
+    });
 
     result.data = new PaginationDto<HistoryDto>(items, totalItem, page, size);
 
