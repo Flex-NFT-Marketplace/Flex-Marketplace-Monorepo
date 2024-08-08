@@ -55,6 +55,8 @@ export class HistoryService {
       return result;
     }
 
+    const now = Date.now();
+
     const items = await this.historyModel
       .find(query)
       .sort(sort)
@@ -95,7 +97,7 @@ export class HistoryService {
       await Promise.all(
         slicedItems.map(async item => {
           if (typeof item.tokenId === 'number') {
-            item.tokenId = String(tokenId);
+            item.tokenId = String(item.tokenId);
             await item.save();
           }
         }),
@@ -103,6 +105,8 @@ export class HistoryService {
     });
 
     result.data = new PaginationDto<HistoryDto>(items, totalItem, page, size);
+
+    console.log(`${Date.now() - now} ms`);
 
     return result;
   }
