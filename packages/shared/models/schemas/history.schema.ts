@@ -80,3 +80,5 @@ HistorySchema.index(
   { nftContract: 1, tokenId: 1, txHash: 1, index: 1 },
   { unique: true },
 );
+HistorySchema.index({ from: 1 });
+HistorySchema.index({ to: 1 });
