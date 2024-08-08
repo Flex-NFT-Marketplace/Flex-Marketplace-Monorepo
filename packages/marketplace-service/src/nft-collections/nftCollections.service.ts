@@ -126,7 +126,23 @@ export class NftCollectionsService {
       .sort(sort)
       .skip(skipIndex)
       .limit(size)
-      .populate('paymentTokens')
+      .populate([
+        {
+          path: 'owner',
+          select: [
+            'address',
+            'username',
+            'isVerified',
+            'email',
+            'avatar',
+            'cover',
+            'about',
+            'socials',
+            'isVerified',
+          ],
+        },
+        'paymentTokens',
+      ])
       .exec();
 
     const afterAlterItem: NftCollectionDocument[] = [];
@@ -461,9 +477,22 @@ export class NftCollectionsService {
             'isVerified',
           ],
         },
+        'paymentTokens',
       ]);
 
-    return data;
+    if (!data) {
+      throw new HttpException('Collection not found', HttpStatus.NOT_FOUND);
+    }
+
+    if (data.avatar === undefined) {
+      try {
+        const newItem = await this.getCollectionImage(data);
+        return new BaseResult(newItem);
+      } catch (error) {
+        return new BaseResult(data);
+      }
+    }
+    return new BaseResult(data);
   }
 
   async updateCollectionMetadatas(nftContract: string, isNew: boolean) {
@@ -796,11 +825,29 @@ export class NftCollectionsService {
       description = collectionDetail.description;
     }
 
-    const newCollection = await this.nftCollectionModel.findOneAndUpdate(
-      { _id: collection._id },
-      { $set: { avatar, cover, description } },
-      { new: true },
-    );
+    const newCollection = await this.nftCollectionModel
+      .findOneAndUpdate(
+        { _id: collection._id },
+        { $set: { avatar, cover, description } },
+        { new: true },
+      )
+      .populate([
+        {
+          path: 'owner',
+          select: [
+            'address',
+            'username',
+            'isVerified',
+            'email',
+            'avatar',
+            'cover',
+            'about',
+            'socials',
+            'isVerified',
+          ],
+        },
+        'paymentTokens',
+      ]);
 
     return newCollection;
   }
