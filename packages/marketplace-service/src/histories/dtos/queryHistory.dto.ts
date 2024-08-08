@@ -2,7 +2,7 @@ import { HistoryType } from '@app/shared/models';
 import { BaseQueryParams } from '@app/shared/types';
 import { ApiProperty } from '@nestjs/swagger';
 import {
-  IsNumber,
+  IsString,
   IsHexadecimal,
   Length,
   IsOptional,
@@ -12,7 +12,7 @@ import {
 export class QueryHistoriesDto extends BaseQueryParams {
   @ApiProperty({ required: false, nullable: true })
   @IsOptional()
-  @IsNumber()
+  @IsString()
   tokenId: string;
 
   @ApiProperty({ required: false, nullable: true })
