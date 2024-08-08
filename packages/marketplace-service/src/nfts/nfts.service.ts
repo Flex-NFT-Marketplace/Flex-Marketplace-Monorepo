@@ -1,14 +1,7 @@
 import { InjectModel } from '@nestjs/mongoose';
-import {
-  Histories,
-  HistoryDocument,
-  NftDocument,
-  NftDto,
-  Nfts,
-} from '@app/shared/models';
-
+import { NftDocument, NftDto, Nfts } from '@app/shared/models';
 import { PaginationDto } from '@app/shared/types/pagination.dto';
-import { Injectable } from '@nestjs/common';
+import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import { Model } from 'mongoose';
 import { UserService } from '../user/user.service';
 import {
@@ -17,8 +10,10 @@ import {
   arraySliceProcess,
 } from '@app/shared/utils';
 import { NftFilterQueryParams } from './dto/nftQuery.dto';
-import { BaseResultPagination } from '@app/shared/types';
+import { BaseResult, BaseResultPagination } from '@app/shared/types';
 import { MetadataService } from '@app/offchain-worker/src/metadata/metadata.service';
+import { GetNftQueryDto } from './dto/getNftQuery.dto';
+
 @Injectable()
 export class NftService {
   constructor(
@@ -159,5 +154,64 @@ export class NftService {
 
     return result;
   }
+
+  async getNftDetail(query: GetNftQueryDto): Promise<BaseResult<NftDto>> {
+    const { nftContract, tokenId } = query;
+    const item = await this.nftModel
+      .findOne({
+        nftContract: formattedContractAddress(nftContract),
+        $or: [{ tokenId }, { tokenId: Number(tokenId) }],
+      })
+      .populate([
+        {
+          path: 'owner',
+          select: [
+            'address',
+            'username',
+            'isVerified',
+            'email',
+            'avatar',
+            'cover',
+            'about',
+            'socials',
+            'isVerified',
+          ],
+        },
+        {
+          path: 'nftCollection',
+          select: [
+            'name',
+            'symbol',
+            'verified',
+            'standard',
+            'description',
+            'avatar',
+            'key',
+          ],
+        },
+      ]);
+
+    if (!item) {
+      throw new HttpException('Nft not found', HttpStatus.NOT_FOUND);
+    }
+
+    if (typeof item.tokenId === 'number') {
+      item.tokenId = String(item.tokenId);
+      await item.save();
+    }
+
+    if (item.image === undefined) {
+      try {
+        const newItem = await this.metadataService.loadMetadata(item._id);
+        if (newItem) {
+          item.image = newItem.image;
+          item.name = newItem.name;
+          item.description = newItem.description;
+          item.attributes = newItem.attributes;
+          item.tokenUri = newItem.tokenUri;
+        }
+      } catch (error) {}
+    }
+    return new BaseResult(item as NftDto);
+  }
 }
-//.populate(['owner', 'nftCollection'])

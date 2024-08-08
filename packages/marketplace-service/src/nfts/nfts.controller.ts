@@ -10,7 +10,8 @@ import {
   Post,
   Body,
   HttpCode,
-  BadRequestException,
+  Get,
+  Query,
   Inject,
 } from '@nestjs/common';
 import { NftService } from './nfts.service';
@@ -19,7 +20,8 @@ import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { ChainDto, NftDto, PaymentTokenDto, UserDto } from '@app/shared/models';
 import { Cache } from 'cache-manager';
 import { NftFilterQueryParams } from './dto/nftQuery.dto';
-import { BaseResultPagination } from '@app/shared/types';
+import { BaseResult, BaseResultPagination } from '@app/shared/types';
+import { GetNftQueryDto } from './dto/getNftQuery.dto';
 
 @ApiTags('NFTs')
 @Controller('nft')
@@ -81,5 +83,35 @@ export class NftController {
       await this.cacheManager.set(key, data, 300000);
     }
     return data;
+  }
+
+  @Get('get-nft')
+  @ApiOperation({
+    summary: 'Get NFT detail',
+  })
+  @ApiOkResponse({
+    schema: {
+      allOf: [
+        {
+          $ref: getSchemaPath(BaseResult),
+        },
+        {
+          properties: {
+            data: {
+              allOf: [
+                {
+                  $ref: getSchemaPath(NftDto),
+                },
+              ],
+            },
+          },
+        },
+      ],
+    },
+  })
+  async getNftDetail(
+    @Query() query: GetNftQueryDto,
+  ): Promise<BaseResult<NftDto>> {
+    return await this.nftsService.getNftDetail(query);
   }
 }
