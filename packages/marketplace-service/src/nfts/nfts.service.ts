@@ -175,6 +175,7 @@ export class NftService {
       }
     }
 
+    let item: any;
     const items = await this.nftModel.aggregate([
       { $match: filter },
       { $limit: 1 },
@@ -235,10 +236,79 @@ export class NftService {
     ]);
 
     if (items.length === 0) {
-      throw new HttpException('Nft not found', HttpStatus.NOT_FOUND);
+      item = (
+        await this.nftModel.aggregate([
+          {
+            $match: {
+              nftContract: formattedContractAddress(nftContract),
+              $or: [{ tokenId }, { tokenId: Number(tokenId) }],
+            },
+          },
+          { $limit: 1 },
+          {
+            $lookup: {
+              from: 'users',
+              localField: 'owner',
+              foreignField: '_id',
+              pipeline: [
+                {
+                  $project: {
+                    _id: 0,
+                    address: 1,
+                  },
+                },
+              ],
+              as: 'owner',
+            },
+          },
+          { $unwind: '$owner' },
+          {
+            $lookup: {
+              from: 'nftcollections',
+              localField: 'nftCollection',
+              foreignField: '_id',
+              pipeline: [
+                {
+                  $project: {
+                    name: 1,
+                    symbol: 1,
+                    verified: 1,
+                    standard: 1,
+                    description: 1,
+                    avatar: 1,
+                    key: 1,
+                  },
+                },
+              ],
+              as: 'nftCollection',
+            },
+          },
+          { $unwind: '$nftCollection' },
+          {
+            $project: {
+              // Include all fields from the root document
+              root: '$$ROOT',
+              // Add or modify specific fields
+              owner: '$owner.address',
+            },
+          },
+          {
+            $replaceRoot: {
+              newRoot: {
+                $mergeObjects: ['$root', { owner: '$owner' }],
+              },
+            },
+          },
+        ])
+      )[0];
+
+      if (!item) {
+        throw new HttpException('Nft not found', HttpStatus.NOT_FOUND);
+      }
+    } else {
+      item = items[0];
     }
 
-    const item = items[0];
     if (typeof item.tokenId === 'number') {
       item.tokenId = String(item.tokenId);
       await this.nftModel.findOneAndUpdate(
