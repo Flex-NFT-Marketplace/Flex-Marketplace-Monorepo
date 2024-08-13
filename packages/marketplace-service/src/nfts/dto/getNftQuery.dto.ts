@@ -1,4 +1,9 @@
-import { IsString, IsHexadecimal, IsNotEmpty } from 'class-validator';
+import {
+  IsString,
+  IsHexadecimal,
+  IsNotEmpty,
+  IsOptional,
+} from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class GetNftQueryDto {
@@ -11,4 +16,10 @@ export class GetNftQueryDto {
   @IsString()
   @IsNotEmpty()
   tokenId: string;
+
+  @IsOptional()
+  @ApiProperty({ type: String, required: false })
+  @IsHexadecimal()
+  @IsNotEmpty()
+  owner?: string;
 }
