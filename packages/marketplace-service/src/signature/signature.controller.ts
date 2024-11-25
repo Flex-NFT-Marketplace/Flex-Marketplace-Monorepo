@@ -100,9 +100,9 @@ export class SignatureController {
     return new BaseResult(true);
   }
 
-  @Get('UpdateSignature')
-  async updateSignatureStatus() {
-    await this.signatureService.updateAllSignature();
-    return new BaseResult(true);
-  }
+  // @Get('UpdateSignature')
+  // async updateSignatureStatus() {
+  //   await this.signatureService.updateAllSignature();
+  //   return new BaseResult(true);
+  // }
 }

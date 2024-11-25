@@ -14,7 +14,7 @@ export class FetchMetadataProcessor {
   ) {}
   logger = new Logger(FetchMetadataProcessor.name);
 
-  @Process({ name: JOB_QUEUE_NFT_METADATA, concurrency: 100 })
+  @Process({ name: JOB_QUEUE_NFT_METADATA, concurrency: 10 })
   async fetchHandle(job: Job<string>) {
     try {
       await this.metadataService.loadMetadata(job.data);
