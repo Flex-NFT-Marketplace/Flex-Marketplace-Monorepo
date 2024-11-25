@@ -22,7 +22,7 @@ export class DeployContractProcessor {
 
   logger = new Logger(DeployContractProcessor.name);
 
-  @Process({ name: ONCHAIN_JOBS.JOB_DEPLOY_CONTRACT, concurrency: 100 })
+  @Process({ name: ONCHAIN_JOBS.JOB_DEPLOY_CONTRACT, concurrency: 10 })
   async detectEvent(job: Job<LogsReturnValues>) {
     const event = job.data;
     const maxRetry = 10;

@@ -22,7 +22,7 @@ export class ERC721MintProcessor {
 
   logger = new Logger(ERC721MintProcessor.name);
 
-  @Process({ name: ONCHAIN_JOBS.JOB_MINT_721, concurrency: 100 })
+  @Process({ name: ONCHAIN_JOBS.JOB_MINT_721, concurrency: 10 })
   async detectEvent(job: Job<LogsReturnValues>) {
     const event = job.data;
     const maxRetry = 10;

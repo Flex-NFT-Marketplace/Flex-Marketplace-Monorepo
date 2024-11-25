@@ -278,7 +278,7 @@ export class NftCollectionsController {
     await this.nftCollectionService.updateCollectionDetail(user.sub, body);
   }
 
-  @UseGuards(JwtAdminAuthGuard)
+  // @UseGuards(JwtAdminAuthGuard)
   @Post('update-all-nfts-metadata')
   @ApiOperation({
     summary: 'update All NFTs metadata',

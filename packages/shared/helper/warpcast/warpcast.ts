@@ -36,7 +36,8 @@ export async function getRenderedComponentString(
 
 export const isCurrentTimeWithinPhase = (dropPhase: DropPhaseDocument) => {
   const currentTime = Date.now();
-  return currentTime >= dropPhase.startTime && currentTime <= dropPhase.endTime;
+  const startTime = dropPhase.startTime + 3 * 60 * 1000; // Add 3 min
+  return currentTime >= startTime && currentTime <= dropPhase.endTime;
 };
 
 export function getLinkFrame(
@@ -299,6 +300,11 @@ export async function checkMintedAmount(
       address,
       phaseId,
     );
+
+    console.log(minterMintedAmount);
+    console.log(minterMintedAmount[0]);
+    console.log(BigInt(limitPerWallet));
+
 
     if (minterMintedAmount[0] < BigInt(limitPerWallet)) {
       return true;

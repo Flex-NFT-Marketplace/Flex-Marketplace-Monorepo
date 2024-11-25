@@ -25,7 +25,7 @@ export enum FLEX {
 
 export enum RPC_PROVIDER {
   TESTNET = 'https://free-rpc.nethermind.io/sepolia-juno',
-  MAINNET = 'https://starknet-mainnet.public.blastapi.io',
+  MAINNET = 'https://starknet-mainnet.public.blastapi.io/rpc/v0_7',
 }
 
 export enum ROLE {

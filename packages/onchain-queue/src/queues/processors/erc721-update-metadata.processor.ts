@@ -22,7 +22,7 @@ export class ERC721UpdateMetadataProcessor {
 
   logger = new Logger(ERC721UpdateMetadataProcessor.name);
 
-  @Process({ name: ONCHAIN_JOBS.JOB_UPDATE_METADATA_721, concurrency: 100 })
+  @Process({ name: ONCHAIN_JOBS.JOB_UPDATE_METADATA_721, concurrency: 10 })
   async detectEvent(job: Job<LogsReturnValues>) {
     const event = job.data;
     const maxRetry = 10;

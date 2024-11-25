@@ -22,7 +22,7 @@ export class TakerBidProcessor {
 
   logger = new Logger(TakerBidProcessor.name);
 
-  @Process({ name: ONCHAIN_JOBS.JOB_TAKER_BID, concurrency: 100 })
+  @Process({ name: ONCHAIN_JOBS.JOB_TAKER_BID, concurrency: 10 })
   async detectEvent(job: Job<LogsReturnValues>) {
     const event = job.data;
     const maxRetry = 10;

@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import configuration from '@app/shared/configuration';
+import { AppClusterService } from './app-cluster.service';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -11,3 +12,4 @@ async function bootstrap() {
   });
 }
 bootstrap();
+// AppClusterService.clusterize(bootstrap)

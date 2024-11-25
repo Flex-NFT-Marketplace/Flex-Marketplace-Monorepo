@@ -29,7 +29,7 @@ export class TakerAskProcessor {
     this.chain = await this.chainModel.findOne();
   }
 
-  @Process({ name: ONCHAIN_JOBS.JOB_TAKER_ASK, concurrency: 100 })
+  @Process({ name: ONCHAIN_JOBS.JOB_TAKER_ASK, concurrency: 10 })
   async detectEvent(job: Job<LogsReturnValues>) {
     const event = job.data;
     const maxRetry = 10;
