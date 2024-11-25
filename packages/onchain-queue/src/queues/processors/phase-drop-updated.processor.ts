@@ -22,7 +22,7 @@ export class PhaseDropUpdatedProcessor {
 
   logger = new Logger(PhaseDropUpdatedProcessor.name);
 
-  @Process({ name: ONCHAIN_JOBS.JOB_PHASE_DROP_UPDATED, concurrency: 100 })
+  @Process({ name: ONCHAIN_JOBS.JOB_PHASE_DROP_UPDATED, concurrency: 10 })
   async detectEvent(job: Job<LogsReturnValues>) {
     const event = job.data;
     const maxRetry = 10;

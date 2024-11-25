@@ -22,7 +22,7 @@ export class PayerUpdatedProcessor {
 
   logger = new Logger(PayerUpdatedProcessor.name);
 
-  @Process({ name: ONCHAIN_JOBS.JOB_PAYER_UPDATED, concurrency: 100 })
+  @Process({ name: ONCHAIN_JOBS.JOB_PAYER_UPDATED, concurrency: 10 })
   async detectEvent(job: Job<LogsReturnValues>) {
     const event = job.data;
     const maxRetry = 10;

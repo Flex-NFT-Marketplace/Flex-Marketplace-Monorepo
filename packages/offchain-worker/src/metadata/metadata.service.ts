@@ -21,15 +21,13 @@ import * as _ from 'lodash';
 const getUrl = (url: string) => {
   if (url.startsWith('ipfs://')) {
     return (
-      url?.replace('ipfs://', configuration().ipfs_gateway) +
-      `?pinataGatewayToken=${configuration().pinata_key}`
+      url?.replace('ipfs://', configuration().ipfs_gateway)
     );
   }
 
   if (url.startsWith('https://ipfs.io/ipfs/')) {
     return (
-      url?.replace('https://ipfs.io/ipfs/', configuration().ipfs_gateway) +
-      `?pinataGatewayToken=${configuration().pinata_key}`
+      url?.replace('https://ipfs.io/ipfs/', configuration().ipfs_gateway)
     );
   }
   return url;
@@ -202,7 +200,7 @@ export class MetadataService {
   parseJSON(dataURI: string): any {
     try {
       // Check for Base64 encoding
-      const base64Prefix = 'base64,';
+      const base64Prefix = 'data:application/json;base64,';
       const isBase64 = dataURI.indexOf(base64Prefix) > -1;
       let jsonPart;
 

@@ -22,7 +22,7 @@ export class CancelOfferProcessor {
 
   logger = new Logger(CancelOfferProcessor.name);
 
-  @Process({ name: ONCHAIN_JOBS.JOB_CANCEL_OFFER, concurrency: 100 })
+  @Process({ name: ONCHAIN_JOBS.JOB_CANCEL_OFFER, concurrency: 10 })
   async detectEvent(job: Job<LogsReturnValues>) {
     const event = job.data;
     const maxRetry = 10;

@@ -22,7 +22,7 @@ export class UpgradeContractProcessor {
 
   logger = new Logger(UpgradeContractProcessor.name);
 
-  @Process({ name: ONCHAIN_JOBS.JOB_UPGRADE_CONTRACT, concurrency: 100 })
+  @Process({ name: ONCHAIN_JOBS.JOB_UPGRADE_CONTRACT, concurrency: 10 })
   async detectEvent(job: Job<LogsReturnValues>) {
     const event = job.data;
     const maxRetry = 10;

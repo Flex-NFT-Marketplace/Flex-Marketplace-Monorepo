@@ -21,7 +21,7 @@ export class CreatorPayoutUpdatedProcessor {
   ) {}
   logger = new Logger(CreatorPayoutUpdatedProcessor.name);
 
-  @Process({ name: ONCHAIN_JOBS.JOB_CREATOR_PAYOUT_UPDATED, concurrency: 100 })
+  @Process({ name: ONCHAIN_JOBS.JOB_CREATOR_PAYOUT_UPDATED, concurrency: 10 })
   async detectEvent(job: Job<LogsReturnValues>) {
     const event = job.data;
     const maxRetry = 10;

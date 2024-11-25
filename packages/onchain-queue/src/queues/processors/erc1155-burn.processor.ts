@@ -22,7 +22,7 @@ export class ERC1155BurnProcessor {
 
   logger = new Logger(ERC1155BurnProcessor.name);
 
-  @Process({ name: ONCHAIN_JOBS.JOB_BURN_1155, concurrency: 100 })
+  @Process({ name: ONCHAIN_JOBS.JOB_BURN_1155, concurrency: 10 })
   async detectEvent(job: Job<LogsReturnValues>) {
     const event = job.data;
     const maxRetry = 10;
