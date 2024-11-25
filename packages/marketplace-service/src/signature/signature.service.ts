@@ -471,15 +471,17 @@ export class SignatureService {
       for (const signature of signatures) {
         const nft = await this.nftModel
           .findOne({
-            contract_address: signature.contract_address,
-            token_id: signature.token_id,
+            nftContract: signature.contract_address,
+            tokenId: signature.token_id,
           })
           .exec();
         if (nft) {
-          await signature
-            .updateOne({ _id: signature._id }, { nft: nft._id })
+        await this.signatureModel
+            .findByIdAndUpdate(signature._id, {
+              nft: nft._id,
+            })
             .exec();
-          console.log('Updated Signature', signature._id);
+          console.log('Updated Signature', nft._id);
         }
       }
     } catch (error) {
