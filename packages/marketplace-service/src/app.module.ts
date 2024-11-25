@@ -11,6 +11,7 @@ import { WalletModule } from './wallet/wallet.module';
 import { CacheModule } from '@nestjs/cache-manager';
 import { DropPhaseModule } from './dropphases/dropPhases.module';
 import { WarpcastModule } from './warpcast/warpcast.module';
+import { SignatureModule } from './signature/signature.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { WarpcastModule } from './warpcast/warpcast.module';
     WalletModule,
     NftCollectionsModule,
     DropPhaseModule,
+    SignatureModule,
     WarpcastModule,
     CacheModule.register({ isGlobal: true }),
   ],
