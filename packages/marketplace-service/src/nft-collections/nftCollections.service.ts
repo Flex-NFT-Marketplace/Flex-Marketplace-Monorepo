@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { InjectModel } from '@nestjs/mongoose';
 import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import {
@@ -45,6 +46,10 @@ import { UpdateCollectionDetailDto } from './dto/updateCollectionDetail.dto';
 import { retryUntil } from '@app/shared/index';
 import axios from 'axios';
 import * as _ from 'lodash';
+import {
+  TrendingNftCollectionsDto,
+  TrendingNftCollectionsQueryDto,
+} from './dto/trendingNftCollection.dto';
 
 @Injectable()
 export class NftCollectionsService {
@@ -456,6 +461,146 @@ export class NftCollectionsService {
     return result;
   }
 
+  // Trending Include Floor Price, 1D Change , 1D Vol, total Vol, owners , supply
+  async getTrendingNFTCollections(
+    query: TrendingNftCollectionsQueryDto,
+  ): Promise<BaseResultPagination<TrendingNftCollectionsDto>> {
+    const { page, size, skipIndex } = query;
+
+    const result = new BaseResultPagination<TrendingNftCollectionsDto>();
+    const oneDay = Date.now() - 86400000;
+    const filter: any = { type: HistoryType.Sale };
+    if (query.nftContract) {
+      filter.nftContract = formattedContractAddress(query.nftContract);
+    }
+
+    const topNftCollection = await this.historyModel.aggregate([
+      {
+        $match: filter,
+      },
+      {
+        $group: {
+          _id: '$nftContract',
+          totalVol: {
+            $sum: '$price',
+          },
+        },
+      },
+      {
+        $sort: {
+          totalVol: -1,
+        },
+      },
+      {
+        $skip: skipIndex,
+      },
+      {
+        $limit: size,
+      },
+      {
+        $lookup: {
+          from: 'histories',
+          let: { nftContract: '$_id' },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ['$$nftContract', '$nftContract'] },
+                    { $eq: ['$type', HistoryType.Sale] },
+                  ],
+                },
+              },
+            },
+            {
+              $group: {
+                _id: '$nftContract',
+                vol1D: {
+                  $sum: {
+                    $cond: {
+                      if: {
+                        $gte: ['$timestamp', oneDay],
+                      },
+                      then: '$price',
+                      else: 0,
+                    },
+                  },
+                },
+                volPre1D: {
+                  $sum: {
+                    $cond: {
+                      if: {
+                        $and: [
+                          { $gte: ['$timestamp', oneDay - 86400000] },
+                          { $lt: ['$timestamp', oneDay] },
+                        ],
+                      },
+                      then: '$price',
+                      else: 0,
+                    },
+                  },
+                },
+              },
+            },
+          ],
+          as: 'statistic',
+        },
+      },
+      {
+        $unwind: '$statistic',
+      },
+      {
+        $project: {
+          _id: 0,
+          nftContract: '$_id',
+          oneDayVol: '$statistic.vol1D',
+          oneDayChange: {
+            $cond: {
+              if: { $gt: ['$statistic.volPre1D', 0] },
+              then: {
+                $divide: [
+                  {
+                    $multiply: [
+                      {
+                        $subtract: ['$statistic.vol1D', '$statistic.volPre1D'],
+                      },
+                      100,
+                    ],
+                  },
+                  '$statistic.volPre1D',
+                ],
+              },
+              else: {
+                $divide: [
+                  {
+                    $multiply: [
+                      {
+                        $subtract: ['$statistic.vol1D', '$statistic.volPre1D'],
+                      },
+                      100,
+                    ],
+                  },
+                  1,
+                ],
+              },
+            },
+          },
+          totalVol: 1,
+        },
+      },
+    ]);
+
+    const total = await this.nftCollectionModel.countDocuments(filter);
+    result.data = new PaginationDto<TrendingNftCollectionsDto>(
+      topNftCollection,
+      total,
+      Number(page),
+      Number(size),
+    );
+
+    return result;
+  }
+
   async getNFTCollectionDetail(nftContract: string) {
     const formatedAddress = formattedContractAddress(nftContract);
     const data = await this.nftCollectionModel
@@ -504,7 +649,7 @@ export class NftCollectionsService {
     const size = 20;
     const totalPages = Math.ceil((1.0 * totalNFts) / size);
     let page = 1;
-    let txSet: string[] = [];
+    const txSet: string[] = [];
     const filter = isNew
       ? [
           {
