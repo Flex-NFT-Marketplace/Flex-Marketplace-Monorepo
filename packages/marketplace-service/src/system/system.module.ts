@@ -2,6 +2,8 @@ import { PassportModule } from '@nestjs/passport';
 import {
   Chains,
   ChainSchema,
+  NftCollections,
+  NftCollectionSchema,
   System,
   SystemSchema,
   Users,
@@ -21,6 +23,10 @@ import { SystemService } from './system.service';
       },
 
       { name: Chains.name, schema: ChainSchema },
+      {
+        name: NftCollections.name,
+        schema: NftCollectionSchema,
+      },
       {
         name: System.name,
         schema: SystemSchema,

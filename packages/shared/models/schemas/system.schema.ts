@@ -12,12 +12,12 @@ export class System extends BaseSchema {
   @Prop()
   name?: string;
 
-  @Prop({ type: SchemaTypes.ObjectId, ref: 'nftCollections' })
+  @Prop({ type: [SchemaTypes.ObjectId], ref: 'NftCollections' })
   nftCollectionBanner?: NftCollectionDocument[];
 
   @Prop({
-    type: SchemaTypes.ObjectId,
-    ref: 'nftCollections',
+    type: [SchemaTypes.ObjectId],
+    ref: 'NftCollections',
   })
   nftCollectionTrending?: NftCollectionDocument[];
 }

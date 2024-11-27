@@ -1,26 +1,45 @@
-import { JWT } from '@app/shared/modules';
-import { Controller, Get, Post } from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Get,
+  Post,
+} from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
-// import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
-// import sharp from 'sharp';
-// import fs from 'fs';
-// import { diskStorage } from 'multer';
-// import * as path from 'path';
-// import configuration from '@app/shared/configuration';
-// import {
-//   editFileName,
-//   imageFileFilter,
-// } from '@app/shared/modules/img/image.service';
+import { SettingBannerCollectionDto } from './dto/settingSystem.dto';
+
+import { SystemService } from './system.service';
+import { JWTAdmin } from '@app/shared/modules';
+import { BaseResult } from '@app/shared/types';
+
 @ApiTags('System Setting')
 @Controller('system-setting')
 export class SystemController {
-  constructor() {}
+  constructor(private readonly systemService: SystemService) {}
 
   @Get('/bannerCollection')
-  async getBannerNftCollection() {}
+  async getBannerNftCollection() {
+    try {
+      const data = await this.systemService.getBannerTop();
+      return new BaseResult(data);
+    } catch (error) {
+      console.log(error);
+      throw new BadRequestException(
+        'Something went wrong in get banner collection',
+      );
+    }
+  }
 
-  @JWT()
+  @JWTAdmin()
   @Post('/bannerCollection')
-  @ApiOperation({ summary: 'Choose Smart Contract Addess to set banner' })
-  async settingBannerNftCollection() {}
+  @ApiOperation({ summary: 'Choose  Contract Address to set banner' })
+  async settingBannerNftCollection(@Body() body: SettingBannerCollectionDto) {
+    try {
+      const data = await this.systemService.settingBannerTop(body);
+      return new BaseResult(data);
+    } catch (error) {
+      console.log(error);
+      throw new BadRequestException('Something went wrong in Setting banner');
+    }
+  }
 }

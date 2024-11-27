@@ -116,7 +116,7 @@ export class AuthService {
     return token;
   }
 
-  // Test Function
+  // TODO Test Function
   async testSignMessage({
     address,
     privateKey,
@@ -124,7 +124,7 @@ export class AuthService {
   }: GetSignatureTestDto & { nonce: string }) {
     address = formattedContractAddress(address);
 
-    const rpc = RPC_PROVIDER.TESTNET;
+    const rpc = RPC_PROVIDER.MAINNET;
     const provider = new Provider({ nodeUrl: rpc });
 
     const account = new Account(provider, address, privateKey);

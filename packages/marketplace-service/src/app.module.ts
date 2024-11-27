@@ -12,6 +12,7 @@ import { CacheModule } from '@nestjs/cache-manager';
 import { DropPhaseModule } from './dropphases/dropPhases.module';
 import { WarpcastModule } from './warpcast/warpcast.module';
 import { SignatureModule } from './signature/signature.module';
+import { SystemModule } from './system/system.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { SignatureModule } from './signature/signature.module';
     DropPhaseModule,
     SignatureModule,
     WarpcastModule,
+    SystemModule,
     CacheModule.register({ isGlobal: true }),
   ],
   controllers: [],

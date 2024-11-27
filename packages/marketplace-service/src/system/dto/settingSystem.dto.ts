@@ -1,4 +1,5 @@
 import { IsHexStringArray } from '@app/shared/helper/isHexString';
+import { BaseQueryParams } from '@app/shared/types';
 import { ApiProperty } from '@nestjs/swagger';
 import { IsArray, ArrayMinSize } from 'class-validator';
 export class SettingBannerCollectionDto {
@@ -8,6 +9,8 @@ export class SettingBannerCollectionDto {
   })
   @IsArray()
   @ArrayMinSize(1) // Ensure at least one banner exists
-  @IsHexStringArray() // Custom decorator for hex string validation
+  @IsHexStringArray()
   nftCollectionBanner: string[];
 }
+
+export class SettingBannerCollectionQueryDto extends BaseQueryParams {}
