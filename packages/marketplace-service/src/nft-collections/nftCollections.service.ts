@@ -474,7 +474,7 @@ export class NftCollectionsService {
       filter.nftContract = formattedContractAddress(query.nftContract);
     }
 
-    const topNftCollection = await this.historyModel.aggregate([
+    const trendingNFTCollection = await this.historyModel.aggregate([
       {
         $match: filter,
       },
@@ -550,6 +550,50 @@ export class NftCollectionsService {
         $unwind: '$statistic',
       },
       {
+        $lookup: {
+          from: 'nfts', // Name of the `nft` collection
+          localField: '_id', // The `nftContract` in the aggregated result
+          foreignField: 'nftContract', // The `nftContract` in the `nfts` collection
+          as: 'nftDetails', // Output array for joined data
+        },
+      },
+      {
+        $unwind: {
+          path: '$nftDetails', // Flatten the `nftDetails` array
+          preserveNullAndEmptyArrays: true, // Preserve results with no matches
+        },
+      },
+      {
+        $match: {
+          $or: [
+            { 'nftDetails.isBurned': false },
+            { 'nftDetails.amount': { $gt: 0 } },
+          ], // Exclude burned or zero-amount NFTs
+        },
+      },
+      {
+        $group: {
+          _id: '$_id', // Group by `nftContract`
+          totalVol: { $first: '$totalVol' }, // Preserve total volume
+          totalOwners: { $addToSet: '$nftDetails.owner' }, // Collect unique owners
+          totalNfts: { $sum: '$nftDetails.amount' }, // Sum of all NFT amounts
+        },
+      },
+      {
+        $lookup: {
+          from: 'nftcollections', // Name of the `nftCollection` collection
+          localField: '_id', // Field in the current collection (`nftContract`)
+          foreignField: 'nftContract', // Field in the `nftCollection` collection
+          as: 'collectionInfo', // Output array field name for joined data
+        },
+      },
+      {
+        $unwind: {
+          path: '$collectionInfo', // Unwind the array to get a single object
+          preserveNullAndEmptyArrays: true, // Keep the document if no match is found
+        },
+      },
+      {
         $project: {
           _id: 0,
           nftContract: '$_id',
@@ -586,13 +630,22 @@ export class NftCollectionsService {
             },
           },
           totalVol: 1,
+          totalOwners: { $size: '$totalOwners' },
+          totalSupply: `$totalNfts`,
+          nftCollection: {
+            name: `$collectionInfo.name`,
+            avatar: `$collectionInfo.avatar`,
+            cover: `$collectionInfo.cover`,
+            descipriton: `$collectionInfo.description`,
+            symbol: `$collectionInfo.symbol`,
+          },
         },
       },
     ]);
 
     const total = await this.nftCollectionModel.countDocuments(filter);
     result.data = new PaginationDto<TrendingNftCollectionsDto>(
-      topNftCollection,
+      trendingNFTCollection,
       total,
       Number(page),
       Number(size),

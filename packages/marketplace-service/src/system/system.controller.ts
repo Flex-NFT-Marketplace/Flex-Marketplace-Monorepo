@@ -19,51 +19,6 @@ export class SystemController {
   @Get('/bannerCollection')
   async getBannerNftCollection() {}
 
-  // @JWT()
-  // @Post('/bannerTop')
-  // @ApiOperation({ summary: 'Upload multiple files' })
-  // @ApiResponse({
-  //   status: 201,
-  //   description: 'The files have been successfully uploaded.',
-  // })
-  // @ApiResponse({ status: 400, description: 'Invalid file format.' })
-  // @UseInterceptors(
-  //   FilesInterceptor('image', 20, {
-  //     storage: diskStorage({
-  //       destination: configuration().file_storage_path,
-  //       filename: editFileName,
-  //     }),
-  //     fileFilter: imageFileFilter,
-  //   }),
-  // )
-  // async settingBannerTop(@UploadedFiles() files, @Body() body) {
-  //   const fileType = body.fileType || 'logo';
-  //   const response = [];
-
-  //   const { width, height } =
-  //     configuration().image_dimension[fileType] ||
-  //     configuration().image_dimension.logo;
-
-  //   for (const file of files) {
-  //     const tempFilePath = `${file.destination}/temp-${file.filename}`;
-
-  //     if (fileType === 'logo' || fileType === 'banner') {
-  //       await sharp(file.path).resize(width, height).toFile(tempFilePath);
-
-  //       fs.unlinkSync(file.path);
-
-  //       fs.renameSync(tempFilePath, `${file.destination}/${file.filename}`);
-  //     }
-
-  //     response.push({
-  //       originalname: file.originalname,
-  //       filename: file.filename,
-  //     });
-  //   }
-
-  //   return response;
-  // }
-
   @JWT()
   @Post('/bannerCollection')
   @ApiOperation({ summary: 'Choose Smart Contract Addess to set banner' })
