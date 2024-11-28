@@ -40,7 +40,7 @@ export class SearchService {
     return {
       users: users.map(user => UserResponseDto.from(user)),
       nfts: nfts.map(nft => NftSearchResponseDto.from(nft)),
-      collections: collections.map(collection =>
+      nftCollections: collections.map(collection =>
         NftCollectionResponseDto.from(collection),
       ),
     };
