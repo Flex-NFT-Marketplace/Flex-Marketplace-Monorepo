@@ -14,6 +14,7 @@ import { WarpcastModule } from './warpcast/warpcast.module';
 import { SignatureModule } from './signature/signature.module';
 import { SystemModule } from './system/system.module';
 import { SearchModule } from './search/search.module';
+import { StakingModule } from './staking/staking.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { SearchModule } from './search/search.module';
     WarpcastModule,
     SystemModule,
     SearchModule,
+    StakingModule,
     CacheModule.register({ isGlobal: true }),
   ],
   controllers: [],

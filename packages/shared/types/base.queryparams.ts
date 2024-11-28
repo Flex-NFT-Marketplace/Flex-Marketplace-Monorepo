@@ -9,16 +9,15 @@ import {
 } from 'class-validator';
 
 export class BaseQueryParams {
-  @ApiProperty({ required: false, type: 'number', example: 1 })
+  @ApiProperty({ required: true, type: 'number', default: 1 })
   @Min(1)
   @IsOptional()
-  page = 1;
+  page: number;
 
-  @ApiProperty({ required: false, type: 'number', example: 10 })
+  @ApiProperty({ required: true, type: 'number', default: 10 })
   @Max(100)
   @Min(0)
-  @IsOptional()
-  size = 10;
+  size: number;
 
   @ApiProperty({ required: false, nullable: true })
   @IsAlphanumeric()

@@ -21,7 +21,7 @@ import { UserResponseDto } from '../user/dto/getUser.dto';
 export class SearchController {
   constructor(private readonly searchService: SearchService) {}
 
-  @Post('/search')
+  @Post()
   @ApiOperation({
     summary:
       'API To Search follow Name or Description of nfts or collections , name account',
