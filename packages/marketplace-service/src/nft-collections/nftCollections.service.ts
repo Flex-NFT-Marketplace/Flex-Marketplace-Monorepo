@@ -636,7 +636,7 @@ export class NftCollectionsService {
             name: `$collectionInfo.name`,
             avatar: `$collectionInfo.avatar`,
             cover: `$collectionInfo.cover`,
-            descipriton: `$collectionInfo.description`,
+            description: `$collectionInfo.description`,
             symbol: `$collectionInfo.symbol`,
           },
         },
