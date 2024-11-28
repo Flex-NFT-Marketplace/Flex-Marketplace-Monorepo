@@ -38,4 +38,17 @@ export default () => ({
     address: String(process.env.VALIDATOR_AD),
     privateKey: String(process.env.VALIDATOR_PK),
   },
+
+  file_storage_path: String(process.env.FILE_STORAGE_PATH),
+
+  image_dimension: {
+    logo: {
+      width: parseInt(process.env.LOGO_WIDTH, 10) || 300,
+      height: parseInt(process.env.LOGO_HEIGHT, 10) || 300,
+    },
+    banner: {
+      width: parseInt(process.env.BANNER_WIDTH, 10) || 1400,
+      height: parseInt(process.env.BANNER_HEIGHT, 10) || 800,
+    },
+  },
 });

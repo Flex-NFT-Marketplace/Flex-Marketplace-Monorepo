@@ -12,11 +12,9 @@ import {
   Post,
   Param,
   HttpCode,
-  BadRequestException,
   Inject,
   HttpException,
   HttpStatus,
-  UseGuards,
 } from '@nestjs/common';
 import { NftCollectionsService } from './nftCollections.service';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
@@ -33,7 +31,7 @@ import {
 import { updateCollectionMetadataDto } from './dto/updateCollectionMetadata.dto';
 import { isHexadecimal } from 'class-validator';
 import { NFTCollectionSuply } from './dto/CollectionSupply.dto';
-import { JWT, JwtAdminAuthGuard, User } from '@app/shared/modules';
+import { JWT, User } from '@app/shared/modules';
 import {
   NftCollectionHolders,
   NftCollectionHoldersQuery,
@@ -41,6 +39,10 @@ import {
 import { NftCollectionAttributeDto } from './dto/CollectionAttribute.dto';
 import { iInfoToken } from '@app/shared/modules/jwt/jwt.dto';
 import { UpdateCollectionDetailDto } from './dto/updateCollectionDetail.dto';
+import {
+  TrendingNftCollectionsDto,
+  TrendingNftCollectionsQueryDto,
+} from './dto/trendingNftCollection.dto';
 
 @ApiTags('NFT Collections')
 @Controller('nft-collection')
@@ -52,6 +54,8 @@ import { UpdateCollectionDetailDto } from './dto/updateCollectionDetail.dto';
   NftCollectionHolders,
   NftCollectionAttributeDto,
   UpdateCollectionDetailDto,
+  TrendingNftCollectionsDto,
+  TrendingNftCollectionsQueryDto,
 )
 export class NftCollectionsController {
   constructor(
@@ -245,6 +249,48 @@ export class NftCollectionsController {
     return data;
   }
 
+  @Post('tredingNftCollection')
+  @ApiOperation({
+    summary: 'Trending NFT Collections',
+  })
+  @ApiOkResponse({
+    schema: {
+      allOf: [
+        {
+          $ref: getSchemaPath(BaseResultPagination),
+        },
+        {
+          properties: {
+            data: {
+              allOf: [
+                {
+                  properties: {
+                    items: {
+                      type: 'array',
+                      items: {
+                        $ref: getSchemaPath(TrendingNftCollectionsDto),
+                      },
+                    },
+                  },
+                },
+              ],
+            },
+          },
+        },
+      ],
+    },
+  })
+  async getTrendingNftCollection(
+    @Body() query: TrendingNftCollectionsQueryDto,
+  ): Promise<BaseResultPagination<TrendingNftCollectionsDto>> {
+    const key = `trending-nft-collection- ${JSON.stringify({ ...query })}`;
+    let data = await this.cacheManager.get(key);
+    if (!data) {
+      data = await this.nftCollectionService.getTrendingNFTCollections(query);
+      await this.cacheManager.set(key, data, 60 * 60 * 1e3);
+    }
+    return data;
+  }
   @Get('total-suppply/:nftContract')
   async getTotalOwnerOfCollection(
     @Param('nftContract') param: string,

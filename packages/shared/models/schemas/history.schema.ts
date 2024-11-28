@@ -82,3 +82,4 @@ HistorySchema.index(
 );
 HistorySchema.index({ from: 1 });
 HistorySchema.index({ to: 1 });
+HistorySchema.index({ nftContract: 1, type: 1, timestamp: 1 });
