@@ -1,4 +1,4 @@
-import { Socials } from '@app/shared/models';
+import { Socials, Users } from '@app/shared/models';
 import { IsHexadecimal, IsOptional } from 'class-validator';
 
 export class GetUserInfoDto {
@@ -17,4 +17,18 @@ export class UserResponseDto {
   address: string;
   socials?: Socials;
   isVerified?: boolean;
+
+  static from(user: Users): UserResponseDto {
+    return {
+      username: user.username,
+      email: user.email,
+      avatar: user.avatar,
+      cover: user.cover,
+      about: user.about,
+      emailVerified: user.emailVerified,
+      address: user.address,
+      socials: user.socials,
+      isVerified: user.isVerified,
+    };
+  }
 }

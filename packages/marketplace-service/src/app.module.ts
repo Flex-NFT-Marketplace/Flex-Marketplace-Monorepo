@@ -13,6 +13,7 @@ import { DropPhaseModule } from './dropphases/dropPhases.module';
 import { WarpcastModule } from './warpcast/warpcast.module';
 import { SignatureModule } from './signature/signature.module';
 import { SystemModule } from './system/system.module';
+import { SearchModule } from './search/search.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { SystemModule } from './system/system.module';
     SignatureModule,
     WarpcastModule,
     SystemModule,
+    SearchModule,
     CacheModule.register({ isGlobal: true }),
   ],
   controllers: [],
