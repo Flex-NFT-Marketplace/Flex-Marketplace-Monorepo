@@ -476,7 +476,7 @@ export class SignatureService {
           })
           .exec();
         if (nft) {
-        await this.signatureModel
+          await this.signatureModel
             .findByIdAndUpdate(signature._id, {
               nft: nft._id,
             })
