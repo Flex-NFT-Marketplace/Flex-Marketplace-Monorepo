@@ -2,15 +2,30 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, SchemaTypes } from 'mongoose';
 import { BaseSchema } from './base.schema';
 import { ROLE } from '@app/shared/constants';
+import { ApiProperty } from '@nestjs/swagger';
 
 export type UserDocument = Users & Document;
 
 export class Socials {
-  facebook: string;
-  twitter: string;
-  telegram: string;
-  discord: string;
-  website: string;
+  @Prop()
+  @ApiProperty()
+  twitter?: string;
+
+  @Prop()
+  @ApiProperty()
+  telegram?: string;
+
+  @Prop()
+  @ApiProperty()
+  discord?: string;
+
+  @Prop()
+  @ApiProperty()
+  website?: string;
+
+  @Prop()
+  @ApiProperty()
+  warpcast?: string;
 }
 
 @Schema({

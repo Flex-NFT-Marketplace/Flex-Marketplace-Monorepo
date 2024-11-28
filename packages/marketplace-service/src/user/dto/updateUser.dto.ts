@@ -1,3 +1,4 @@
+import { Socials } from '@app/shared/models';
 import { ApiProperty } from '@nestjs/swagger';
 import { IsEmail, IsString, IsUrl, IsOptional } from 'class-validator';
 
@@ -26,4 +27,8 @@ export class UpdateUserInfo {
   @ApiProperty()
   @IsString()
   about?: string;
+
+  @IsOptional()
+  @ApiProperty()
+  social?: Socials;
 }

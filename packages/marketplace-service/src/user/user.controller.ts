@@ -5,18 +5,25 @@ import {
   ApiOkResponse,
   getSchemaPath,
 } from '@nestjs/swagger';
-import { Controller, Get, Query, Post, Body } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Query,
+  Post,
+  Body,
+  BadRequestException,
+} from '@nestjs/common';
 import { UserService } from './user.service';
 import { JWT, User } from '@app/shared/modules';
 import { BaseResult } from '@app/shared/types/base.result';
-import { UserDto } from '@app/shared/models';
+import { Socials } from '@app/shared/models';
 import { iInfoToken } from '@app/shared/modules/jwt/jwt.dto';
-import { GetUserInfoDto } from './dto/getUser.dto';
+import { GetUserInfoDto, UserResponseDto } from './dto/getUser.dto';
 import { UpdateUserInfo } from './dto/updateUser.dto';
 
 @ApiTags('Users')
 @Controller('user')
-@ApiExtraModels(UserDto)
+@ApiExtraModels(UserResponseDto, Socials)
 export class UsersController {
   constructor(private readonly userService: UserService) {}
 
@@ -35,7 +42,7 @@ export class UsersController {
             data: {
               allOf: [
                 {
-                  $ref: getSchemaPath(UserDto),
+                  $ref: getSchemaPath(UserResponseDto),
                 },
               ],
             },
@@ -44,12 +51,13 @@ export class UsersController {
       ],
     },
   })
-  async getUserInfo(
-    @Query() query: GetUserInfoDto,
-  ): Promise<BaseResult<UserDto>> {
-    const data = await this.userService.getUserInfo(query);
-
-    return new BaseResult<UserDto>(data);
+  async getUserInfo(@Query() query: GetUserInfoDto) {
+    try {
+      const data = await this.userService.getUserInfo(query);
+      return new BaseResult(data);
+    } catch (error) {
+      throw new BadRequestException(error.message);
+    }
   }
 
   @JWT()
