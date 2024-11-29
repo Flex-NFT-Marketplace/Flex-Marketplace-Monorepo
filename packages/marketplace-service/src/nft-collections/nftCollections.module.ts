@@ -14,6 +14,8 @@ import {
   Nfts,
   PaymentTokenSchema,
   PaymentTokens,
+  Signature,
+  SignatureSchema,
   UserSchema,
   Users,
 } from '@app/shared/models';
@@ -54,6 +56,10 @@ import { JwtAdminStrategy } from '@app/shared/modules';
         schema: HistorySchema,
       },
       { name: Chains.name, schema: ChainSchema },
+      {
+        name: Signature.name,
+        schema: SignatureSchema,
+      },
     ]),
     BullModule.registerQueue(
       {

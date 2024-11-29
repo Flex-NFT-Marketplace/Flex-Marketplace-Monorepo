@@ -13,6 +13,7 @@ import { NftFilterQueryParams } from './dto/nftQuery.dto';
 import { BaseResult, BaseResultPagination } from '@app/shared/types';
 import { MetadataService } from '@app/offchain-worker/src/metadata/metadata.service';
 import { GetNftQueryDto } from './dto/getNftQuery.dto';
+import { SignatureService } from '../signature/signature.service';
 
 @Injectable()
 export class NftService {
@@ -21,6 +22,7 @@ export class NftService {
     private readonly nftModel: Model<NftDocument>,
     private readonly userService: UserService,
     private readonly metadataService: MetadataService,
+    private readonly signatureService: SignatureService,
   ) {}
 
   async getNftsByQuery(
@@ -32,11 +34,11 @@ export class NftService {
       if (isValidObjectId(query.owner)) {
         filter.owner = query.owner;
       } else {
-        const user = this.userService.getOrCreateUser(
+        const user = await this.userService.getOrCreateUser(
           formattedContractAddress(query.owner),
         );
         if (user) {
-          filter.owner = (await user)._id;
+          filter.owner = user._id;
         }
       }
     }
@@ -144,8 +146,43 @@ export class NftService {
       20,
     );
 
+    //Todo code of signatureService
+    let bestAsk: any;
+
+    if (query.owner != '') {
+      bestAsk = await this.signatureService.getSignatureByOwner(
+        query.nftContract,
+        query.tokenId,
+        query.owner,
+      );
+    } else {
+      bestAsk = await this.signatureService.getSignature(
+        query.nftContract,
+        query.tokenId,
+      );
+    }
+
+    const listAsk = await this.signatureService.getSignatures(
+      query.nftContract,
+      query.tokenId,
+    );
+
+    const listBid = await this.signatureService.getBidSignatures(
+      query.nftContract,
+      query.tokenId,
+    );
+
+    const orderData = {
+      bestAsk,
+      listAsk,
+      listBid,
+    };
+
     result.data = new PaginationDto(
-      afterAlterItem,
+      {
+        nft: afterAlterItem,
+        orderData,
+      },
       count,
       query.page,
       query.size,
@@ -166,11 +203,11 @@ export class NftService {
       if (isValidObjectId(query.owner)) {
         filter.owner = query.owner;
       } else {
-        const user = this.userService.getOrCreateUser(
+        const user = await this.userService.getOrCreateUser(
           formattedContractAddress(query.owner),
         );
         if (user) {
-          filter.owner = (await user)._id;
+          filter.owner = user._id;
         }
       }
     }

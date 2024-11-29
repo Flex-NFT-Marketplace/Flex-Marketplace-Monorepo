@@ -81,7 +81,7 @@ export class Signature {
   @Prop()
   buyer_address: string;
 
-  @Prop({ type: Types.ObjectId, ref: 'NFT' })
+  @Prop({ type: Types.ObjectId, ref: 'Nfts' })
   nft: Types.ObjectId;
 
   @Prop()
@@ -90,3 +90,4 @@ export class Signature {
 
 export const SignatureSchema = SchemaFactory.createForClass(Signature);
 SignatureSchema.index({ contract_address: 1, token_id: 1 });
+SignatureSchema.index({ signer: 1, status: 1 });

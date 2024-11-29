@@ -11,6 +11,9 @@ export class SearchQueryDto extends BaseQueryParams {
 
 export class NftSearchResponseDto {
   @ApiProperty()
+  name?: string;
+
+  @ApiProperty()
   nftContract: string;
 
   @ApiProperty()
@@ -42,6 +45,7 @@ export class NftSearchResponseDto {
 
   static from(nft: Nfts): NftSearchResponseDto {
     return {
+      name: nft.name,
       nftContract: nft.nftContract,
       tokenId: nft.tokenId.toString(),
       royaltyRate: nft.royaltyRate,
@@ -61,19 +65,22 @@ export class NftCollectionResponseDto {
   name: string;
 
   @ApiProperty()
-  description: string;
+  description?: string;
 
   @ApiProperty()
-  cover: string;
+  cover?: string;
 
   @ApiProperty()
   standard: string;
 
   @ApiProperty()
-  avatar: string;
+  avatar?: string;
 
   @ApiProperty()
   nftContract: string;
+
+  @ApiProperty()
+  featuredImage?: string;
 
   static from(collection: NftCollections): NftCollectionResponseDto {
     return {
@@ -83,6 +90,7 @@ export class NftCollectionResponseDto {
       standard: collection.standard,
       nftContract: collection.nftContract,
       avatar: collection.avatar,
+      featuredImage: collection.featuredImage,
     };
   }
 }

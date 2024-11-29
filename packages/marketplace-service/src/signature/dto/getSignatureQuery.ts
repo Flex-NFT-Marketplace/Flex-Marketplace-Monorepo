@@ -1,7 +1,9 @@
+import { IsOptional } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { BaseQueryParams } from '@app/shared/types';
 export class GetSignatureActivityQueryDTO extends BaseQueryParams {
   @ApiProperty()
+  @IsOptional()
   contract_address?: string;
 
   @ApiProperty()

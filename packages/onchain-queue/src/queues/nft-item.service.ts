@@ -409,12 +409,12 @@ export class NftItemService {
     );
     let nftDocument: NftDocument = null;
 
-    let owner = await this.web3Service.getERC721Owner(
+    const owner = await this.web3Service.getERC721Owner(
       nftAddress,
       tokenId,
       chain.rpc,
     );
-    let ownerDocument = owner
+    const ownerDocument = owner
       ? await this.userService.getOrCreateUser(owner)
       : null;
     if (existedNft) {
@@ -1086,7 +1086,7 @@ export class NftItemService {
     if (offerDocument) {
       await this.offerModel.findOneAndUpdate(
         { _id: offerDocument._id },
-        { $set: { status: OfferStatus.cancelled } },
+        { $set: { status: OfferStatus.Cancelled } },
       );
 
       newNftDocument = await this.nftModel.findOne({
@@ -1202,7 +1202,7 @@ export class NftItemService {
     const offerDocuments = await this.offerModel.find({
       buyer: userDocument,
       saltNonce: { $lt: newMinNonce },
-      status: OfferStatus.pending,
+      status: OfferStatus.Pending,
     });
 
     if (offerDocuments.length > 0) {
@@ -1213,7 +1213,7 @@ export class NftItemService {
               _id: offer._id,
             },
             update: {
-              status: OfferStatus.cancelled,
+              status: OfferStatus.Cancelled,
             },
           },
         });
@@ -1311,8 +1311,8 @@ export class NftItemService {
       : null;
 
     await this.offerModel.updateMany(
-      { seller: sellerUser, status: OfferStatus.pending },
-      { $set: { status: OfferStatus.cancelled } },
+      { seller: sellerUser, status: OfferStatus.Pending },
+      { $set: { status: OfferStatus.Cancelled } },
     );
 
     if (sellerNft) {
@@ -1647,14 +1647,14 @@ export class NftItemService {
             },
             update: {
               remainingAmount: 0,
-              status: OfferStatus.accepted,
+              status: OfferStatus.Accepted,
             },
           },
         });
 
         await this.offerModel.updateMany(
-          { _id: { $ne: offer._id }, status: OfferStatus.pending },
-          { $set: { status: OfferStatus.cancelled } },
+          { _id: { $ne: offer._id }, status: OfferStatus.Pending },
+          { $set: { status: OfferStatus.Cancelled } },
         );
       }
 
@@ -1762,7 +1762,7 @@ export class NftItemService {
                   remainingUsage == 0
                     ? {
                         remainingAmount: remainingUsage,
-                        status: OfferStatus.accepted,
+                        status: OfferStatus.Accepted,
                       }
                     : {
                         remainingAmount: remainingUsage,
@@ -1776,9 +1776,9 @@ export class NftItemService {
           {
             _id: { $ne: offer._id },
             remainingAmount: { $gt: sellerNft.amount },
-            status: OfferStatus.pending,
+            status: OfferStatus.Pending,
           },
-          { $set: { status: OfferStatus.cancelled } },
+          { $set: { status: OfferStatus.Cancelled } },
         );
       } catch (error) {}
     }

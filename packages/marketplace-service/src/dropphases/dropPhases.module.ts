@@ -7,6 +7,8 @@ import {
   DropPhases,
   NftCollectionSchema,
   NftCollections,
+  Signature,
+  SignatureSchema,
   UserSchema,
   Users,
 } from '@app/shared/models';
@@ -22,6 +24,10 @@ import { Web3Service } from '@app/web3-service/web3.service';
       { name: Users.name, schema: UserSchema },
       { name: NftCollections.name, schema: NftCollectionSchema },
       { name: Chains.name, schema: ChainSchema },
+      {
+        name: Signature.name,
+        schema: SignatureSchema,
+      },
     ]),
   ],
   providers: [DropPhaseService, UserService, Web3Service],

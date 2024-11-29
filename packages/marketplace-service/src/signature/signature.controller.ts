@@ -10,12 +10,14 @@ import {
 } from '@nestjs/common';
 import { SignatureDTO, UpdateSignatureDTO } from './dto/signature.dto';
 import { SignatureService } from './signature.service';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiExtraModels, ApiTags } from '@nestjs/swagger';
 import { BaseResult, BaseResultPagination } from '@app/shared/types';
 import { PaginationDto } from '@app/shared/types/pagination.dto';
+import { GetSignatureActivityQueryDTO } from './dto/getSignatureQuery';
 
 @ApiTags('Signatures')
 @Controller('signatures')
+@ApiExtraModels(GetSignatureActivityQueryDTO)
 export class SignatureController {
   constructor(private readonly signatureService: SignatureService) {}
 
@@ -31,20 +33,21 @@ export class SignatureController {
   }
 
   @Get('/activity')
-  async getNFTActivity(
-    @Query('contract_address') contract_address: string,
-    @Query('page') page?: number,
-    @Query('limit') limit?: number,
-    @Query('sortPrice') sortPrice?: string,
-    @Query('minPrice') minPrice?: number,
-    @Query('maxPrice') maxPrice?: number,
-    @Query('status') status?: string,
-    @Query('search') search?: string,
-  ) {
+  async getNFTActivity(@Query() query: GetSignatureActivityQueryDTO) {
+    const {
+      contract_address,
+      page,
+      size,
+      sortPrice,
+      minPrice,
+      maxPrice,
+      status,
+      search,
+    } = query;
     const res = await this.signatureService.getNFTActivity(
       contract_address,
       page,
-      limit,
+      size,
       sortPrice,
       minPrice,
       maxPrice,
@@ -53,7 +56,7 @@ export class SignatureController {
     );
 
     const result = new BaseResultPagination<any>();
-    result.data = new PaginationDto<any>(res.data, res.totalPages, page, limit);
+    result.data = new PaginationDto<any>(res.data, res.totalPages, page, size);
     return result;
   }
 

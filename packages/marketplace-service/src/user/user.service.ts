@@ -1,5 +1,5 @@
 import { InjectModel } from '@nestjs/mongoose';
-import { UserDocument, Users } from '@app/shared/models';
+import { Signature, UserDocument, Users } from '@app/shared/models';
 import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import { Model } from 'mongoose';
 import { Web3Service } from '@app/web3-service/web3.service';
@@ -7,11 +7,17 @@ import { v1 as uuidv1 } from 'uuid';
 import { formattedContractAddress } from '@app/shared/utils';
 import { UpdateUserInfo } from './dto/updateUser.dto';
 import { GetUserInfoDto, UserResponseDto } from './dto/getUser.dto';
-import { BaseResult } from '@app/shared/types';
+import { BaseResult, BaseResultPagination } from '@app/shared/types';
+import { QueryUserActivity } from './dto/userActivity.dto';
+import { SignatureDTO } from '../signature/dto/signature.dto';
+import { PaginationDto } from '@app/shared/types/pagination.dto';
 
 @Injectable()
 export class UserService {
-  constructor(@InjectModel(Users.name) private userModel: Model<Users>) {
+  constructor(
+    @InjectModel(Users.name) private userModel: Model<Users>,
+    @InjectModel(Signature.name) private signatureModel: Model<Signature>,
+  ) {
     this.web3Service = new Web3Service();
   }
   web3Service: Web3Service;
@@ -133,5 +139,37 @@ export class UserService {
     );
 
     return new BaseResult('Update profile successful.');
+  }
+
+  async getUserActivity(
+    query: QueryUserActivity,
+  ): Promise<BaseResultPagination<SignatureDTO>> {
+    const { page, size, skipIndex, userAddress, status, sort } = query;
+    const result = new BaseResultPagination<SignatureDTO>();
+    const filter: any = {};
+    if (userAddress) {
+      filter.signer = userAddress;
+    }
+    if (status) {
+      filter.status = status;
+    }
+
+    const count = await this.signatureModel.countDocuments(filter);
+    if (count === 0 || size === 0) {
+      result.data = new PaginationDto<SignatureDTO>([], count, page, size);
+      return result;
+    }
+
+    const items = await this.signatureModel
+      .find(filter)
+      .skip(skipIndex)
+      .limit(size)
+      .sort(sort)
+      .populate('nft')
+      .exec();
+
+    result.data = new PaginationDto(items, count, page, size);
+
+    return result;
   }
 }

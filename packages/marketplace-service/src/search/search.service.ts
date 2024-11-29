@@ -18,6 +18,34 @@ export class SearchService {
   ) {}
 
   async search(query: SearchQueryDto) {
+    if (!query.search) {
+      const users = await this.userModel
+        .find()
+        .sort(query.sort)
+        .skip(query.skipIndex)
+        .limit(query.size)
+        .exec();
+      const nfts = await this.nftsModel
+        .find()
+        .sort(query.sort)
+        .skip(query.skipIndex)
+        .limit(query.size)
+        .exec();
+      const collections = await this.nftCollectionsModel
+        .find()
+        .sort(query.sort)
+        .skip(query.skipIndex)
+        .limit(query.size)
+        .exec();
+
+      return {
+        users: users.map(user => UserResponseDto.from(user)),
+        nfts: nfts.map(nft => NftSearchResponseDto.from(nft)),
+        nftCollections: collections.map(collection =>
+          NftCollectionResponseDto.from(collection),
+        ),
+      };
+    }
     const users = await this.userModel
       .find({ address: { $regex: query.search, $options: 'i' } })
       .sort(query.sort)
@@ -36,7 +64,7 @@ export class SearchService {
       .skip(query.skipIndex)
       .limit(query.size)
       .exec();
-    console.log('data Collection', collections);
+
     return {
       users: users.map(user => UserResponseDto.from(user)),
       nfts: nfts.map(nft => NftSearchResponseDto.from(nft)),

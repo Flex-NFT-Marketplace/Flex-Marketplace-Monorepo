@@ -1,4 +1,10 @@
-import { BadRequestException, Body, Controller, Post } from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Inject,
+  Post,
+} from '@nestjs/common';
 import {
   ApiExtraModels,
   ApiOkResponse,
@@ -14,12 +20,17 @@ import {
 import { SearchService } from './search.service';
 import { BaseResult } from '@app/shared/types';
 import { UserResponseDto } from '../user/dto/getUser.dto';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Cache } from 'cache-manager';
 
 @ApiTags('Search ')
 @Controller('search')
 @ApiExtraModels(NftSearchResponseDto, NftCollectionResponseDto)
 export class SearchController {
-  constructor(private readonly searchService: SearchService) {}
+  constructor(
+    private readonly searchService: SearchService,
+    @Inject(CACHE_MANAGER) private cacheManager: Cache,
+  ) {}
 
   @Post()
   @ApiOperation({
@@ -63,10 +74,18 @@ export class SearchController {
   })
   async search(@Body() query: SearchQueryDto) {
     try {
+      if (!query.search) {
+        const key = `get-search - ${JSON.stringify({ ...query })}`;
+        let data = await this.cacheManager.get(key);
+        if (!data) {
+          data = await this.searchService.search(query);
+          await this.cacheManager.set(key, data, 300000);
+          return new BaseResult(data);
+        }
+      }
       const data = await this.searchService.search(query);
       return new BaseResult(data);
     } catch (error) {
-      console.log('What Wrong', error);
       throw new BadRequestException('Something Went  Wrong from Search');
     }
   }

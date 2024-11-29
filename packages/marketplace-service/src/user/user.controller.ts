@@ -20,6 +20,9 @@ import { Socials } from '@app/shared/models';
 import { iInfoToken } from '@app/shared/modules/jwt/jwt.dto';
 import { GetUserInfoDto, UserResponseDto } from './dto/getUser.dto';
 import { UpdateUserInfo } from './dto/updateUser.dto';
+import { QueryUserActivity } from './dto/userActivity.dto';
+import { BaseResultPagination } from '@app/shared/types';
+import { SignatureDTO } from '../signature/dto/signature.dto';
 
 @ApiTags('Users')
 @Controller('user')
@@ -67,5 +70,20 @@ export class UsersController {
   })
   async updateProfile(@Body() body: UpdateUserInfo, @User() user: iInfoToken) {
     return await this.userService.updateUserInformation(user.sub, body);
+  }
+
+  @Get('activity/:userAddress')
+  @ApiOperation({
+    summary: 'API Get User Activity Information by User Address and Status',
+  })
+  async getUserActivity(
+    @Query() query: QueryUserActivity,
+  ): Promise<BaseResultPagination<SignatureDTO>> {
+    try {
+      const data = await this.userService.getUserActivity(query);
+      return data;
+    } catch (error) {
+      throw new BadRequestException(error.message);
+    }
   }
 }
