@@ -436,10 +436,12 @@ export class SignatureService {
     const dataItems = await this.signatureModel
       .find(filter)
       .sort(sortQuery)
+      .skip(page)
+      .limit(size)
       .populate(['nft'])
       .exec();
 
-    console.log('dataItems', dataItems);
+    // console.log('dataItems', dataItems);
     result.data = new PaginationDto(dataItems, total, page, size);
     // console.log('dataItems', dataItems);
     // try {
@@ -494,6 +496,7 @@ export class SignatureService {
     // } catch (error) {
     //   this.logger.error(error);
     // }
+    console.log('Data', result);
     return result;
   }
 
