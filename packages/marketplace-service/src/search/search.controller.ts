@@ -75,6 +75,7 @@ export class SearchController {
   async search(@Body() query: SearchQueryDto) {
     try {
       if (!query.search) {
+        console.log('Uodate', query.search);
         const key = `get-search - ${JSON.stringify({ ...query })}`;
         let data = await this.cacheManager.get(key);
         if (!data) {
@@ -82,6 +83,7 @@ export class SearchController {
           await this.cacheManager.set(key, data, 300000);
           return new BaseResult(data);
         }
+        return new BaseResult(data);
       }
       const data = await this.searchService.search(query);
       return new BaseResult(data);

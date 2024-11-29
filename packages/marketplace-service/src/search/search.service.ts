@@ -26,13 +26,18 @@ export class SearchService {
         .limit(query.size)
         .exec();
       const nfts = await this.nftsModel
-        .find()
+        .find({
+          image: { $exists: true, $ne: null },
+        })
         .sort(query.sort)
         .skip(query.skipIndex)
         .limit(query.size)
         .exec();
       const collections = await this.nftCollectionsModel
-        .find()
+        .find({
+          avatar: { $exists: true, $ne: null },
+          cover: { $exists: true, $ne: null },
+        })
         .sort(query.sort)
         .skip(query.skipIndex)
         .limit(query.size)
