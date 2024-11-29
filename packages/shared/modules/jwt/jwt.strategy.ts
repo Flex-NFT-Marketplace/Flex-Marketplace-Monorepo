@@ -7,6 +7,7 @@ import { UserDocument, Users } from '@app/shared/models';
 import { Model } from 'mongoose';
 import configuration from '@app/shared/configuration';
 import { JwtPayload } from './jwt.dto';
+import { formattedContractAddress } from '@app/shared/utils';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
@@ -24,7 +25,9 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
 
   async validate(payload: JwtPayload) {
     const { sub } = payload;
-    const user = await this.userModel.findOne({ address: sub }).exec();
+    const user = await this.userModel
+      .findOne({ address: formattedContractAddress(sub.toLocaleLowerCase()) })
+      .exec();
     if (!user) {
       throw new UnauthorizedException();
     }

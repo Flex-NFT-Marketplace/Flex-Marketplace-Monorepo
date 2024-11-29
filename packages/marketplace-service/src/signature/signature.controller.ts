@@ -10,7 +10,7 @@ import {
 } from '@nestjs/common';
 import { SignatureDTO, UpdateSignatureDTO } from './dto/signature.dto';
 import { SignatureService } from './signature.service';
-import { ApiExtraModels, ApiTags } from '@nestjs/swagger';
+import { ApiExtraModels, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { BaseResult, BaseResultPagination } from '@app/shared/types';
 import { PaginationDto } from '@app/shared/types/pagination.dto';
 import { GetSignatureActivityQueryDTO } from './dto/getSignatureQuery';
@@ -33,31 +33,17 @@ export class SignatureController {
   }
 
   @Get('/activity')
+  @ApiOperation({
+    summary: 'Get NFT activity signature',
+    description: 'Get nft activity signature data',
+  })
   async getNFTActivity(@Query() query: GetSignatureActivityQueryDTO) {
-    const {
-      contract_address,
-      page,
-      size,
-      sortPrice,
-      minPrice,
-      maxPrice,
-      status,
-      search,
-    } = query;
-    const res = await this.signatureService.getNFTActivity(
-      contract_address,
-      page,
-      size,
-      sortPrice,
-      minPrice,
-      maxPrice,
-      status,
-      search,
-    );
-
-    const result = new BaseResultPagination<any>();
-    result.data = new PaginationDto<any>(res.data, res.totalPages, page, size);
-    return result;
+    try {
+      const res = await this.signatureService.getNFTActivity(query);
+      return res;
+    } catch (error) {
+      throw new BadRequestException(error.message);
+    }
   }
 
   @Get('bid/:contract_address/:token_id')

@@ -16,6 +16,7 @@ import {
   TxStatusEnum,
 } from '@app/shared/models/schemas/signature.schema';
 import { RPC_PROVIDER } from '@app/shared/constants';
+import { GetSignatureActivityQueryDTO } from './dto/getSignatureQuery';
 
 @Injectable()
 export class SignatureService {
@@ -387,17 +388,18 @@ export class SignatureService {
     }
   };
 
-  async getNFTActivity(
-    contract_address: string,
-    page: number = 1,
-    limit: number = 50,
-    sortPrice: string = 'asc',
-    minPrice: number = 0,
-    maxPrice: number = 1000,
-    status: string = 'ALL',
-    search: string = '',
-  ) {
+  async getNFTActivity(query: GetSignatureActivityQueryDTO) {
     let sortQuery = {};
+    const {
+      contract_address,
+      sortPrice,
+      minPrice,
+      maxPrice,
+      status,
+      search,
+      page,
+      size,
+    } = query;
 
     switch (sortPrice) {
       case 'asc':
@@ -408,6 +410,17 @@ export class SignatureService {
         break;
       default:
         sortQuery = { updatedAt: -1 };
+    }
+    const filter: any = {};
+    if (query.contract_address) {
+      filter.contract_address = query.contract_address;
+    }
+    if (query.status) {
+      switch (query.status) {
+        case 'LISTED':
+          filter.price = 'LISTING';
+          break;
+      }
     }
 
     try {
@@ -437,14 +450,14 @@ export class SignatureService {
         {
           $unwind: {
             path: '$nft',
-            preserveNullAndEmptyArrays: true, // Đặt thành false nếu bạn muốn lọc ra các tài liệu không khớp trong $lookup
+            preserveNullAndEmptyArrays: true,
           },
         },
         {
-          $skip: (page - 1) * limit,
+          $skip: (page - 1) * size,
         },
         {
-          $limit: limit,
+          $limit: size,
         },
       ];
 
@@ -452,7 +465,7 @@ export class SignatureService {
 
       const totalDocuments = await this.signatureModel.countDocuments().exec();
 
-      const totalPages = Math.ceil(totalDocuments / limit);
+      const totalPages = Math.ceil(totalDocuments / size);
 
       let nextPage = Number(page) + 1;
 

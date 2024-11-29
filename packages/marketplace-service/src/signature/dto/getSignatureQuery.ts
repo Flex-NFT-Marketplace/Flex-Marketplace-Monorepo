@@ -1,23 +1,42 @@
-import { IsOptional } from 'class-validator';
+import { IsHexadecimal, IsOptional, IsString } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { BaseQueryParams } from '@app/shared/types';
 export class GetSignatureActivityQueryDTO extends BaseQueryParams {
-  @ApiProperty()
+  @ApiProperty({
+    required: false,
+    description: 'Contract address of NFT',
+  })
   @IsOptional()
+  @IsHexadecimal()
   contract_address?: string;
 
-  @ApiProperty()
+  @ApiProperty({
+    required: false,
+  })
+  @IsOptional()
   sortPrice?: string;
 
-  @ApiProperty()
+  @ApiProperty({
+    required: false,
+  })
+  @IsOptional()
   minPrice?: number;
 
-  @ApiProperty()
+  @ApiProperty({
+    required: false,
+  })
+  @IsOptional()
   maxPrice?: number;
 
-  @ApiProperty()
+  @ApiProperty({
+    required: false,
+  })
+  @IsOptional()
   status?: string;
 
-  @ApiProperty()
+  @ApiProperty({
+    required: false,
+  })
+  @IsOptional()
   search?: string;
 }
