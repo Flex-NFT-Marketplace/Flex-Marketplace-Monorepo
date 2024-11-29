@@ -1,0 +1,51 @@
+{
+  "name": "flexhaus-service",
+  "version": "0.0.1",
+  "description": "",
+  "author": "",
+  "license": "UNLICENSED",
+  "scripts": {
+    "build": "nest build",
+    "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
+    "start": "nest start",
+    "start:dev": "nest start --watch",
+    "start:debug": "nest start --debug --watch",
+    "start:prod": "node dist/main",
+    "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:cov": "jest --coverage",
+    "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
+    "test:e2e": "jest --config ./test/jest-e2e.json"
+  },
+  "dependencies": {
+    "@nestjs/cache-manager": "^2.2.2",
+    "cache-manager": "^5.6.1",
+    "cache-manager-ioredis": "^2.1.0",
+    "reflect-metadata": "^0.2.0",
+    "rxjs": "^7.8.1",
+    "shared": "0.0.1",
+    "web3-service": "0.0.1"
+  },
+  "jest": {
+    "moduleFileExtensions": [
+      "js",
+      "json",
+      "ts"
+    ],
+    "rootDir": ".",
+    "testRegex": ".*\\.spec\\.ts$",
+    "transform": {
+      "^.+\\.(t|j)s$": "ts-jest"
+    },
+    "collectCoverageFrom": [
+      "**/*.(t|j)s"
+    ],
+    "coverageDirectory": "../coverage",
+    "testEnvironment": "node",
+    "moduleNameMapper": {
+      "^@app/shared(|/.*)$": "<rootDir>/../../packages/shared/$1",
+      "^@app/web3-service(|/.*)$": "<rootDir>/../../packages/web3-service/$1"
+    }
+  }
+}
