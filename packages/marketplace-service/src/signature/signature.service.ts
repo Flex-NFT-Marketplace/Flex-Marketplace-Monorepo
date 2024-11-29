@@ -398,6 +398,7 @@ export class SignatureService {
       status,
       search,
       page,
+      sort,
       size,
     } = query;
 
@@ -415,14 +416,18 @@ export class SignatureService {
     if (query.contract_address) {
       filter.contract_address = query.contract_address;
     }
+    if (query.minPrice) {
+      filter.price = { $gte: Number(minPrice) };
+    }
+    if (query.maxPrice) {
+      filter.price = { $lte: Number(maxPrice) };
+    }
     if (query.status) {
-      switch (query.status) {
-        case 'LISTED':
-          filter.price = 'LISTING';
-          break;
-      }
+      filter.status = query.status;
     }
 
+    const dataItems = await this.signatureModel.find(filter).sort(sort).exec();
+    console.log('dataItems', dataItems);
     try {
       const agg = [
         {

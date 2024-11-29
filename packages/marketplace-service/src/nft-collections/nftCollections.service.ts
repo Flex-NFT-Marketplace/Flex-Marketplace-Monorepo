@@ -376,9 +376,23 @@ export class NftCollectionsService {
         $unwind: '$statistic',
       },
       {
+        $lookup: {
+          from: 'nftcollections', // Name of the `nftCollection` collection
+          localField: '_id', // Field in the current collection (`nftContract`)
+          foreignField: 'nftContract', // Field in the `nftCollection` collection
+          as: 'collectionInfo', // Output array field name for joined data
+        },
+      },
+      {
+        $unwind: {
+          path: '$collectionInfo', // Unwind the array to get a single object
+          preserveNullAndEmptyArrays: true, // Keep the document if no match is found
+        },
+      },
+      {
         $project: {
           _id: 0,
-          nftContract: '$_id',
+          // nftContract: '$_id',
           oneDayVol: '$statistic.vol1D',
           sevenDayVol: '$statistic.vol7D',
           oneDayChange: {
@@ -444,6 +458,13 @@ export class NftCollectionsService {
             },
           },
           totalVol: 1,
+          nftCollection: {
+            name: `$collectionInfo.name`,
+            avatar: `$collectionInfo.avatar`,
+            cover: `$collectionInfo.cover`,
+            description: `$collectionInfo.description`,
+            symbol: `$collectionInfo.symbol`,
+          },
         },
       },
     ]);
