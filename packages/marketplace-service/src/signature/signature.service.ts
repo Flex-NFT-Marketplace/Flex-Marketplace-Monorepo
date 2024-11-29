@@ -17,6 +17,8 @@ import {
 } from '@app/shared/models/schemas/signature.schema';
 import { RPC_PROVIDER } from '@app/shared/constants';
 import { GetSignatureActivityQueryDTO } from './dto/getSignatureQuery';
+import { BaseResultPagination } from '@app/shared/types';
+import { PaginationDto } from '@app/shared/types/pagination.dto';
 
 @Injectable()
 export class SignatureService {
@@ -389,7 +391,6 @@ export class SignatureService {
   };
 
   async getNFTActivity(query: GetSignatureActivityQueryDTO) {
-    let sortQuery = {};
     const {
       contract_address,
       sortPrice,
@@ -398,10 +399,28 @@ export class SignatureService {
       status,
       search,
       page,
-      sort,
       size,
     } = query;
 
+    const filter: any = {};
+    const result = new BaseResultPagination<any>();
+    if (contract_address) {
+      filter.contract_address = query.contract_address;
+    }
+    if (minPrice || maxPrice) {
+      filter.price = {};
+      if (minPrice) {
+        filter.price.$gte = Number(minPrice);
+      }
+      if (maxPrice) {
+        filter.price.$lte = Number(maxPrice);
+      }
+    }
+    if (status) {
+      filter.status = query.status;
+    }
+
+    let sortQuery = {};
     switch (sortPrice) {
       case 'asc':
         sortQuery = { price: 1, updatedAt: -1 };
@@ -412,74 +431,70 @@ export class SignatureService {
       default:
         sortQuery = { updatedAt: -1 };
     }
-    const filter: any = {};
-    if (query.contract_address) {
-      filter.contract_address = query.contract_address;
-    }
-    if (query.minPrice) {
-      filter.price = { $gte: Number(minPrice) };
-    }
-    if (query.maxPrice) {
-      filter.price = { $lte: Number(maxPrice) };
-    }
-    if (query.status) {
-      filter.status = query.status;
-    }
 
-    const dataItems = await this.signatureModel.find(filter).sort(sort).exec();
+    const total = await this.signatureModel.countDocuments(filter);
+    const dataItems = await this.signatureModel
+      .find(filter)
+      .sort(sortQuery)
+      .populate(['nft'])
+      .exec();
+
     console.log('dataItems', dataItems);
-    try {
-      const agg = [
-        {
-          $match: {
-            ...(contract_address != '' && {
-              contract_address: contract_address,
-            }),
-            price: { $gte: Number(minPrice), $lte: Number(maxPrice) },
-            ...(status === 'LISTED'
-              ? { status: 'LISTING' }
-              : { status: { $ne: 'ORDER_CANCEL' } }),
-          },
-        },
-        {
-          $sort: sortQuery,
-        },
-        {
-          $lookup: {
-            from: 'nftcollections', // Tên của bộ sưu tập NFT
-            localField: 'nft', // Trường từ các tài liệu đầu vào trong giai đoạn $lookup
-            foreignField: '_id', // Trường từ các tài liệu trong bộ sưu tập "from"
-            as: 'nft', // Trường mảng thêm vào các tài liệu đầu vào chứa các tài liệu khớp từ bộ sưu tập "from"
-          },
-        },
-        {
-          $unwind: {
-            path: '$nft',
-            preserveNullAndEmptyArrays: true,
-          },
-        },
-        {
-          $skip: (page - 1) * size,
-        },
-        {
-          $limit: size,
-        },
-      ];
+    result.data = new PaginationDto(dataItems, total, page, size);
+    // console.log('dataItems', dataItems);
+    // try {
+    //   const agg = [
+    //     {
+    //       $match: {
+    //         ...(contract_address != '' && {
+    //           contract_address: contract_address,
+    //         }),
+    //         price: { $gte: Number(minPrice), $lte: Number(maxPrice) },
+    //         ...(status === 'LISTED'
+    //           ? { status: 'LISTING' }
+    //           : { status: { $ne: 'ORDER_CANCEL' } }),
+    //       },
+    //     },
+    //     {
+    //       $sort: sortQuery,
+    //     },
+    //     {
+    //       $lookup: {
+    //         from: 'nftcollections', // Tên của bộ sưu tập NFT
+    //         localField: 'nft', // Trường từ các tài liệu đầu vào trong giai đoạn $lookup
+    //         foreignField: '_id', // Trường từ các tài liệu trong bộ sưu tập "from"
+    //         as: 'nft', // Trường mảng thêm vào các tài liệu đầu vào chứa các tài liệu khớp từ bộ sưu tập "from"
+    //       },
+    //     },
+    //     {
+    //       $unwind: {
+    //         path: '$nft',
+    //         preserveNullAndEmptyArrays: true,
+    //       },
+    //     },
+    //     {
+    //       $skip: (page - 1) * size,
+    //     },
+    //     {
+    //       $limit: size,
+    //     },
+    //   ];
 
-      const nfts = await this.signatureModel.aggregate(agg);
+    //   const nfts = await this.signatureModel.aggregate(agg);
 
-      const totalDocuments = await this.signatureModel.countDocuments().exec();
+    //   const totalDocuments = await this.signatureModel.countDocuments().exec();
 
-      const totalPages = Math.ceil(totalDocuments / size);
+    //   const totalPages = Math.ceil(totalDocuments / size);
 
-      let nextPage = Number(page) + 1;
+    //   let nextPage = Number(page) + 1;
 
-      if (nextPage > 10) nextPage = -1;
+    //   if (nextPage > 10) nextPage = -1;
 
-      return { data: nfts, totalPages: totalPages, nextPage: nextPage };
-    } catch (error) {
-      this.logger.error(error);
-    }
+    //   return { data: nfts, totalPages: totalPages, nextPage: nextPage };
+    // } catch (error) {
+    //   this.logger.error(error);
+    // }
+    return result;
   }
 
   //todo Hide
