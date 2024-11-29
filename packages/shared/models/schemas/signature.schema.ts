@@ -86,6 +86,11 @@ export class Signature {
 
   @Prop()
   currency: string;
+
+  @Prop()
+  is_burned?: boolean;
+  @Prop()
+  is_burned_tx_hash?: string;
 }
 
 export const SignatureSchema = SchemaFactory.createForClass(Signature);

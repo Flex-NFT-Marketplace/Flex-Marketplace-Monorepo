@@ -23,6 +23,9 @@ import {
   SaleDocument,
   Sales,
   Staking,
+  Signature,
+  SignatureDocument,
+  SignStatusEnum,
 } from '@app/shared/models';
 import {
   CancelAllOrdersReturnValue,
@@ -71,6 +74,8 @@ export class NftItemService {
     private readonly dropPhaseModel: Model<DropPhaseDocument>,
     @InjectModel(Staking.name)
     private readonly stakingModel: Model<Staking>,
+    @InjectModel(Signature.name)
+    private readonly signatureModel: Model<SignatureDocument>,
     @InjectQueue(QUEUE_METADATA)
     private readonly fetchMetadataQueue: Queue<string>,
     private readonly web3Service: Web3Service,
@@ -545,6 +550,23 @@ export class NftItemService {
       { upsert: true, new: true },
     );
 
+    await this.signatureModel.findOneAndUpdate(
+      {
+        contract_address: nftAddress,
+        token_id: tokenId,
+      },
+      {
+        $set: {
+          is_burned: true,
+          is_burned_tx_hash: log.transaction_hash,
+        },
+      },
+      {
+        upsert: true,
+        new: true,
+      },
+    );
+
     this.logger.debug(`nft burned ${nftAddress}: ${tokenId} at - ${timestamp}`);
   }
 
@@ -642,6 +664,24 @@ export class NftItemService {
       },
       { $set: history },
       { upsert: true, new: true },
+    );
+
+    await this.signatureModel.findOneAndUpdate(
+      {
+        contract_address: nftAddress,
+        token_id: tokenId,
+      },
+      {
+        $set: {
+          status: SignStatusEnum.SOLD,
+          transaction_hash: log.transaction_hash,
+          buyer_address: to,
+        },
+      },
+      {
+        upsert: true,
+        new: true,
+      },
     );
 
     if (updateNfts.length > 0) {
@@ -867,7 +907,22 @@ export class NftItemService {
       { $set: history },
       { upsert: true, new: true },
     );
-
+    await this.signatureModel.findOneAndUpdate(
+      {
+        contract_address: nftAddress,
+        token_id: tokenId,
+      },
+      {
+        $set: {
+          is_burned: true,
+          is_burned_tx_hash: log.transaction_hash,
+        },
+      },
+      {
+        upsert: true,
+        new: true,
+      },
+    );
     this.logger.debug(
       `${value} nft burned ${nftAddress}: ${tokenId} ${from} -> ${to} - ${timestamp}`,
     );
@@ -998,6 +1053,24 @@ export class NftItemService {
       },
       { $set: history },
       { upsert: true, new: true },
+    );
+
+    await this.signatureModel.findOneAndUpdate(
+      {
+        contract_address: nftAddress,
+        token_id: tokenId,
+      },
+      {
+        $set: {
+          status: SignStatusEnum.SOLD,
+          transaction_hash: log.transaction_hash,
+          buyer_address: to,
+        },
+      },
+      {
+        upsert: true,
+        new: true,
+      },
     );
 
     if (newNfts.length > 0) {

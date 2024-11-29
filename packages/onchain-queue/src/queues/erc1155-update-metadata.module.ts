@@ -19,6 +19,8 @@ import {
   PaymentTokens,
   SaleSchema,
   Sales,
+  Signature,
+  SignatureSchema,
   Staking,
   StakingSchema,
   UserSchema,
@@ -52,6 +54,10 @@ import { ERC1155UpdateMetadataProcessor } from './processors';
       { name: Histories.name, schema: HistorySchema },
       { name: DropPhases.name, schema: DropPhaseSchema },
       { name: Staking.name, schema: StakingSchema },
+      {
+        name: Signature.name,
+        schema: SignatureSchema,
+      },
     ]),
     BullModule.registerQueue(
       {
