@@ -367,6 +367,38 @@ export class NftService {
         }
       } catch (error) {}
     }
+    //Todo code of signatureService
+    let bestAsk: any;
+
+    if (query.owner != '') {
+      bestAsk = await this.signatureService.getSignatureByOwner(
+        query.nftContract,
+        query.tokenId,
+        query.owner,
+      );
+    } else {
+      bestAsk = await this.signatureService.getSignature(
+        query.nftContract,
+        query.tokenId,
+      );
+    }
+
+    const listAsk = await this.signatureService.getSignatures(
+      query.nftContract,
+      query.tokenId,
+    );
+
+    const listBid = await this.signatureService.getBidSignatures(
+      query.nftContract,
+      query.tokenId,
+    );
+
+    const orderData = {
+      bestAsk,
+      listAsk,
+      listBid,
+    };
+    item.orderData = orderData;
     return new BaseResult(item as NftDto);
   }
 }

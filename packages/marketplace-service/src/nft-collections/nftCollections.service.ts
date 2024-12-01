@@ -665,6 +665,7 @@ export class NftCollectionsService {
             cover: `$collectionInfo.cover`,
             description: `$collectionInfo.description`,
             symbol: `$collectionInfo.symbol`,
+            nftCollectionStats: `$collectionInfo.nftCollectionStats`,
           },
         },
       },
