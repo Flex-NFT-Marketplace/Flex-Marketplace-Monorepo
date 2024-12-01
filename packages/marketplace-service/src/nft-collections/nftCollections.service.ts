@@ -704,6 +704,7 @@ export class NftCollectionsService {
           ],
         },
         'paymentTokens',
+        'nftCollectionStats',
       ]);
 
     if (!data) {
