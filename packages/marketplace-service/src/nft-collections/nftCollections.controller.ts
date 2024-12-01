@@ -15,6 +15,7 @@ import {
   Inject,
   HttpException,
   HttpStatus,
+  BadRequestException,
 } from '@nestjs/common';
 import { NftCollectionsService } from './nftCollections.service';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
@@ -344,6 +345,37 @@ export class NftCollectionsController {
       );
 
       return new BaseResult(true);
+    } catch (error) {
+      throw new Error(error);
+    }
+  }
+
+  @Post('update-all-nftsCollection-stats')
+  @ApiOperation({
+    summary: 'update All NFTs Collection stats !TODO Not use',
+  })
+  async updateAllNFTsCollectionStats() {
+    try {
+      await this.nftCollectionService.updateAllNftCollectionStatsData();
+    } catch (error) {
+      console.log('What Wrog', error);
+      throw new BadRequestException(error);
+    }
+  }
+
+  @Post('update-nftCollection-stats/:nftContract')
+  @ApiOperation({
+    summary: 'update NFT Collection stats',
+  })
+  async updateNFTCollectionStats(@Param('nftContract') nftContract: string) {
+    try {
+      if (!isHexadecimal(nftContract)) {
+        throw new Error('Invalid Address');
+      }
+
+      const data =
+        await this.nftCollectionService.getNftCollectionStats(nftContract);
+      return new BaseResult(data);
     } catch (error) {
       throw new Error(error);
     }

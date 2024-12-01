@@ -10,6 +10,7 @@ import {
 } from '../types';
 import { Document, SchemaTypes } from 'mongoose';
 import { DropPhaseDocument } from './dropphase.schema';
+import { NftCollectionStatsDocument } from './nftCollectionStats.chema';
 
 export type NftCollectionDocument = NftCollections & Document;
 
@@ -94,6 +95,9 @@ export class NftCollections extends BaseSchema {
 
   @Prop({ type: ExternalLink })
   externalLink?: ExternalLink;
+
+  @Prop({ type: SchemaTypes.ObjectId, ref: 'NftCollectionStats' })
+  nftCollectionStats?: NftCollectionStatsDocument;
 }
 
 export const NftCollectionSchema = SchemaFactory.createForClass(NftCollections);

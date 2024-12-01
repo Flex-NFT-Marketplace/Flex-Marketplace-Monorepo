@@ -1,10 +1,11 @@
-import { IsHexadecimal, IsOptional, IsString } from 'class-validator';
+import { IsEnum, IsHexadecimal, IsOptional } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { BaseQueryParams } from '@app/shared/types';
+import { SignStatusEnum } from '@app/shared/models';
 export class GetSignatureActivityQueryDTO extends BaseQueryParams {
   @ApiProperty({
     required: false,
-    description: 'Contract address of NFT',
+    description: 'nft contract address',
   })
   @IsOptional()
   @IsHexadecimal()
@@ -31,12 +32,13 @@ export class GetSignatureActivityQueryDTO extends BaseQueryParams {
   @ApiProperty({
     required: false,
   })
+  @IsEnum(SignStatusEnum)
   @IsOptional()
-  status?: string;
+  status?: SignStatusEnum;
 
-  @ApiProperty({
-    required: false,
-  })
-  @IsOptional()
-  search?: string;
+  // @ApiProperty({
+  //   required: false,
+  // })
+  // @IsOptional()
+  // search?: string;
 }

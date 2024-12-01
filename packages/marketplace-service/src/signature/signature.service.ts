@@ -397,7 +397,6 @@ export class SignatureService {
       minPrice,
       maxPrice,
       status,
-      search,
       page,
       size,
     } = query;
@@ -499,6 +498,8 @@ export class SignatureService {
     console.log('Data', result);
     return result;
   }
+
+  async getNftCollectionActivity(query: GetSignatureActivityQueryDTO) {}
 
   //todo Hide
   async updateAllSignature() {
