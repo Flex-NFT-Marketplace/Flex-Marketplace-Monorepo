@@ -119,12 +119,16 @@ export class NftCollectionsController {
     },
   })
   async getNFTCollectionDetail(@Param('nftContract') nftContract: string) {
-    if (!isHexadecimal(nftContract)) {
-      throw new HttpException('Invalid Nft Contract', HttpStatus.BAD_REQUEST);
+    try {
+      if (!isHexadecimal(nftContract)) {
+        throw new HttpException('Invalid Nft Contract', HttpStatus.BAD_REQUEST);
+      }
+      const data =
+        await this.nftCollectionService.getNFTCollectionDetail(nftContract);
+      return new BaseResult(data);
+    } catch (error) {
+      console.log('WHat Wrong', error);
     }
-    const data =
-      await this.nftCollectionService.getNFTCollectionDetail(nftContract);
-    return new BaseResult(data);
   }
 
   @Post('holders')

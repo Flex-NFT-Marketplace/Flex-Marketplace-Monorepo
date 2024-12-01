@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 
@@ -38,13 +38,13 @@ export class SignatureService {
     });
   }
 
-  async createSignature(signature: SignatureDTO) {
+  async createSignature(signature: SignatureDTO, signer: string) {
     try {
       const signExits = await this.signatureModel
         .findOne({
           contract_address: signature.contract_address,
           token_id: signature.token_id,
-          signer: signature.signer,
+          signer: signer,
           status: { $in: [SignStatusEnum.LISTING, SignStatusEnum.BUYING] },
         })
         .exec();
@@ -66,6 +66,7 @@ export class SignatureService {
 
       return newSignature.save();
     } catch (error) {
+      throw new BadRequestException(error.message);
       console.log(error);
     }
   }
@@ -105,6 +106,7 @@ export class SignatureService {
         return signature[0];
       }
     } catch (error) {
+      throw new BadRequestException(error.message);
       console.log(error);
     }
   }
@@ -157,6 +159,7 @@ export class SignatureService {
         return signature[0];
       }
     } catch (error) {
+      throw new BadRequestException(error.message);
       console.log(error);
     }
   }
@@ -176,6 +179,7 @@ export class SignatureService {
 
       return signature;
     } catch (error) {
+      throw new BadRequestException(error.message);
       console.log(error);
     }
   }
@@ -195,6 +199,7 @@ export class SignatureService {
 
       return signature;
     } catch (error) {
+      throw new BadRequestException(error.message);
       console.log(error);
     }
   }
@@ -242,17 +247,23 @@ export class SignatureService {
         }
       }
     } catch (error) {
-      console.log(error);
+      throw new BadRequestException(error.message);
     }
   }
 
   async updateSignatureBid(
     updateSignatureDTO: UpdateSignatureDTO,
+    signer: string,
   ): Promise<void> {
     try {
       const { signature_id, transaction_hash, amount } = updateSignatureDTO;
 
-      const signature = await this.signatureModel.findById(signature_id).exec();
+      const signature = await this.signatureModel
+        .findOne({
+          _id: signature_id,
+          signer: signer,
+        })
+        .exec();
 
       const collectionModel = await this.collectionModel
         .findOne({ contract_address: signature.contract_address })
@@ -265,6 +276,7 @@ export class SignatureService {
         });
       }
     } catch (error) {
+      throw new BadRequestException(error.message);
       this.logger.error(error);
     }
   }
@@ -327,11 +339,14 @@ export class SignatureService {
     }
   }
 
-  async cancelSignature(signature_id: string) {
+  async cancelSignature(signature_id: string, signer: string) {
     try {
       const res = await this.signatureModel
-        .findByIdAndUpdate(
-          signature_id,
+        .findOne(
+          {
+            _id: signature_id,
+            signer: signer,
+          },
           { status: SignStatusEnum.ORDER_CANCEL },
           { new: true },
         )
@@ -499,7 +514,115 @@ export class SignatureService {
     return result;
   }
 
-  async getNftCollectionActivity(query: GetSignatureActivityQueryDTO) {}
+  async getNftCollectionActivity(query: GetSignatureActivityQueryDTO) {
+    const {
+      contract_address,
+      sortPrice = 'desc', // default descending
+      minPrice,
+      maxPrice,
+      status,
+      page,
+      size,
+    } = query;
+    const result = new BaseResultPagination<any>();
+    const skip = (page - 1) * size;
+    const limit = size;
+
+    const matchConditions: any = {}; // Dynamically build match conditions
+
+    if (contract_address) {
+      matchConditions.contract_address = contract_address;
+    }
+
+    if (minPrice || maxPrice) {
+      matchConditions.price = {};
+      if (minPrice) matchConditions.price.$gte = Number(minPrice);
+      if (maxPrice) matchConditions.price.$lte = Number(maxPrice);
+    }
+
+    if (status) {
+      matchConditions.status = status;
+    }
+
+    const activities = await this.signatureModel.aggregate([
+      { $match: matchConditions },
+      {
+        $lookup: {
+          from: 'nfts',
+          localField: 'nft',
+          foreignField: '_id',
+          as: 'nftDetails',
+        },
+      },
+      { $unwind: { path: '$nftDetails', preserveNullAndEmptyArrays: true } },
+      {
+        $lookup: {
+          from: 'nftcollections',
+          localField: 'nftDetails.nftContract',
+          foreignField: 'nftContract',
+          as: 'collectionDetails',
+        },
+      },
+      {
+        $unwind: {
+          path: '$collectionDetails',
+          preserveNullAndEmptyArrays: false,
+        },
+      },
+      {
+        $match: {
+          contract_address: { $ne: null }, // Exclude documents with null contract_address
+          'collectionDetails.name': { $ne: null }, // Exclude documents with null collection name
+        },
+      },
+      {
+        $group: {
+          _id: '$contract_address',
+          name: { $first: '$collectionDetails.name' },
+          avatar: { $first: '$collectionDetails.avatar' },
+          cover: { $first: '$collectionDetails.cover' },
+          symbol: { $first: '$collectionDetails.symbol' },
+          activities: {
+            $push: {
+              contract_address: '$contract_address',
+              name: '$name',
+              token_id: '$token_id',
+              price: '$price',
+              amount: '$amount',
+              status: '$status',
+              buyer_address: '$buyer_address',
+              transaction_hash: '$transaction_hash',
+              createdAt: '$createdAt',
+            },
+          },
+        },
+      },
+      {
+        $addFields: {
+          activities: { $slice: ['$activities', 10] }, // Limit activities to 10
+        },
+      },
+      {
+        $project: {
+          _id: 0, // Exclude MongoDB default `_id`
+          contract_address: '$_id',
+          name: 1,
+          avatar: 1,
+          cover: 1,
+          symbol: 1,
+          activities: 1,
+        },
+      },
+      { $sort: { 'activities.createdAt': sortPrice === 'asc' ? 1 : -1 } },
+      { $skip: skip },
+      { $limit: limit },
+    ]);
+
+    // Total count for meta information
+    const total = await this.signatureModel.countDocuments(matchConditions);
+    result.data = new PaginationDto(activities, total, page, size);
+    return result;
+  }
 
   //todo Hide
   async updateAllSignature() {

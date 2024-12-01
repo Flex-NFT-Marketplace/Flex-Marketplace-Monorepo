@@ -707,6 +707,7 @@ export class NftCollectionsService {
         'nftCollectionStats',
       ]);
 
+    console.log('Data NFT Collection Detail', data);
     if (!data) {
       throw new HttpException('Collection not found', HttpStatus.NOT_FOUND);
     }
@@ -1116,10 +1117,10 @@ export class NftCollectionsService {
     nftContract: string,
   ): Promise<NftCollectionStats> {
     const formattedAddress = formattedContractAddress(nftContract);
-    const nftCollectionStats = await this.nftCollectionModel.findOne({
+    const nftCollections = await this.nftCollectionModel.findOne({
       nftContract: formattedAddress,
     });
-    if (!nftCollectionStats) {
+    if (!nftCollections) {
       throw new HttpException(
         'NFT Collection Stats not found',
         HttpStatus.NOT_FOUND,
@@ -1159,101 +1160,206 @@ export class NftCollectionsService {
     sevenDays: number,
   ): Promise<NftCollectionStats> {
     try {
+      // const stats = await this.historyModel.aggregate([
+      //   {
+      //     $match: { nftContract, type: HistoryType.Sale },
+      //   },
+      //   {
+      //     $group: {
+      //       _id: '$nftContract',
+      //       vol1D: {
+      //         $sum: {
+      //           $cond: {
+      //             if: { $gte: ['$timestamp', oneDay] },
+      //             then: '$price',
+      //             else: 0,
+      //           },
+      //         },
+      //       },
+      //       volPre1D: {
+      //         $sum: {
+      //           $cond: {
+      //             if: {
+      //               $and: [
+      //                 { $gte: ['$timestamp', oneDay - 86400000] },
+      //                 { $lt: ['$timestamp', oneDay] },
+      //               ],
+      //             },
+      //             then: '$price',
+      //             else: 0,
+      //           },
+      //         },
+      //       },
+      //       vol7D: {
+      //         $sum: {
+      //           $cond: {
+      //             if: { $gte: ['$timestamp', sevenDays] },
+      //             then: '$price',
+      //             else: 0,
+      //           },
+      //         },
+      //       },
+      //       volPre7D: {
+      //         $sum: {
+      //           $cond: {
+      //             if: {
+      //               $and: [
+      //                 { $gte: ['$timestamp', sevenDays - 7 * 86400000] },
+      //                 { $lt: ['$timestamp', sevenDays] },
+      //               ],
+      //             },
+      //             then: '$price',
+      //             else: 0,
+      //           },
+      //         },
+      //       },
+      //       totalVol: { $sum: '$price' },
+      //       saleCount1D: {
+      //         $sum: {
+      //           $cond: {
+      //             if: { $gte: ['$timestamp', oneDay] },
+      //             then: 1,
+      //             else: 0,
+      //           },
+      //         },
+      //       },
+      //       saleCount7D: {
+      //         $sum: {
+      //           $cond: {
+      //             if: { $gte: ['$timestamp', sevenDays] },
+      //             then: 1,
+      //             else: 0,
+      //           },
+      //         },
+      //       },
+      //     },
+      //   },
+      //   {
+      //     $lookup: {
+      //       from: 'nfts',
+      //       localField: '_id',
+      //       foreignField: 'nftContract',
+      //       as: 'nftDetails',
+      //     },
+      //   },
+      //   {
+      //     $unwind: {
+      //       path: '$nftDetails',
+      //       preserveNullAndEmptyArrays: true,
+      //     },
+      //   },
+      //   {
+      //     $match: {
+      //       $or: [
+      //         { 'nftDetails.isBurned': false },
+      //         { 'nftDetails.amount': { $gt: 0 } },
+      //       ],
+      //     },
+      //   },
+      //   {
+      //     $group: {
+      //       _id: '$_id',
+      //       totalVol: { $first: '$totalVol' },
+      //       totalOwners: { $addToSet: '$nftDetails.owner' },
+      //       totalNfts: { $sum: '$nftDetails.amount' },
+      //       saleCount1D: { $first: '$saleCount1D' },
+      //       saleCount7D: { $first: '$saleCount7D' },
+      //     },
+      //   },
+      //   {
+      //     $lookup: {
+      //       from: 'nftcollections',
+      //       localField: '_id',
+      //       foreignField: 'nftContract',
+      //       as: 'collectionInfo',
+      //     },
+      //   },
+      //   {
+      //     $unwind: {
+      //       path: '$collectionInfo',
+      //       preserveNullAndEmptyArrays: true,
+      //     },
+      //   },
+      // ]);
       const stats = await this.historyModel.aggregate([
         {
-          $match: { nftContract, type: HistoryType.Sale },
+          $match: {
+            nftContract,
+            type: HistoryType.Sale,
+            timestamp: { $gte: sevenDays - 7 * 86400000 }, // Pre-filter timestamps
+          },
         },
         {
           $group: {
             _id: '$nftContract',
             vol1D: {
               $sum: {
-                $cond: {
-                  if: { $gte: ['$timestamp', oneDay] },
-                  then: '$price',
-                  else: 0,
-                },
+                $cond: [{ $gte: ['$timestamp', oneDay] }, '$price', 0],
               },
             },
             volPre1D: {
               $sum: {
-                $cond: {
-                  if: {
+                $cond: [
+                  {
                     $and: [
                       { $gte: ['$timestamp', oneDay - 86400000] },
                       { $lt: ['$timestamp', oneDay] },
                     ],
                   },
-                  then: '$price',
-                  else: 0,
-                },
+                  '$price',
+                  0,
+                ],
               },
             },
             vol7D: {
               $sum: {
-                $cond: {
-                  if: { $gte: ['$timestamp', sevenDays] },
-                  then: '$price',
-                  else: 0,
-                },
+                $cond: [{ $gte: ['$timestamp', sevenDays] }, '$price', 0],
               },
             },
             volPre7D: {
               $sum: {
-                $cond: {
-                  if: {
+                $cond: [
+                  {
                     $and: [
                       { $gte: ['$timestamp', sevenDays - 7 * 86400000] },
                       { $lt: ['$timestamp', sevenDays] },
                     ],
                   },
-                  then: '$price',
-                  else: 0,
-                },
+                  '$price',
+                  0,
+                ],
               },
             },
             totalVol: { $sum: '$price' },
             saleCount1D: {
-              $sum: {
-                $cond: {
-                  if: { $gte: ['$timestamp', oneDay] },
-                  then: 1,
-                  else: 0,
-                },
-              },
+              $sum: { $cond: [{ $gte: ['$timestamp', oneDay] }, 1, 0] },
             },
             saleCount7D: {
-              $sum: {
-                $cond: {
-                  if: { $gte: ['$timestamp', sevenDays] },
-                  then: 1,
-                  else: 0,
-                },
-              },
+              $sum: { $cond: [{ $gte: ['$timestamp', sevenDays] }, 1, 0] },
             },
           },
         },
         {
           $lookup: {
             from: 'nfts',
-            localField: '_id',
-            foreignField: 'nftContract',
+            let: { nftContract: '$_id' },
+            pipeline: [
+              {
+                $match: {
+                  $expr: { $eq: ['$$nftContract', '$nftContract'] },
+                },
+              },
+              {
+                $match: {
+                  $or: [{ isBurned: false }, { amount: { $gt: 0 } }],
+                },
+              },
+            ],
             as: 'nftDetails',
           },
         },
         {
-          $unwind: {
-            path: '$nftDetails',
-            preserveNullAndEmptyArrays: true,
-          },
-        },
-        {
-          $match: {
-            $or: [
-              { 'nftDetails.isBurned': false },
-              { 'nftDetails.amount': { $gt: 0 } },
-            ],
-          },
+          $unwind: { path: '$nftDetails', preserveNullAndEmptyArrays: true },
         },
         {
           $group: {
@@ -1316,6 +1422,7 @@ export class NftCollectionsService {
         },
       ]);
       const result = stats[0];
+
       const result2 = statsSignature[0];
       return {
         nftContract,

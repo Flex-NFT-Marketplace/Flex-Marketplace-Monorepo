@@ -11,9 +11,11 @@ import {
 import { SignatureDTO, UpdateSignatureDTO } from './dto/signature.dto';
 import { SignatureService } from './signature.service';
 import { ApiExtraModels, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { BaseResult, BaseResultPagination } from '@app/shared/types';
-import { PaginationDto } from '@app/shared/types/pagination.dto';
+import { BaseResult } from '@app/shared/types';
+
 import { GetSignatureActivityQueryDTO } from './dto/getSignatureQuery';
+import { JWT, User } from '@app/shared/modules';
+import { iInfoToken } from '@app/shared/modules/jwt/jwt.dto';
 
 @ApiTags('Signatures')
 @Controller('signatures')
@@ -22,9 +24,16 @@ export class SignatureController {
   constructor(private readonly signatureService: SignatureService) {}
 
   //   @JWT()
+  @JWT()
   @Post()
-  async createSignature(@Body() signatureDTO: SignatureDTO) {
-    const res = await this.signatureService.createSignature(signatureDTO);
+  async createSignature(
+    @Body() signatureDTO: SignatureDTO,
+    @User() token: iInfoToken,
+  ) {
+    const res = await this.signatureService.createSignature(
+      signatureDTO,
+      token.sub,
+    );
 
     if (!res) {
       return new BadRequestException();
@@ -40,6 +49,19 @@ export class SignatureController {
   async getNFTActivity(@Query() query: GetSignatureActivityQueryDTO) {
     try {
       const res = await this.signatureService.getNFTActivity(query);
+      return res;
+    } catch (error) {
+      throw new BadRequestException(error.message);
+    }
+  }
+  @Get('actvityNftCollections')
+  @ApiOperation({
+    summary: 'Get NFT Collection activity signature',
+    description: 'Get nft CollectionActivity activity signature data',
+  })
+  async getNFTCollectionActivity(@Query() query: GetSignatureActivityQueryDTO) {
+    try {
+      const res = await this.signatureService.getNftCollectionActivity(query);
       return res;
     } catch (error) {
       throw new BadRequestException(error.message);
@@ -71,21 +93,33 @@ export class SignatureController {
     return new BaseResult(res);
   }
 
+  @JWT()
   @Put('/bid')
-  async updateSignatureBid(@Body() updateSignDTO: UpdateSignatureDTO) {
-    const res = await this.signatureService.updateSignatureBid(updateSignDTO);
+  async updateSignatureBid(
+    @Body() updateSignDTO: UpdateSignatureDTO,
+    @User() token: iInfoToken,
+  ) {
+    const res = await this.signatureService.updateSignatureBid(
+      updateSignDTO,
+      token.sub,
+    );
     return new BaseResult(res);
   }
 
+  @JWT()
   @Put()
   async updateSignature(@Body() updateSignDTO: UpdateSignatureDTO) {
     const res = await this.signatureService.updateSignature(updateSignDTO);
     return new BaseResult(res);
   }
 
+  @JWT()
   @Put('cancel_order/:signature_id')
-  async cancelSignature(@Param('signature_id') signatureId: string) {
-    await this.signatureService.cancelSignature(signatureId);
+  async cancelSignature(
+    @Param('signature_id') signatureId: string,
+    @User() token: iInfoToken,
+  ) {
+    await this.signatureService.cancelSignature(signatureId, token.sub);
     return new BaseResult(true);
   }
 
