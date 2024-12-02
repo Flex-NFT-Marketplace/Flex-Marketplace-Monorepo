@@ -118,22 +118,30 @@ export class NftService {
       items,
       async slicedItems => {
         await Promise.all(
-          slicedItems.map(async (item, index) => {
+          slicedItems.map(async item => {
+            const currentResult: any = {
+              nftData: {},
+              orderData: {},
+            };
             if (item.image === undefined) {
               try {
                 const newItem = await this.metadataService.loadMetadata(
                   item._id,
                 );
                 if (newItem) {
-                  afterAlterItem.push(newItem);
+                  currentResult.nftData = newItem;
+                  // afterAlterItem.push(newItem);
                 } else {
-                  afterAlterItem.push(item);
+                  // afterAlterItem.push(item);
+                  currentResult.nftData = item;
                 }
               } catch (error) {
-                afterAlterItem.push(item);
+                // afterAlterItem.push(item);
+                currentResult.nftData = item;
               }
             } else {
-              afterAlterItem.push(item);
+              // afterAlterItem.push(item);
+              currentResult.nftData = item;
             }
 
             if (typeof item.tokenId === 'number') {
@@ -171,11 +179,13 @@ export class NftService {
               listBid,
             };
 
-            const existingItem = afterAlterItem[index] || {};
-            afterAlterItem[index] = {
-              nftData: existingItem,
-              orderData: orderData,
-            };
+            // const existingItem = afterAlterItem[index] || {};
+            // afterAlterItem[index] = {
+            //   nftData: existingItem,
+            //   orderData: orderData,
+            // };
+            currentResult.orderData = orderData;
+            afterAlterItem.push(currentResult);
           }),
         );
       },
