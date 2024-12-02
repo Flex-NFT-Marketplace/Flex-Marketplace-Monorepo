@@ -170,14 +170,16 @@ export class NftService {
               listAsk,
               listBid,
             };
-            // console.log('orderData', orderData);
+
             const existingItem = afterAlterItem[index] || {};
-            afterAlterItem[index] = { nftData: existingItem, orderData };
-            // console.log('index', afterAlterItem[index]);
+            afterAlterItem[index] = {
+              nftData: existingItem,
+              orderData: orderData,
+            };
           }),
         );
       },
-      20,
+      query.size,
     );
 
     result.data = new PaginationDto(
