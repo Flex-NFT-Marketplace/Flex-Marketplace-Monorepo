@@ -1254,33 +1254,9 @@ export class NftCollectionsService {
           },
         },
         {
-          $lookup: {
-            from: 'nfts',
-            let: { nftContract: '$_id' },
-            pipeline: [
-              {
-                $match: {
-                  $expr: { $eq: ['$$nftContract', '$nftContract'] },
-                },
-              },
-              {
-                $match: {
-                  $or: [{ isBurned: false }, { amount: { $gt: 0 } }],
-                },
-              },
-            ],
-            as: 'nftDetails',
-          },
-        },
-        {
-          $unwind: { path: '$nftDetails', preserveNullAndEmptyArrays: true },
-        },
-        {
           $group: {
             _id: '$_id',
             totalVol: { $first: '$totalVol' },
-            totalOwners: { $addToSet: '$nftDetails.owner' },
-            totalNfts: { $sum: '$nftDetails.amount' },
             saleCount1D: { $first: '$saleCount1D' },
             saleCount7D: { $first: '$saleCount7D' },
           },
@@ -1335,29 +1311,34 @@ export class NftCollectionsService {
           },
         },
       ]);
+      const totalOwner = await this.getTotalOwners(nftContract);
       const result = stats[0];
 
       const result2 = statsSignature[0];
       return {
         nftContract,
         bestOffer: result2?.bestOffer || 0,
-        nftCount: result?.totalNfts || 0,
-        ownerCount: result?.totalOwners?.length || 0,
+        nftCount: totalOwner.supply || 0,
+        ownerCount: totalOwner.owners || 0,
         totalVolume: result?.totalVol / 1e18 || 0,
         totalListingCount: result2?.totalListingCount || 0,
         floorPrice: result2?.floorPrice || 0,
         stats1D: {
           saleCount: result?.saleCount1D || 0,
           volume: result?.vol1D || 0,
-          avgPrice: result?.vol1D / (result?.totalNfts || 1),
-          volChange: result?.volPre1D
-            ? ((result?.vol1D - result?.volPre1D) / result?.volPre1D) * 100
-            : 0,
+          avgPrice:
+            result?.vol1D && totalOwner.supply
+              ? result?.vol1D / totalOwner.supply
+              : 0,
+          volChange:
+            result?.volPre1D && result?.vol1D
+              ? ((result?.vol1D - result?.volPre1D) / result?.volPre1D) * 100
+              : 0,
         },
         stats7D: {
           saleCount: result?.saleCount7D || 0,
           volume: result?.vol7D || 0,
-          avgPrice: result?.vol7D / (result?.totalNfts || 1),
+          avgPrice: result?.vol7D / (totalOwner.supply || 1),
           volChange: result?.volPre7D
             ? ((result?.vol7D - result?.volPre7D) / result?.volPre7D) * 100
             : 0,

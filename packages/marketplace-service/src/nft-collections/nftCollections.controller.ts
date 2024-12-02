@@ -15,7 +15,6 @@ import {
   Inject,
   HttpException,
   HttpStatus,
-  BadRequestException,
 } from '@nestjs/common';
 import { NftCollectionsService } from './nftCollections.service';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
