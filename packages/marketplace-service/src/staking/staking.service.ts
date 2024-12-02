@@ -16,8 +16,16 @@ export class StakingService {
   async getStakingInfo(query: StakingQueryDto) {
     const filter: any = {};
     const result = new BaseResultPagination();
-    const { size, skipIndex, sort, page, tokenId, nftContract, userAddress } =
-      query;
+    const {
+      size,
+      skipIndex,
+      orderBy,
+      desc,
+      page,
+      tokenId,
+      nftContract,
+      userAddress,
+    } = query;
     if (nftContract) {
       filter.nftContract = query.nftContract;
     }
@@ -38,15 +46,119 @@ export class StakingService {
       result.data = new PaginationDto([], totalItem, page, size);
       return result;
     }
-    const stakingInfo = await this.stakingModel
-      .find(filter)
-      .sort(sort)
-      .skip(skipIndex)
-      .limit(size)
-      .populate({
-        path: 'user',
-        select: 'username address isVerified emailVerified createdAt updatedAt',
-      });
-    return stakingInfo;
+    // const stakingInfo = await this.stakingModel.aggregate([
+    //   { $match: filter },
+    //   // { $sort: sort },
+    //   { $skip: skipIndex },
+    //   { $limit: size },
+    //   // {
+    //   //   $lookup: {
+    //   //     from: 'users',
+    //   //     localField: 'user',
+    //   //     foreignField: '_id',
+    //   //     as: 'user',
+    //   //   },
+    //   // },
+    //   // {
+    //   //   $unwind: {
+    //   //     path: '$user',
+    //   //     preserveNullAndEmptyArrays: true,
+    //   //   },
+    //   // },
+    //   {
+    //     $lookup: {
+    //       from: 'nfts',
+    //       localField: 'nftContract',
+    //       foreignField: 'nftContract',
+    //       as: 'nftDetails',
+    //     },
+    //   },
+    //   {
+    //     $unwind: {
+    //       path: '$nftDetails',
+    //       preserveNullAndEmptyArrays: true,
+    //     },
+    //   },
+    //   {
+    //     $project: {
+    //       user: {
+    //         username: 1,
+    //         address: 1,
+    //         isVerified: 1,
+    //         emailVerified: 1,
+    //         createdAt: 1,
+    //         updatedAt: 1,
+    //       },
+    //       nftDetails: 1,
+    //       tokenId: 1,
+    //       nftContract: 1,
+    //       createdAt: 1,
+    //       updatedAt: 1,
+    //     },
+    //   },
+    // ]);
+    const stakingInfo = await this.stakingModel.aggregate([
+      { $match: filter },
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'user',
+          foreignField: '_id',
+          as: 'user',
+        },
+      },
+      { $unwind: '$user' },
+      {
+        $lookup: {
+          from: 'nfts',
+          let: { nftContract: '$nftContract', tokenId: '$tokenId' },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ['$nftContract', '$$nftContract'] },
+                    { $eq: ['$tokenId', '$$tokenId'] },
+                  ],
+                },
+              },
+            },
+          ],
+          as: 'nftDetails',
+        },
+      },
+      { $unwind: '$nftDetails' },
+      {
+        $project: {
+          user: {
+            username: 1,
+            address: 1,
+            isVerified: 1,
+            emailVerified: 1,
+            createdAt: 1,
+            updatedAt: 1,
+          },
+          nftDetails: 1,
+          tokenId: 1,
+          nftContract: 1,
+          createdAt: 1,
+          updatedAt: 1,
+        },
+      },
+
+      {
+        $skip: skipIndex,
+      },
+      {
+        $sort: {
+          [orderBy]: desc === 'asc' ? 1 : -1,
+        },
+      },
+      {
+        $limit: size,
+      },
+    ]);
+    result.data = new PaginationDto(stakingInfo, totalItem, page, size);
+    return result;
   }
 }
