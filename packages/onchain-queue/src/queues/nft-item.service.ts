@@ -26,6 +26,10 @@ import {
   Signature,
   SignatureDocument,
   SignStatusEnum,
+  FlexHausSet,
+  FlexHausDrop,
+  FlexHausSetDocument,
+  FlexHausDropDocument,
 } from '@app/shared/models';
 import {
   CancelAllOrdersReturnValue,
@@ -39,6 +43,7 @@ import {
   PayerUpdatedReturnValue,
   PhaseDropUpdatedReturnValue,
   SaleReturnValue,
+  UpdateDropReturnValue,
   UpgradedContractReturnValue,
 } from '@app/web3-service/decodeEvent';
 import { EventType, LogsReturnValues } from '@app/web3-service/types';
@@ -76,6 +81,10 @@ export class NftItemService {
     private readonly stakingModel: Model<Staking>,
     @InjectModel(Signature.name)
     private readonly signatureModel: Model<SignatureDocument>,
+    @InjectModel(FlexHausSet.name)
+    private readonly flexHausSetModel: Model<FlexHausSetDocument>,
+    @InjectModel(FlexHausDrop.name)
+    private readonly flexHausDropModel: Model<FlexHausDropDocument>,
     @InjectQueue(QUEUE_METADATA)
     private readonly fetchMetadataQueue: Queue<string>,
     private readonly web3Service: Web3Service,
@@ -110,6 +119,7 @@ export class NftItemService {
     process[EventType.UPDATE_METADATA_1155] = this.processNft1155UpdateMetadata;
     process[EventType.ITEM_STAKED] = this.processItemStaked;
     process[EventType.ITEM_UNSTAKED] = this.processItemUnstaked;
+    process[EventType.UPDATE_DROP] = this.processUpdateDrop;
 
     await process[log.eventType].call(this, log, chain, index);
   }
@@ -167,7 +177,7 @@ export class NftItemService {
   }
 
   async processContractDeployed(log: LogsReturnValues, chain: ChainDocument) {
-    const { address, deployer } =
+    const { address, deployer, isFlexHausCollectible } =
       log.returnValues as ContractDeployedReturnValue;
 
     const nftInfo = await this.web3Service.getNFTCollectionDetail(
@@ -205,6 +215,7 @@ export class NftItemService {
         collaboratories: [],
         isNonFungibleFlexDropToken,
         contractUri,
+        isFlexHausCollectible,
         dropPhases: [],
         attributesMap: [],
       };
@@ -293,6 +304,7 @@ export class NftItemService {
       price,
       isFlexDropMinted,
       isWarpcastMinted,
+      isClaimCollectible,
       phaseId,
     } = log.returnValues as ERC721TransferReturnValue;
 
@@ -359,7 +371,9 @@ export class NftItemService {
         ? HistoryType.FlexDropMint
         : isWarpcastMinted
           ? HistoryType.WarpcastMint
-          : HistoryType.Mint,
+          : isClaimCollectible
+            ? HistoryType.ClaimCollectible
+            : HistoryType.Mint,
       phaseId: phaseId ? phaseId : null,
     };
 
@@ -2095,6 +2109,46 @@ export class NftItemService {
         index,
       },
       { $set: history },
+      { upsert: true, new: true },
+    );
+  }
+
+  async processUpdateDrop(log: LogsReturnValues, chain: ChainDocument) {
+    const { collectible, dropType, secureAmount, topSupporters, startTime } =
+      log.returnValues as UpdateDropReturnValue;
+
+    const nftCollection = await this.getOrCreateNftCollection(
+      collectible,
+      chain,
+    );
+
+    let set = await this.flexHausSetModel.findOne({
+      collectibles: { $in: [nftCollection._id] },
+    });
+
+    if (!set) {
+      const newSet: FlexHausSet = {
+        collectibles: [nftCollection],
+        startTime,
+      };
+      set = await this.flexHausSetModel.findOneAndUpdate(
+        { collectibles: { $in: [nftCollection] } },
+        { $set: newSet },
+        { upsert: true, new: true },
+      );
+    }
+
+    let newDrop: FlexHausDrop = {
+      collectible: nftCollection,
+      dropType,
+      secureAmount,
+      topSupporters,
+      set,
+    };
+
+    await this.flexHausDropModel.findOneAndUpdate(
+      { collectible: nftCollection },
+      { $set: newDrop },
       { upsert: true, new: true },
     );
   }

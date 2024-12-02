@@ -41,7 +41,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { Web3Service } from '@app/web3-service/web3.service';
 import { NftItemService } from './nft-item.service';
 import { UserService } from '../users/user.service';
-import { TakerBidProcessor } from './processors';
+import { UpdateDropProcessor } from './processors';
 
 @Module({
   imports: [
@@ -71,11 +71,11 @@ import { TakerBidProcessor } from './processors';
         defaultJobOptions: MQ_JOB_DEFAULT_CONFIG,
       },
       {
-        name: ONCHAIN_QUEUES.QUEUE_TAKER_BID,
+        name: ONCHAIN_QUEUES.QUEUE_ITEM_STAKED,
         defaultJobOptions: MQ_JOB_DEFAULT_CONFIG,
       },
     ),
   ],
-  providers: [NftItemService, UserService, Web3Service, TakerBidProcessor],
+  providers: [NftItemService, UserService, Web3Service, UpdateDropProcessor],
 })
-export class TakerBidQueueModule {}
+export class UpdateDropQueueModule {}

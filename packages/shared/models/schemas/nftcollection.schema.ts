@@ -74,6 +74,9 @@ export class NftCollections extends BaseSchema {
   @Prop({ default: false })
   isNonFungibleFlexDropToken?: boolean;
 
+  @Prop({ default: false })
+  isFlexHausCollectible?: boolean;
+
   @Prop({ type: SchemaTypes.ObjectId, ref: 'Users' })
   creatorPayout?: UserDocument;
 
