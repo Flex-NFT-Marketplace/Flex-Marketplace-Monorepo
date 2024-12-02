@@ -125,7 +125,7 @@ export class NftCollectionsController {
       }
       const data =
         await this.nftCollectionService.getNFTCollectionDetail(nftContract);
-      return new BaseResult(data);
+      return data;
     } catch (error) {
       console.log('WHat Wrong', error);
     }
