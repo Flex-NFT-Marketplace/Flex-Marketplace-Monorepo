@@ -354,18 +354,18 @@ export class NftCollectionsController {
     }
   }
 
-  @Post('update-all-nftsCollection-stats')
-  @ApiOperation({
-    summary: 'update All NFTs Collection stats !TODO Not use',
-  })
-  async updateAllNFTsCollectionStats() {
-    try {
-      await this.nftCollectionService.updateAllNftCollectionStatsData();
-    } catch (error) {
-      console.log('What Wrog', error);
-      throw new BadRequestException(error);
-    }
-  }
+  // @Post('update-all-nftsCollection-stats')
+  // @ApiOperation({
+  //   summary: 'update All NFTs Collection stats !TODO Not use',
+  // })
+  // async updateAllNFTsCollectionStats() {
+  //   try {
+  //     await this.nftCollectionService.updateAllNftCollectionStatsData();
+  //   } catch (error) {
+  //     console.log('What Wrog', error);
+  //     throw new BadRequestException(error);
+  //   }
+  // }
 
   @Post('update-nftCollection-stats/:nftContract')
   @ApiOperation({
@@ -378,7 +378,9 @@ export class NftCollectionsController {
       }
 
       const data =
-        await this.nftCollectionService.getNftCollectionStats(nftContract);
+        await this.nftCollectionService.getOrCreateNftCollectionStats(
+          nftContract,
+        );
       return new BaseResult(data);
     } catch (error) {
       throw new Error(error);

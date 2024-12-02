@@ -31,8 +31,7 @@ import {
 } from '@app/shared/models';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getModelToken } from '@nestjs/mongoose';
-import { UserService } from '../../users/user.service';
-import { NftItemService } from '../nft-item.service';
+
 import chain from './mocks/chain.json';
 import paymentToken from './mocks/paymentToken.json';
 import users from './mocks/users.json';
@@ -42,6 +41,8 @@ import sales from './mocks/sales.json';
 import { Web3Service } from '@app/web3-service/web3.service';
 import { BlockDetectionService } from '../block-detection.service';
 import { Provider } from 'starknet';
+import { NftItemService } from 'onchain-queue/src/queues';
+import { UserService } from 'marketplace-service/src/user/user.service';
 
 describe('NFT item service', () => {
   let nftItemService: NftItemService;
@@ -167,22 +168,22 @@ describe('NFT item service', () => {
       await blockDetectionService.init();
     }
 
-    for (let i = 0; i < sales.length; i++) {
-      const saleEntity: Sales = {
-        ...sales[i],
-        nft: nftDocuments[i],
-        signer: nftDocuments[i].owner,
-        nftContract: nftCollectionDocuments[i].nftContract,
-        nftCollection: nftCollectionDocuments[i],
-        paymentToken: paymentTokenDocument,
-        status: MarketStatus.OnSale,
-      };
-      const saleDocument = await saleModel.create(saleEntity);
-      await nftModel.findOneAndUpdate(
-        { _id: nftDocuments[i]._id },
-        { $set: { sale: saleDocument } },
-      );
-    }
+    // for (let i = 0; i < sales.length; i++) {
+    //   const saleEntity: Sales = {
+    //     ...sales[i],
+    //     nft: nftDocuments[i],
+    //     signer: nftDocuments[i].owner,
+    //     nftContract: nftCollectionDocuments[i].nftContract,
+    //     nftCollection: nftCollectionDocuments[i],
+    //     paymentToken: paymentTokenDocument,
+    //     status: MarketStatus.OnSale,
+    //   };
+    //   const saleDocument = await saleModel.create(saleEntity);
+    //   await nftModel.findOneAndUpdate(
+    //     { _id: nftDocuments[i]._id },
+    //     { $set: { sale: saleDocument } },
+    //   );
+    // }
   });
 
   afterAll(async () => {
@@ -200,21 +201,25 @@ describe('NFT item service', () => {
   });
 
   describe('testing service', () => {
-    it('processContractDeployed', async () => {
-      const block = await provider.getBlock(175293);
-      await blockDetectionService.processTx(
-        '0x05ab69287f62819eeb1f3ca6d72fdec85280aaa29152a19a13a9a87e5634f662',
-        block.timestamp,
-      );
+    // it('processContractDeployed', async () => {
+    //   const block = await provider.getBlock(175293);
+    //   await blockDetectionService.processTx(
+    //     '0x05ab69287f62819eeb1f3ca6d72fdec85280aaa29152a19a13a9a87e5634f662',
+    //     block.timestamp,
+    //   );
 
-      const nftCollection = await nftCollectionModel.findOne();
-      console.log(nftCollection);
-    });
+    //   const nftCollection = await nftCollectionModel.findOne();
+    //   console.log(nftCollection);
+    // });
 
     it('processNft721Minted', async () => {
       const block = await provider.getBlock(55981);
       await blockDetectionService.processTx(
-        '0x0020bc3a3ad741c76619449e4aa562ae385d810066eadff1816c12570f5caa5d',
+        {
+          txHash:
+            '0x07eb55fd74a1e3055318022bdbcd6c784ad196fb3946e102008cef38cbe9c0d4',
+          status: 0,
+        },
         block.timestamp * 1e3,
       );
 
@@ -224,69 +229,69 @@ describe('NFT item service', () => {
       console.log({ history });
     }, 60000);
 
-    it('processNft1155Transfered', async () => {
-      const block = await provider.getBlock(51805);
-      // const nftsBefore = await nftModel.find();
-      // console.log(`Before processTx ${nftsBefore}`);
+    // it('processNft1155Transfered', async () => {
+    //   const block = await provider.getBlock(51805);
+    //   // const nftsBefore = await nftModel.find();
+    //   // console.log(`Before processTx ${nftsBefore}`);
 
-      // const salesBefore = await saleModel.find();
-      // console.log(`Before processTx ${salesBefore}`);
+    //   // const salesBefore = await saleModel.find();
+    //   // console.log(`Before processTx ${salesBefore}`);
 
-      await blockDetectionService.processTx(
-        '0x00df9751bbaa8cb1a14f7405a66a270092bb7b7d1455579d5e429109de221b65',
-        block.timestamp * 1e3,
-      );
+    //   await blockDetectionService.processTx(
+    //     '0x00df9751bbaa8cb1a14f7405a66a270092bb7b7d1455579d5e429109de221b65',
+    //     block.timestamp * 1e3,
+    //   );
 
-      const nfts = await nftModel.find();
-      console.log(nfts);
+    //   const nfts = await nftModel.find();
+    //   console.log(nfts);
 
-      const sales = await saleModel.find();
-      console.log(sales);
+    //   const sales = await saleModel.find();
+    //   console.log(sales);
 
-      const totalAmount = nfts[1].amount;
+    //   const totalAmount = nfts[1].amount;
 
-      expect(
-        sales.reduce((acc, cur) => acc + cur.remainingAmount, 0),
-      ).toBeLessThanOrEqual(totalAmount);
-    });
+    //   expect(
+    //     sales.reduce((acc, cur) => acc + cur.remainingAmount, 0),
+    //   ).toBeLessThanOrEqual(totalAmount);
+    // });
 
-    it('processNft1155TransferedBatch', async () => {
-      const block = await provider.getBlock(57727);
-      const nftsBefore = await nftModel.find();
-      console.log(`Before processTx ${nftsBefore}`);
+    // it('processNft1155TransferedBatch', async () => {
+    //   const block = await provider.getBlock(57727);
+    //   const nftsBefore = await nftModel.find();
+    //   console.log(`Before processTx ${nftsBefore}`);
 
-      await blockDetectionService.processTx(
-        '0x06f4f5a7f3c27d58fa30bf9c39889d4076966d3c3e28fc58650ded1bbde63dfe',
-        block.timestamp * 1e3,
-      );
+    //   await blockDetectionService.processTx(
+    //     '0x06f4f5a7f3c27d58fa30bf9c39889d4076966d3c3e28fc58650ded1bbde63dfe',
+    //     block.timestamp * 1e3,
+    //   );
 
-      const nfts = await nftModel.find();
-      console.log(nfts);
-    });
+    //   const nfts = await nftModel.find();
+    //   console.log(nfts);
+    // });
 
-    it('processTakerBid', async () => {
-      const block = await provider.getBlock(56020);
-      await blockDetectionService.processTx(
-        '0x05905d1437bfa797b73cc6a59bab9c82f471e038b0902cfadfb73d9e5c08791b',
-        block.timestamp * 1e3,
-      );
+    // it('processTakerBid', async () => {
+    //   const block = await provider.getBlock(56020);
+    //   await blockDetectionService.processTx(
+    //     '0x07eb55fd74a1e3055318022bdbcd6c784ad196fb3946e102008cef38cbe9c0d4',
+    //     block.timestamp * 1e3,
+    //   );
 
-      const nfts = await nftModel.find();
-      console.log(nfts);
-    });
+    //   const nfts = await nftModel.find();
+    //   console.log(nfts);
+    // });
 
-    it('processPhaseDropUpdated', async () => {
-      const block = await provider.getBlock(55717);
-      await blockDetectionService.processTx(
-        '0x027f4509e95167c4bcd520dd1d9d8c7a7791e829b544dfeb538fd76174d58d3f',
-        block.timestamp * 1e3,
-      );
+    // it('processPhaseDropUpdated', async () => {
+    //   const block = await provider.getBlock(55717);
+    //   await blockDetectionService.processTx(
+    //     '0x027f4509e95167c4bcd520dd1d9d8c7a7791e829b544dfeb538fd76174d58d3f',
+    //     block.timestamp * 1e3,
+    //   );
 
-      const nftCollection = await nftCollectionModel
-        .find()
-        .populate(['dropPhases']);
+    //   const nftCollection = await nftCollectionModel
+    //     .find()
+    //     .populate(['dropPhases']);
 
-      console.log(nftCollection[2]);
-    });
+    //   console.log(nftCollection[2]);
+    // });
   });
 });

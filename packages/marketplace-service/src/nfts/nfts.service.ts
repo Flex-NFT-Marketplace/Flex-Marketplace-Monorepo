@@ -118,7 +118,7 @@ export class NftService {
       items,
       async slicedItems => {
         await Promise.all(
-          slicedItems.map(async item => {
+          slicedItems.map(async (item, index) => {
             if (item.image === undefined) {
               try {
                 const newItem = await this.metadataService.loadMetadata(
@@ -140,49 +140,48 @@ export class NftService {
               item.tokenId = String(item.tokenId);
               await item.save();
             }
+            //Todo code of signatureService
+            let bestAsk: any;
+
+            if (item.owner.username != '') {
+              bestAsk = await this.signatureService.getSignatureByOwner(
+                item.nftContract,
+                item.tokenId,
+                item.owner.username,
+              );
+            } else {
+              bestAsk = await this.signatureService.getSignature(
+                item.nftContract,
+                item.tokenId,
+              );
+            }
+            const listAsk = await this.signatureService.getSignatures(
+              item.nftContract,
+              item.tokenId,
+            );
+
+            const listBid = await this.signatureService.getBidSignatures(
+              item.nftContract,
+              item.tokenId,
+            );
+
+            const orderData = {
+              bestAsk,
+              listAsk,
+              listBid,
+            };
+            // console.log('orderData', orderData);
+            const existingItem = afterAlterItem[index] || {};
+            afterAlterItem[index] = { nftData: existingItem, orderData };
+            // console.log('index', afterAlterItem[index]);
           }),
         );
       },
       20,
     );
 
-    //Todo code of signatureService
-    let bestAsk: any;
-
-    if (query.owner != '') {
-      bestAsk = await this.signatureService.getSignatureByOwner(
-        query.nftContract,
-        query.tokenId,
-        query.owner,
-      );
-    } else {
-      bestAsk = await this.signatureService.getSignature(
-        query.nftContract,
-        query.tokenId,
-      );
-    }
-
-    const listAsk = await this.signatureService.getSignatures(
-      query.nftContract,
-      query.tokenId,
-    );
-
-    const listBid = await this.signatureService.getBidSignatures(
-      query.nftContract,
-      query.tokenId,
-    );
-
-    const orderData = {
-      bestAsk,
-      listAsk,
-      listBid,
-    };
-
     result.data = new PaginationDto(
-      {
-        nft: afterAlterItem,
-        orderData,
-      },
+      afterAlterItem,
       count,
       query.page,
       query.size,

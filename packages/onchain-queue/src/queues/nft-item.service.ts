@@ -26,6 +26,8 @@ import {
   Signature,
   SignatureDocument,
   SignStatusEnum,
+  NftCollectionStats,
+  NftCollectionStatsDocument,
 } from '@app/shared/models';
 import {
   CancelAllOrdersReturnValue,
@@ -76,6 +78,9 @@ export class NftItemService {
     private readonly stakingModel: Model<Staking>,
     @InjectModel(Signature.name)
     private readonly signatureModel: Model<SignatureDocument>,
+    @InjectModel(NftCollectionStats.name)
+    private readonly nftCollectionStats: Model<NftCollectionStatsDocument>,
+
     @InjectQueue(QUEUE_METADATA)
     private readonly fetchMetadataQueue: Queue<string>,
     private readonly web3Service: Web3Service,
