@@ -99,6 +99,20 @@ export class NftService {
           ],
         },
         {
+          path: 'creator',
+          select: [
+            'address',
+            'username',
+            'isVerified',
+            'email',
+            'avatar',
+            'cover',
+            'about',
+            'socials',
+            'isVerified',
+          ],
+        },
+        {
           path: 'nftCollection',
           select: [
             'name',
@@ -211,64 +225,7 @@ export class NftService {
     };
 
     let item: any;
-    // const items = await this.nftModel.aggregate([
-    //   { $match: filter },
-    //   { $limit: 1 },
-    //   {
-    //     $lookup: {
-    //       from: 'users',
-    //       localField: 'owner',
-    //       foreignField: '_id',
-    //       pipeline: [
-    //         {
-    //           $project: {
-    //             _id: 0,
-    //             address: 1,
-    //           },
-    //         },
-    //       ],
-    //       as: 'owner',
-    //     },
-    //   },
-    //   { $unwind: '$owner' },
-    //   {
-    //     $lookup: {
-    //       from: 'nftcollections',
-    //       localField: 'nftCollection',
-    //       foreignField: '_id',
-    //       pipeline: [
-    //         {
-    //           $project: {
-    //             name: 1,
-    //             symbol: 1,
-    //             verified: 1,
-    //             standard: 1,
-    //             description: 1,
-    //             avatar: 1,
-    //             key: 1,
-    //           },
-    //         },
-    //       ],
-    //       as: 'nftCollection',
-    //     },
-    //   },
-    //   { $unwind: '$nftCollection' },
-    //   {
-    //     $project: {
-    //       // Include all fields from the root document
-    //       root: '$$ROOT',
-    //       // Add or modify specific fields
-    //       owner: '$owner.address',
-    //     },
-    //   },
-    //   {
-    //     $replaceRoot: {
-    //       newRoot: {
-    //         $mergeObjects: ['$root', { owner: '$owner' }],
-    //       },
-    //     },
-    //   },
-    // ]);
+
     const items = await this.nftModel
       .find(filter)
       .limit(1)
@@ -283,8 +240,15 @@ export class NftService {
         },
         {
           path: 'nftCollection',
-          select:
-            'attributesMap chain isFlexHausCollectible contractUri createdA isNonFungibleFlexDropToken name standard updatedAt verified avatar cover description',
+          select: [
+            'name',
+            'symbol',
+            'verified',
+            'standard',
+            'description',
+            'avatar',
+            'key',
+          ],
         },
       ]);
 
