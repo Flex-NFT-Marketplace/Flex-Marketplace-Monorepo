@@ -38,6 +38,7 @@ export class BlockDetectionService extends OnchainWorker {
     upgradeContractQueue: Queue<LogsReturnValues>,
     itemStakedQueue: Queue<LogsReturnValues>,
     itemUnstakedQueue: Queue<LogsReturnValues>,
+    updateDropQueue: Queue<LogsReturnValues>,
     onchainQueue: OnchainQueueService,
     blockModel: Model<BlockDocument>,
     web3Service: Web3Service,
@@ -63,6 +64,7 @@ export class BlockDetectionService extends OnchainWorker {
     this.upgradeContractQueue = upgradeContractQueue;
     this.itemStakedQueue = itemStakedQueue;
     this.itemUnstakedQueue = itemUnstakedQueue;
+    this.updateDropQueue = updateDropQueue;
     this.onchainQueue = onchainQueue;
     this.chain = chain;
     this.chainId = chain.id;
@@ -90,6 +92,7 @@ export class BlockDetectionService extends OnchainWorker {
   upgradeContractQueue: Queue<LogsReturnValues>;
   itemStakedQueue: Queue<LogsReturnValues>;
   itemUnstakedQueue: Queue<LogsReturnValues>;
+  updateDropQueue: Queue<LogsReturnValues>;
   blockModel: Model<BlockDocument>;
 
   fetchLatestBlock: () => Promise<number> = async () => {
@@ -275,6 +278,10 @@ export class BlockDetectionService extends OnchainWorker {
         ev => ev.eventType === EventType.ITEM_UNSTAKED,
       );
 
+      const claimCollectibleEv = eventWithType.filter(
+        ev => ev.eventType === EventType.CLAIM_COLLECTIBLE,
+      );
+
       // skip transfer event if it is sale or accept offer or flexdrop minted -> prevent duplicate event
       const eventlogs = eventWithType.filter(ev => {
         if (
@@ -338,6 +345,17 @@ export class BlockDetectionService extends OnchainWorker {
             log.returnValues.price =
               ev.returnValues.totalMintPrice / ev.returnValues.quantityMinted;
             log.returnValues.phaseId = ev.returnValues.phaseId;
+          }
+        });
+      }
+
+      for (const ev of claimCollectibleEv) {
+        eventlogs.map(log => {
+          if (
+            log.eventType === EventType.MINT_721 &&
+            log.returnValues.nftAddress === ev.returnValues.collectible
+          ) {
+            log.returnValues.isClaimCollectible = true;
           }
         });
       }
@@ -454,6 +472,10 @@ export class BlockDetectionService extends OnchainWorker {
           case EventType.ITEM_UNSTAKED:
             queue = this.itemUnstakedQueue;
             jobName = ONCHAIN_JOBS.JOB_ITEM_UNSTAKED;
+            break;
+          case EventType.UPDATE_DROP:
+            queue = this.updateDropQueue;
+            jobName = ONCHAIN_JOBS.JOB_UPDATE_DROP;
             break;
         }
 
