@@ -12,8 +12,6 @@ import {
   Histories,
   HistorySchema,
   NftCollectionSchema,
-  NftCollectionStats,
-  NftCollectionStatsSchema,
   NftCollections,
   NftSchema,
   Nfts,
@@ -43,7 +41,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { Web3Service } from '@app/web3-service/web3.service';
 import { NftItemService } from './nft-item.service';
 import { UserService } from '../users/user.service';
-import { CreatorPayoutUpdatedProcessor } from './processors';
+import { UpdateDropProcessor } from './processors';
 
 @Module({
   imports: [
@@ -66,10 +64,6 @@ import { CreatorPayoutUpdatedProcessor } from './processors';
         name: Signature.name,
         schema: SignatureSchema,
       },
-      {
-        name: NftCollectionStats.name,
-        schema: NftCollectionStatsSchema,
-      },
     ]),
     BullModule.registerQueue(
       {
@@ -77,16 +71,11 @@ import { CreatorPayoutUpdatedProcessor } from './processors';
         defaultJobOptions: MQ_JOB_DEFAULT_CONFIG,
       },
       {
-        name: ONCHAIN_QUEUES.QUEUE_CREATOR_PAYOUT_UPDATED,
+        name: ONCHAIN_QUEUES.QUEUE_ITEM_STAKED,
         defaultJobOptions: MQ_JOB_DEFAULT_CONFIG,
       },
     ),
   ],
-  providers: [
-    NftItemService,
-    UserService,
-    Web3Service,
-    CreatorPayoutUpdatedProcessor,
-  ],
+  providers: [NftItemService, UserService, Web3Service, UpdateDropProcessor],
 })
-export class CreatorPayoutUpdatedQueueModule {}
+export class UpdateDropQueueModule {}
