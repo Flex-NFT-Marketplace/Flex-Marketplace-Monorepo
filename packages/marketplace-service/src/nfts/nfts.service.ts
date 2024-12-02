@@ -210,78 +210,83 @@ export class NftService {
       $or: [{ tokenId }, { tokenId: Number(tokenId) }],
     };
 
-    if (query.owner) {
-      if (isValidObjectId(query.owner)) {
-        filter.owner = query.owner;
-      } else {
-        const user = await this.userService.getOrCreateUser(
-          formattedContractAddress(query.owner),
-        );
-        if (user) {
-          filter.owner = user._id;
-        }
-      }
-    }
-
     let item: any;
-    const items = await this.nftModel.aggregate([
-      { $match: filter },
-      { $limit: 1 },
-      {
-        $lookup: {
-          from: 'users',
-          localField: 'owner',
-          foreignField: '_id',
-          pipeline: [
-            {
-              $project: {
-                _id: 0,
-                address: 1,
-              },
-            },
-          ],
-          as: 'owner',
+    // const items = await this.nftModel.aggregate([
+    //   { $match: filter },
+    //   { $limit: 1 },
+    //   {
+    //     $lookup: {
+    //       from: 'users',
+    //       localField: 'owner',
+    //       foreignField: '_id',
+    //       pipeline: [
+    //         {
+    //           $project: {
+    //             _id: 0,
+    //             address: 1,
+    //           },
+    //         },
+    //       ],
+    //       as: 'owner',
+    //     },
+    //   },
+    //   { $unwind: '$owner' },
+    //   {
+    //     $lookup: {
+    //       from: 'nftcollections',
+    //       localField: 'nftCollection',
+    //       foreignField: '_id',
+    //       pipeline: [
+    //         {
+    //           $project: {
+    //             name: 1,
+    //             symbol: 1,
+    //             verified: 1,
+    //             standard: 1,
+    //             description: 1,
+    //             avatar: 1,
+    //             key: 1,
+    //           },
+    //         },
+    //       ],
+    //       as: 'nftCollection',
+    //     },
+    //   },
+    //   { $unwind: '$nftCollection' },
+    //   {
+    //     $project: {
+    //       // Include all fields from the root document
+    //       root: '$$ROOT',
+    //       // Add or modify specific fields
+    //       owner: '$owner.address',
+    //     },
+    //   },
+    //   {
+    //     $replaceRoot: {
+    //       newRoot: {
+    //         $mergeObjects: ['$root', { owner: '$owner' }],
+    //       },
+    //     },
+    //   },
+    // ]);
+    const items = await this.nftModel
+      .find(filter)
+      .limit(1)
+      .populate([
+        {
+          path: 'owner',
+          select: 'address username isVerified',
         },
-      },
-      { $unwind: '$owner' },
-      {
-        $lookup: {
-          from: 'nftcollections',
-          localField: 'nftCollection',
-          foreignField: '_id',
-          pipeline: [
-            {
-              $project: {
-                name: 1,
-                symbol: 1,
-                verified: 1,
-                standard: 1,
-                description: 1,
-                avatar: 1,
-                key: 1,
-              },
-            },
-          ],
-          as: 'nftCollection',
+        {
+          path: 'creator',
+          select: 'address username isVerified',
         },
-      },
-      { $unwind: '$nftCollection' },
-      {
-        $project: {
-          // Include all fields from the root document
-          root: '$$ROOT',
-          // Add or modify specific fields
-          owner: '$owner.address',
+        {
+          path: 'nftCollection',
+          select:
+            'attributesMap chain isFlexHausCollectible contractUri createdA isNonFungibleFlexDropToken name standard updatedAt verified avatar cover description',
         },
-      },
-      {
-        $replaceRoot: {
-          newRoot: {
-            $mergeObjects: ['$root', { owner: '$owner' }],
-          },
-        },
-      },
-    ]);
+      ]);
 
     if (items.length === 0) {
       item = (
