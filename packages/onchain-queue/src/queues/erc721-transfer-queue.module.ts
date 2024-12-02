@@ -8,6 +8,8 @@ import {
   Histories,
   HistorySchema,
   NftCollectionSchema,
+  NftCollectionStats,
+  NftCollectionStatsSchema,
   NftCollections,
   NftSchema,
   Nfts,
@@ -57,6 +59,10 @@ import { ERC721TransferProcessor } from './processors';
       {
         name: Signature.name,
         schema: SignatureSchema,
+      },
+      {
+        name: NftCollectionStats.name,
+        schema: NftCollectionStatsSchema,
       },
     ]),
     BullModule.registerQueue(

@@ -170,7 +170,48 @@ export class NftItemService {
       );
     return nftCollectionDocument;
   }
+  async getOrCreateNftCollectionStats(nftAddress: string) {
+    const nftCollectionStats = await this.nftCollectionStats.findOne({
+      nftContract: nftAddress,
+    });
 
+    if (nftCollectionStats) {
+      return nftCollectionStats;
+    }
+
+    const nftCollectionStatsEntity: NftCollectionStats = {
+      nftContract: nftAddress,
+      bestOffer: 0,
+      nftCount: 0,
+      ownerCount: 0,
+      totalVolume: 0,
+      totalListingCount: 0,
+      floorPrice: 0,
+      stats1D: {
+        saleCount: 0,
+        volume: 0,
+        avgPrice: 0,
+        volChange: 0,
+      },
+      stats7D: {
+        saleCount: 0,
+        volume: 0,
+        avgPrice: 0,
+        volChange: 0,
+      },
+      lastUpdated: 0,
+    };
+
+    const nftCollectionStatsDocument =
+      await this.nftCollectionModel.findOneAndUpdate(
+        {
+          nftContract: nftCollectionStatsEntity.nftContract,
+        },
+        { $set: nftCollectionStatsEntity },
+        { upsert: true, new: true },
+      );
+    return nftCollectionStatsDocument;
+  }
   async processContractDeployed(log: LogsReturnValues, chain: ChainDocument) {
     const { address, deployer } =
       log.returnValues as ContractDeployedReturnValue;
