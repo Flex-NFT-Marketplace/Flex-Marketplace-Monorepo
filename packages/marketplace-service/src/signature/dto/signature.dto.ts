@@ -23,7 +23,7 @@ export class SignatureDTO {
 
   readonly sell_end: number;
 
-  readonly signer: string;
+  // readonly signer: string;
 
   readonly buyer_address: string;
 

@@ -16,5 +16,6 @@ export * from './staking.schema';
 export * from './warpcastUser.schema';
 export * from './signature.schema';
 export * from './system.schema';
+export * from './nftCollectionStats.chema';
 export * from './flexhausset.schema';
 export * from './flexhausdrop.schema';

@@ -27,6 +27,10 @@ import { MQ_JOB_DEFAULT_CONFIG, ONCHAIN_QUEUES } from '@app/shared/types';
 import { OnchainQueueService } from '@app/shared/utils/queue';
 import { PassportModule } from '@nestjs/passport';
 import { JwtAdminStrategy } from '@app/shared/modules';
+import {
+  NftCollectionStats,
+  NftCollectionStatsSchema,
+} from '@app/shared/models/schemas/nftCollectionStats.chema';
 
 @Module({
   imports: [
@@ -59,6 +63,10 @@ import { JwtAdminStrategy } from '@app/shared/modules';
       {
         name: Signature.name,
         schema: SignatureSchema,
+      },
+      {
+        name: NftCollectionStats.name,
+        schema: NftCollectionStatsSchema,
       },
     ]),
     BullModule.registerQueue(

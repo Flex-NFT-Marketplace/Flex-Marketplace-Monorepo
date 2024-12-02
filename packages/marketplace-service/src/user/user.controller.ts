@@ -72,7 +72,7 @@ export class UsersController {
     return await this.userService.updateUserInformation(user.sub, body);
   }
 
-  @Get('activity/:userAddress')
+  @Get('activity')
   @ApiOperation({
     summary: 'API Get User Activity Information by User Address and Status',
   })

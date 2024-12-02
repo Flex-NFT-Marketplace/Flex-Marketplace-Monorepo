@@ -14,6 +14,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { SystemController } from './system.controller';
 import { JwtAdminStrategy } from '@app/shared/modules';
 import { SystemService } from './system.service';
+
 @Module({
   imports: [
     MongooseModule.forFeature([

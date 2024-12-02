@@ -85,4 +85,7 @@ export class NftDto {
   @IsNumber()
   @ApiProperty()
   burnedAt?: number;
+
+  @ApiProperty()
+  orderData?: any;
 }

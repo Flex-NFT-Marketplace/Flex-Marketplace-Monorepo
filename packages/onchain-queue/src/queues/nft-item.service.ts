@@ -26,6 +26,8 @@ import {
   Signature,
   SignatureDocument,
   SignStatusEnum,
+  NftCollectionStats,
+  NftCollectionStatsDocument,
   FlexHausSet,
   FlexHausDrop,
   FlexHausSetDocument,
@@ -81,6 +83,9 @@ export class NftItemService {
     private readonly stakingModel: Model<Staking>,
     @InjectModel(Signature.name)
     private readonly signatureModel: Model<SignatureDocument>,
+    @InjectModel(NftCollectionStats.name)
+    private readonly nftCollectionStats: Model<NftCollectionStatsDocument>,
+
     @InjectModel(FlexHausSet.name)
     private readonly flexHausSetModel: Model<FlexHausSetDocument>,
     @InjectModel(FlexHausDrop.name)

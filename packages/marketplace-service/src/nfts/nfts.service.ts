@@ -119,70 +119,81 @@ export class NftService {
       async slicedItems => {
         await Promise.all(
           slicedItems.map(async item => {
+            const currentResult: any = {
+              nftData: {},
+              orderData: {},
+            };
             if (item.image === undefined) {
               try {
                 const newItem = await this.metadataService.loadMetadata(
                   item._id,
                 );
                 if (newItem) {
-                  afterAlterItem.push(newItem);
+                  currentResult.nftData = newItem;
+                  // afterAlterItem.push(newItem);
                 } else {
-                  afterAlterItem.push(item);
+                  // afterAlterItem.push(item);
+                  currentResult.nftData = item;
                 }
               } catch (error) {
-                afterAlterItem.push(item);
+                // afterAlterItem.push(item);
+                currentResult.nftData = item;
               }
             } else {
-              afterAlterItem.push(item);
+              // afterAlterItem.push(item);
+              currentResult.nftData = item;
             }
 
             if (typeof item.tokenId === 'number') {
               item.tokenId = String(item.tokenId);
               await item.save();
             }
+            //Todo code of signatureService
+            let bestAsk: any;
+
+            if (item.owner.username != '') {
+              bestAsk = await this.signatureService.getSignatureByOwner(
+                item.nftContract,
+                item.tokenId,
+                item.owner.username,
+              );
+            } else {
+              bestAsk = await this.signatureService.getSignature(
+                item.nftContract,
+                item.tokenId,
+              );
+            }
+            const listAsk = await this.signatureService.getSignatures(
+              item.nftContract,
+              item.tokenId,
+            );
+
+            const listBid = await this.signatureService.getBidSignatures(
+              item.nftContract,
+              item.tokenId,
+            );
+
+            const orderData = {
+              bestAsk,
+              listAsk,
+              listBid,
+            };
+
+            // const existingItem = afterAlterItem[index] || {};
+            // afterAlterItem[index] = {
+            //   nftData: existingItem,
+            //   orderData: orderData,
+            // };
+            currentResult.orderData = orderData;
+            afterAlterItem.push(currentResult);
           }),
         );
       },
-      20,
+      query.size,
     );
-
-    //Todo code of signatureService
-    let bestAsk: any;
-
-    if (query.owner != '') {
-      bestAsk = await this.signatureService.getSignatureByOwner(
-        query.nftContract,
-        query.tokenId,
-        query.owner,
-      );
-    } else {
-      bestAsk = await this.signatureService.getSignature(
-        query.nftContract,
-        query.tokenId,
-      );
-    }
-
-    const listAsk = await this.signatureService.getSignatures(
-      query.nftContract,
-      query.tokenId,
-    );
-
-    const listBid = await this.signatureService.getBidSignatures(
-      query.nftContract,
-      query.tokenId,
-    );
-
-    const orderData = {
-      bestAsk,
-      listAsk,
-      listBid,
-    };
 
     result.data = new PaginationDto(
-      {
-        nft: afterAlterItem,
-        orderData,
-      },
+      afterAlterItem,
       count,
       query.page,
       query.size,
@@ -367,6 +378,38 @@ export class NftService {
         }
       } catch (error) {}
     }
+    //Todo code of signatureService
+    let bestAsk: any;
+
+    if (query.owner != '') {
+      bestAsk = await this.signatureService.getSignatureByOwner(
+        query.nftContract,
+        query.tokenId,
+        query.owner,
+      );
+    } else {
+      bestAsk = await this.signatureService.getSignature(
+        query.nftContract,
+        query.tokenId,
+      );
+    }
+
+    const listAsk = await this.signatureService.getSignatures(
+      query.nftContract,
+      query.tokenId,
+    );
+
+    const listBid = await this.signatureService.getBidSignatures(
+      query.nftContract,
+      query.tokenId,
+    );
+
+    const orderData = {
+      bestAsk,
+      listAsk,
+      listBid,
+    };
+    item.orderData = orderData;
     return new BaseResult(item as NftDto);
   }
 }
