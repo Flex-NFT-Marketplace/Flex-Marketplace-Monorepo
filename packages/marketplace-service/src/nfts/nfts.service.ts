@@ -219,6 +219,10 @@ export class NftService {
 
   async getNftDetail(query: GetNftQueryDto): Promise<BaseResult<NftDto>> {
     const { nftContract, tokenId } = query;
+    const currentResult: any = {
+      nftData: {},
+      orderData: {},
+    };
     const filter: any = {
       nftContract: formattedContractAddress(nftContract),
       $or: [{ tokenId }, { tokenId: Number(tokenId) }],
@@ -378,7 +382,8 @@ export class NftService {
       listAsk,
       listBid,
     };
-    item.orderData = orderData;
-    return new BaseResult(item as NftDto);
+    currentResult.nftData = item;
+    currentResult.orderData = orderData;
+    return new BaseResult(currentResult);
   }
 }
