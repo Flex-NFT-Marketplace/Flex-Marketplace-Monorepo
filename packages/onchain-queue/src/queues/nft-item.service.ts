@@ -2168,12 +2168,12 @@ export class NftItemService {
       chain,
     );
 
-    let set = await this.flexHausSetModel.findOne({
+    const set = await this.flexHausSetModel.findOne({
       collectibles: { $in: [nftCollection._id] },
     });
 
     if (set) {
-      let newDrop: FlexHausDrop = {
+      const newDrop: FlexHausDrop = {
         collectible: nftCollection,
         dropType,
         secureAmount,

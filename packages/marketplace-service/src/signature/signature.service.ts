@@ -2,12 +2,12 @@ import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 
-// import { StarkscanService } from 'src/starkscan/starkscan.service';
 import { RpcProvider } from 'starknet';
 import { SignatureDTO, UpdateSignatureDTO } from './dto/signature.dto';
 import {
   NftCollections,
   NftCollectionStandard,
+  NftCollectionStats,
   Nfts,
 } from '@app/shared/models';
 import {
@@ -19,6 +19,7 @@ import { RPC_PROVIDER } from '@app/shared/constants';
 import { GetSignatureActivityQueryDTO } from './dto/getSignatureQuery';
 import { BaseResultPagination } from '@app/shared/types';
 import { PaginationDto } from '@app/shared/types/pagination.dto';
+import { NftCollectionsService } from '../nft-collections/nftCollections.service';
 
 @Injectable()
 export class SignatureService {
@@ -30,6 +31,9 @@ export class SignatureService {
     @InjectModel(NftCollections.name)
     private collectionModel: Model<NftCollections>,
     @InjectModel(Signature.name) private signatureModel: Model<Signature>,
+    @InjectModel(NftCollectionStats.name)
+    private collectionStatsModel: Model<NftCollectionStats>,
+    private colelctionService: NftCollectionsService,
   ) {
     this.provider = new RpcProvider({
       nodeUrl:
@@ -276,8 +280,8 @@ export class SignatureService {
         });
       }
     } catch (error) {
+      this.logger.log(`Error in Update Bid ${error.message}`);
       throw new BadRequestException(error.message);
-      this.logger.error(error);
     }
   }
 
@@ -325,6 +329,22 @@ export class SignatureService {
                 await signature.save();
                 this.logger.log(
                   'Synced tx status to SOLD: ' + signature.transaction_hash,
+                );
+
+                const dataExist =
+                  await this.colelctionService.getOrCreateNftCollectionStats(
+                    signature.contract_address,
+                  );
+                const avgPrice = dataExist.floorPrice / dataExist.totalVolume;
+                await this.collectionStatsModel.findOneAndUpdate(
+                  {
+                    contract_address: dataExist.nftContract,
+                  },
+                  {
+                    $inc: {
+                      floorPrice: avgPrice,
+                    },
+                  },
                 );
                 break;
             }

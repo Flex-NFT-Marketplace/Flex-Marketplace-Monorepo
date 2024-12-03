@@ -4,6 +4,8 @@ import { UsersController } from './user.controller';
 import { UserService } from './user.service';
 import {
   NftCollectionSchema,
+  NftCollectionStats,
+  NftCollectionStatsSchema,
   NftCollections,
   NftSchema,
   Nfts,
@@ -14,7 +16,6 @@ import {
 } from '@app/shared/models';
 import { PassportModule } from '@nestjs/passport';
 import { JwtStrategy } from '@app/shared/modules';
-import { SignatureService } from '../signature/signature.service';
 
 @Module({
   imports: [
@@ -35,11 +36,15 @@ import { SignatureService } from '../signature/signature.service';
         name: NftCollections.name,
         schema: NftCollectionSchema,
       },
+      {
+        name: NftCollectionStats.name,
+        schema: NftCollectionStatsSchema,
+      },
     ]),
     PassportModule.register({ defaultStrategy: 'jwt' }),
   ],
   controllers: [UsersController],
-  providers: [UserService, JwtStrategy, SignatureService],
+  providers: [UserService, JwtStrategy],
   exports: [UserService],
 })
 export class UsersModule {}
