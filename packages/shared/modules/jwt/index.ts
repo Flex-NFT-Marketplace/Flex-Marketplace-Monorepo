@@ -4,3 +4,4 @@ export * from './jwt.strategy';
 export * from './jwt-admin.auth.guard';
 export * from './jwt-admin.strategy';
 export * from './jwt-admin.decorator';
+export * from './jwt.dto';

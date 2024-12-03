@@ -11,10 +11,10 @@ async function bootstrap() {
   app.enableCors();
   app.getHttpAdapter().getInstance().disable('x-powered-by');
 
-  const PORT = configuration().api_port;
+  const PORT = configuration().flexhaus_api_port;
 
   await app.listen(PORT, () => {
-    console.log(`Marketplace api is running on port ${PORT}`);
+    console.log(`Flexhaus api is running on port ${PORT}`);
   });
 }
 bootstrap();

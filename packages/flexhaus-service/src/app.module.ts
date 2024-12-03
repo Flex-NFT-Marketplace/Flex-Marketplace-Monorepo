@@ -3,14 +3,20 @@ import { Module, MiddlewareConsumer } from '@nestjs/common';
 import configuration from '@app/shared/configuration';
 import { AppLoggerMiddleware } from '@app/shared/middleware/app-logger.middleware';
 import { CacheModule } from '@nestjs/cache-manager';
+import { FlexHausDropModule } from './drop/flexhausDrop.module';
+import { JwtStrategy } from '@app/shared/modules';
+import { Users, UserSchema } from '@app/shared/models';
 
 @Module({
   imports: [
     MongooseModule.forRoot(configuration().db_path),
+    MongooseModule.forFeature([{ name: Users.name, schema: UserSchema }]),
     CacheModule.register({ isGlobal: true }),
+    FlexHausDropModule,
   ],
   controllers: [],
-  providers: [],
+  providers: [JwtStrategy],
+  exports: [JwtStrategy],
 })
 export class AppModule {
   configure(consumer: MiddlewareConsumer): void {
