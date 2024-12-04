@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model, Types } from 'mongoose';
+import { Model } from 'mongoose';
 
 import { RpcProvider } from 'starknet';
 import { SignatureDTO, UpdateSignatureDTO } from './dto/signature.dto';
@@ -365,12 +365,13 @@ export class SignatureService {
       if (!exist) {
         throw new BadRequestException('Signature not found');
       }
-
+      if (exist.signer !== signer) {
+        throw new BadRequestException('This Signature not belong to you');
+      }
       const res = await this.signatureModel
-        .findOneAndUpdate(
+        .findByIdAndUpdate(
           {
-            _id: new Types.ObjectId(signature_id),
-            signer: signer,
+            signature_id,
           },
           { status: SignStatusEnum.ORDER_CANCEL },
         )
