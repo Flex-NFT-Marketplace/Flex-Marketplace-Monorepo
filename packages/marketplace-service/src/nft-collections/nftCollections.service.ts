@@ -812,6 +812,7 @@ export class NftCollectionsService {
                 $expr: {
                   $and: [
                     { $eq: ['$nftContract', '$$nftContract'] },
+
                     // { $or: [{ isBurned: false }, { amount: { $gt: 0 } }] },
                   ],
                 },
