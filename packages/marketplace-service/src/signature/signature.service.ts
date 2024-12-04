@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 
 import { RpcProvider } from 'starknet';
 import { SignatureDTO, UpdateSignatureDTO } from './dto/signature.dto';
@@ -361,14 +361,18 @@ export class SignatureService {
 
   async cancelSignature(signature_id: string, signer: string) {
     try {
+      const exist = await this.signatureModel.findById(signature_id).exec();
+      if (!exist) {
+        throw new BadRequestException('Signature not found');
+      }
+
       const res = await this.signatureModel
         .findOneAndUpdate(
           {
-            _id: signature_id,
+            _id: new Types.ObjectId(signature_id),
             signer: signer,
           },
           { status: SignStatusEnum.ORDER_CANCEL },
-          { new: true, upsert: true },
         )
         .exec();
       console.log('Cancel Signature', res);
