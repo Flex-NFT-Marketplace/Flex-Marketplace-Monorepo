@@ -362,7 +362,7 @@ export class SignatureService {
   async cancelSignature(signature_id: string, signer: string) {
     try {
       const res = await this.signatureModel
-        .findOne(
+        .findOneAndUpdate(
           {
             _id: signature_id,
             signer: signer,

@@ -99,11 +99,15 @@ export class SignatureController {
     @Body() updateSignDTO: UpdateSignatureDTO,
     @User() token: iInfoToken,
   ) {
-    const res = await this.signatureService.updateSignatureBid(
-      updateSignDTO,
-      token.sub,
-    );
-    return new BaseResult(res);
+    try {
+      const res = await this.signatureService.updateSignatureBid(
+        updateSignDTO,
+        token.sub,
+      );
+      return new BaseResult(res);
+    } catch (error) {
+      return new BadRequestException(error.message);
+    }
   }
 
   @JWT()
@@ -119,8 +123,12 @@ export class SignatureController {
     @Param('signature_id') signatureId: string,
     @User() token: iInfoToken,
   ) {
-    await this.signatureService.cancelSignature(signatureId, token.sub);
-    return new BaseResult(true);
+    try {
+      await this.signatureService.cancelSignature(signatureId, token.sub);
+      return new BaseResult(true);
+    } catch (error) {
+      return new BadRequestException(error.message);
+    }
   }
 
   // @Get('UpdateSignature')
