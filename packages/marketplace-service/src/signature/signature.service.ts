@@ -368,10 +368,10 @@ export class SignatureService {
             signer: signer,
           },
           { status: SignStatusEnum.ORDER_CANCEL },
-          { new: true },
+          { new: true, upsert: true },
         )
         .exec();
-
+      console.log('Cancel Signature', res);
       return res;
     } catch (error) {
       this.logger.error(error);
