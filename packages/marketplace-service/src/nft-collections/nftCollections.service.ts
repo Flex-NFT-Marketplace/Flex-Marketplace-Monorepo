@@ -604,8 +604,8 @@ export class NftCollectionsService {
       },
       {
         $unwind: {
-          path: '$collectionInfo', // Unwind the array to get a single object
-          preserveNullAndEmptyArrays: true, // Keep the document if no match is found
+          path: '$collectionInfo',
+          preserveNullAndEmptyArrays: true,
         },
       },
 
@@ -689,6 +689,7 @@ export class NftCollectionsService {
       {
         $sort: {
           oneDayVol: -1,
+          oneDayChange: -1,
         },
       },
       {

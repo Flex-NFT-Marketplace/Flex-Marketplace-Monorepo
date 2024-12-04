@@ -248,7 +248,7 @@ export class NftCollectionsController {
     let data = await this.cacheManager.get(key);
     if (!data) {
       data = await this.nftCollectionService.getTopNFTCollection(query);
-      await this.cacheManager.set(key, data, 60 * 60 * 1e3);
+      await this.cacheManager.set(key, data, 12 * 60 * 60 * 1e3);
     }
     return data;
   }
@@ -291,7 +291,7 @@ export class NftCollectionsController {
     let data = await this.cacheManager.get(key);
     if (!data) {
       data = await this.nftCollectionService.getTrendingNFTCollections(query);
-      await this.cacheManager.set(key, data, 60 * 60 * 1e3);
+      await this.cacheManager.set(key, data, 12 * 60 * 60 * 1e3);
     }
     return data;
   }
