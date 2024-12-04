@@ -20,6 +20,7 @@ import { GetSignatureActivityQueryDTO } from './dto/getSignatureQuery';
 import { BaseResultPagination } from '@app/shared/types';
 import { PaginationDto } from '@app/shared/types/pagination.dto';
 import { NftCollectionsService } from '../nft-collections/nftCollections.service';
+import { formattedContractAddress } from '@app/shared/utils';
 
 @Injectable()
 export class SignatureService {
@@ -365,21 +366,24 @@ export class SignatureService {
       if (!exist) {
         throw new BadRequestException('Signature not found');
       }
-      if (exist.signer !== signer) {
+
+      if (formattedContractAddress(exist.signer) !== signer) {
         throw new BadRequestException('This Signature not belong to you');
       }
       const res = await this.signatureModel
         .findByIdAndUpdate(
           {
-            signature_id,
+            _id: signature_id,
           },
           { status: SignStatusEnum.ORDER_CANCEL },
+          { new: true },
         )
         .exec();
       console.log('Cancel Signature', res);
       return res;
     } catch (error) {
       this.logger.error(error);
+      throw new BadRequestException(error.message);
     }
   }
 
