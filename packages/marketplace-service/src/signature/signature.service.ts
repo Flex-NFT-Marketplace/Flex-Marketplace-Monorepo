@@ -133,7 +133,7 @@ export class SignatureService {
   ): Promise<Signature> {
     try {
       const collection = await this.collectionModel.findOne({
-        contract_address: formattedContractAddress(contract_address),
+        nftContract: formattedContractAddress(contract_address),
       });
 
       if (!collection) return;
@@ -226,7 +226,7 @@ export class SignatureService {
     //     signature.contract_address,
     //   );
     const collectionModel = await this.collectionModel
-      .findOne({ contract_address: signature.contract_address })
+      .findOne({ nftContract: signature.contract_address })
       .exec();
 
     if (collectionModel.standard == NftCollectionStandard.ERC721) {
@@ -265,15 +265,12 @@ export class SignatureService {
   ): Promise<void> {
     const { signature_id, transaction_hash, amount } = updateSignatureDTO;
 
-    const signature = await this.signatureModel
-      .findOne({
-        _id: signature_id,
-        signer: signer,
-      })
-      .exec();
-
+    const signature = await this.signatureModel.findById(signature_id).exec();
+    if (!signature) {
+      throw new BadRequestException('Signature not found');
+    }
     const collectionModel = await this.collectionModel
-      .findOne({ contract_address: signature.contract_address })
+      .findOne({ nftContract: signature.contract_address })
       .exec();
 
     if (collectionModel.standard == NftCollectionStandard.ERC721) {
