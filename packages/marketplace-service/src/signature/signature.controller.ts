@@ -113,8 +113,12 @@ export class SignatureController {
   @JWT()
   @Put()
   async updateSignature(@Body() updateSignDTO: UpdateSignatureDTO) {
-    const res = await this.signatureService.updateSignature(updateSignDTO);
-    return new BaseResult(res);
+    try {
+      const res = await this.signatureService.updateSignature(updateSignDTO);
+      return new BaseResult(res);
+    } catch (error) {
+      return new BadRequestException(error.message);
+    }
   }
 
   @JWT()

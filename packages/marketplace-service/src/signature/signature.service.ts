@@ -74,6 +74,7 @@ export class SignatureService {
       }
       const newSignature = new this.signatureModel({
         ...signature,
+        signer: formattedContractAddress(signer),
         signature4: JSON.stringify(signatureArray),
         transaction_status: TxStatusEnum.PENDING,
         nft: nft._id,
@@ -216,49 +217,45 @@ export class SignatureService {
   }
 
   async updateSignature(updateSignatureDTO: UpdateSignatureDTO): Promise<void> {
-    try {
-      const { signature_id, transaction_hash, buyer_address, amount } =
-        updateSignatureDTO;
+    const { signature_id, transaction_hash, buyer_address, amount } =
+      updateSignatureDTO;
 
-      const signature = await this.signatureModel.findById(signature_id).exec();
+    const signature = await this.signatureModel.findById(signature_id).exec();
 
-      //   const schema = await this.collectionService.getSchema(
-      //     signature.contract_address,
-      //   );
-      const collectionModel = await this.collectionModel
-        .findOne({ contract_address: signature.contract_address })
-        .exec();
+    //   const schema = await this.collectionService.getSchema(
+    //     signature.contract_address,
+    //   );
+    const collectionModel = await this.collectionModel
+      .findOne({ contract_address: signature.contract_address })
+      .exec();
 
-      if (collectionModel.standard == NftCollectionStandard.ERC721) {
+    if (collectionModel.standard == NftCollectionStandard.ERC721) {
+      await this.signatureModel.findByIdAndUpdate(signature_id, {
+        status: SignStatusEnum.BUYING,
+        transaction_hash: transaction_hash,
+        buyer_address: formattedContractAddress(buyer_address),
+      });
+    } else {
+      if (amount == signature.amount) {
         await this.signatureModel.findByIdAndUpdate(signature_id, {
           status: SignStatusEnum.BUYING,
           transaction_hash: transaction_hash,
           buyer_address: formattedContractAddress(buyer_address),
         });
       } else {
-        if (amount == signature.amount) {
-          await this.signatureModel.findByIdAndUpdate(signature_id, {
-            status: SignStatusEnum.BUYING,
-            transaction_hash: transaction_hash,
-            buyer_address: formattedContractAddress(buyer_address),
-          });
-        } else {
-          await this.signatureModel.findByIdAndUpdate(signature_id, {
-            amount: signature.amount - amount,
-          });
+        await this.signatureModel.findByIdAndUpdate(signature_id, {
+          amount: signature.amount - amount,
+        });
 
-          new this.signatureModel({
-            ...signature.toObject(),
-            _id: undefined, // Ensure a new ID is generated for the new document
-            status: SignStatusEnum.BUYING,
-            amount: amount,
-            transaction_hash: transaction_hash,
-            buyer_address: formattedContractAddress(buyer_address),
-          }).save();
-        }
+        new this.signatureModel({
+          ...signature.toObject(),
+          _id: undefined, // Ensure a new ID is generated for the new document
+          status: SignStatusEnum.BUYING,
+          amount: amount,
+          transaction_hash: transaction_hash,
+          buyer_address: formattedContractAddress(buyer_address),
+        }).save();
       }
-    } catch (error) {
-      throw new BadRequestException(error.message);
     }
   }
 
@@ -266,29 +263,32 @@ export class SignatureService {
     updateSignatureDTO: UpdateSignatureDTO,
     signer: string,
   ): Promise<void> {
-    try {
-      const { signature_id, transaction_hash, amount } = updateSignatureDTO;
+    const { signature_id, transaction_hash, amount } = updateSignatureDTO;
 
-      const signature = await this.signatureModel
-        .findOne({
-          _id: signature_id,
-          signer: signer,
-        })
+    const signature = await this.signatureModel
+      .findOne({
+        _id: signature_id,
+        signer: signer,
+      })
+      .exec();
+
+    const collectionModel = await this.collectionModel
+      .findOne({ contract_address: signature.contract_address })
+      .exec();
+
+    if (collectionModel.standard == NftCollectionStandard.ERC721) {
+      await this.signatureModel
+        .findByIdAndUpdate(
+          signature_id,
+          {
+            status: SignStatusEnum.BIDDING,
+            transaction_hash: transaction_hash,
+          },
+          {
+            new: true,
+          },
+        )
         .exec();
-
-      const collectionModel = await this.collectionModel
-        .findOne({ contract_address: signature.contract_address })
-        .exec();
-
-      if (collectionModel.standard == NftCollectionStandard.ERC721) {
-        await this.signatureModel.findByIdAndUpdate(signature_id, {
-          status: SignStatusEnum.BIDDING,
-          transaction_hash: transaction_hash,
-        });
-      }
-    } catch (error) {
-      this.logger.log(`Error in Update Bid ${error.message}`);
-      throw new BadRequestException(error.message);
     }
   }
 
