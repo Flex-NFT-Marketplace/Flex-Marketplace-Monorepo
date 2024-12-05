@@ -22,11 +22,12 @@ import {
 } from '@app/shared/models';
 import { NftCollectionsService } from '../nft-collections/nftCollections.service';
 import { NftCollectionsModule } from '../nft-collections/nftCollections.module';
-import { UsersModule } from '../user/user.module';
+
 import { MQ_JOB_DEFAULT_CONFIG, ONCHAIN_QUEUES } from '@app/shared/types';
 import { OnchainQueueService } from '@app/shared/utils/queue';
 import { UserService } from '../user/user.service';
 import { Web3Service } from '@app/web3-service/web3.service';
+import { CronService } from './task/signatureTask.service';
 
 @Module({
   imports: [
@@ -65,6 +66,7 @@ import { Web3Service } from '@app/web3-service/web3.service';
     OnchainQueueService,
     UserService,
     Web3Service,
+    CronService,
   ],
   exports: [SignatureService],
 })

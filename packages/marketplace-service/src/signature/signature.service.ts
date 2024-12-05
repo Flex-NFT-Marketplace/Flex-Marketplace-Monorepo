@@ -266,8 +266,12 @@ export class SignatureService {
     const { signature_id, transaction_hash, amount } = updateSignatureDTO;
 
     const signature = await this.signatureModel.findById(signature_id).exec();
+
     if (!signature) {
       throw new BadRequestException('Signature not found');
+    }
+    if (formattedContractAddress(signature.signer) !== signer) {
+      throw new BadRequestException('This Signature not belong to you');
     }
     const collectionModel = await this.collectionModel
       .findOne({ nftContract: signature.contract_address })
