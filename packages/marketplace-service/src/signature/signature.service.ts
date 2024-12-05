@@ -342,7 +342,7 @@ export class SignatureService {
                 const avgPrice = dataExist.floorPrice / dataExist.totalVolume;
                 await this.collectionStatsModel.findOneAndUpdate(
                   {
-                    contract_address: dataExist.nftContract,
+                    nftContract: dataExist.nftContract,
                   },
                   {
                     $inc: {
