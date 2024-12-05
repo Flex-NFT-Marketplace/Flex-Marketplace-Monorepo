@@ -270,7 +270,7 @@ export class SignatureService {
     if (!signature) {
       throw new BadRequestException('Signature not found');
     }
-    if (formattedContractAddress(signature.signer) !== signer) {
+    if (signature.signer !== signer) {
       throw new BadRequestException('This Signature not belong to you');
     }
     const collectionModel = await this.collectionModel
@@ -344,16 +344,31 @@ export class SignatureService {
                     signature.contract_address,
                   );
                 const avgPrice = dataExist.floorPrice / dataExist.totalVolume;
-                await this.collectionStatsModel.findOneAndUpdate(
-                  {
-                    nftContract: dataExist.nftContract,
-                  },
-                  {
-                    $inc: {
-                      floorPrice: avgPrice,
+                await this.signatureModel
+                  .updateMany(
+                    {
+                      contract_address: signature.contract_address,
+                      token_id: signature.token_id,
+                      status: SignStatusEnum.BID,
                     },
-                  },
-                );
+                    {
+                      status: SignStatusEnum.ORDER_CANCEL,
+                    },
+                  )
+                  .exec();
+
+                await this.collectionStatsModel
+                  .findOneAndUpdate(
+                    {
+                      nftContract: dataExist.nftContract,
+                    },
+                    {
+                      $inc: {
+                        floorPrice: avgPrice,
+                      },
+                    },
+                  )
+                  .exec();
                 break;
             }
           }
