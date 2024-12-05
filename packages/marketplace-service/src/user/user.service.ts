@@ -146,19 +146,20 @@ export class UserService {
   ): Promise<BaseResultPagination<SignatureDTO>> {
     const { page, size, skipIndex, userAddress, status, sort } = query;
     const result = new BaseResultPagination<SignatureDTO>();
+    console.log('Format Address', formattedContractAddress(userAddress));
     const filter: any = {};
     if (userAddress) {
-      filter.signer = userAddress;
+      filter.signer = formattedContractAddress(userAddress);
     }
     if (status) {
       filter.status = status;
     }
 
-    const count = await this.signatureModel.countDocuments(filter);
-    if (count === 0 || size === 0) {
-      result.data = new PaginationDto<SignatureDTO>([], count, page, size);
-      return result;
-    }
+    // const count = await this.signatureModel.countDocuments(filter);
+    // if (count === 0 || size === 0) {
+    //   result.data = new PaginationDto<SignatureDTO>([], count, page, size);
+    //   return result;
+    // }
 
     const items = await this.signatureModel
       .find(filter)
@@ -168,8 +169,49 @@ export class UserService {
       .populate('nft')
       .exec();
 
-    result.data = new PaginationDto(items, count, page, size);
+    console.log('WHat Wrong ', items);
+    result.data = new PaginationDto(items, 1, page, size);
 
     return result;
   }
+
+  // async fomatAllUserAddress() {
+  //   const documents = await this.signatureModel.find();
+
+  //   for (const doc of documents) {
+  //     try {
+  //       console.log('Updating document ID: ', doc._id);
+  //       const signatureArray = JSON.parse(doc.signature4);
+
+  //       if (signatureArray.length > 1) {
+  //         signatureArray[1] = formattedContractAddress(signatureArray[1]);
+  //       }
+  //       if (signatureArray.length > 2) {
+  //         signatureArray[2] = formattedContractAddress(signatureArray[2]);
+  //       }
+
+  //       const updates = {
+  //         contract_address: doc.contract_address
+  //           ? formattedContractAddress(doc.contract_address)
+  //           : doc.contract_address,
+  //         signer: doc.signer
+  //           ? formattedContractAddress(doc.signer)
+  //           : doc.signer,
+  //         buyer_address: doc.buyer_address
+  //           ? formattedContractAddress(doc.buyer_address)
+  //           : doc.buyer_address,
+  //         signature4: JSON.stringify(signatureArray),
+  //       };
+
+  //       // Update the document in the database
+  //       await this.signatureModel.findByIdAndUpdate(doc._id, updates, {
+  //         new: true,
+  //       });
+
+  //       console.log(`Updated document ID: ${doc._id}`);
+  //     } catch (error) {
+  //       console.error('Error formatting document fields:', error);
+  //     }
+  //   }
+  // }
 }

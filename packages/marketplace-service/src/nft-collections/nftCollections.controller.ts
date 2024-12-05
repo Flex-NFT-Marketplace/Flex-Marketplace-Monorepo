@@ -287,7 +287,8 @@ export class NftCollectionsController {
   async getTrendingNftCollection(
     @Body() query: TrendingNftCollectionsQueryDto,
   ): Promise<BaseResultPagination<TrendingNftCollectionsDto>> {
-    const key = `trending-nft-collection- ${JSON.stringify({ ...query })}`;
+    const key = `trending-nft-collection-${JSON.stringify({ ...query })}`;
+    console.log('Key', key);
     let data = await this.cacheManager.get(key);
     if (!data) {
       data = await this.nftCollectionService.getTrendingNFTCollections(query);

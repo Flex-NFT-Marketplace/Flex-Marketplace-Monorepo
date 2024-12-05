@@ -1,3 +1,4 @@
+import { ScheduleModule } from '@nestjs/schedule';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Module, MiddlewareConsumer } from '@nestjs/common';
 import { AuthModule } from './auth/auth.module';
@@ -15,6 +16,7 @@ import { SignatureModule } from './signature/signature.module';
 import { SystemModule } from './system/system.module';
 import { SearchModule } from './search/search.module';
 import { StakingModule } from './staking/staking.module';
+import { NftCollectionTaskModule } from './nft-collections/task/nftCollectionTask.module';
 
 @Module({
   imports: [
@@ -31,7 +33,9 @@ import { StakingModule } from './staking/staking.module';
     SystemModule,
     SearchModule,
     StakingModule,
-    CacheModule.register({ isGlobal: true }),
+    CacheModule.register({ isGlobal: true, max: 100 }),
+    ScheduleModule.forRoot(),
+    NftCollectionTaskModule,
   ],
   controllers: [],
   providers: [],

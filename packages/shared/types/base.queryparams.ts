@@ -11,7 +11,6 @@ import {
 export class BaseQueryParams {
   @ApiProperty({ required: true, type: 'number', default: 1 })
   @Min(1)
-  @IsOptional()
   page: number;
 
   @ApiProperty({ required: true, type: 'number', default: 10 })
@@ -23,7 +22,7 @@ export class BaseQueryParams {
   @IsAlphanumeric()
   @MaxLength(20)
   @IsOptional()
-  orderBy: string;
+  orderBy?: string;
 
   @ApiProperty({ required: false, nullable: true, enum: ['desc', 'asc'] })
   @IsOptional()

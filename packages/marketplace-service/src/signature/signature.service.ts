@@ -47,7 +47,9 @@ export class SignatureService {
     try {
       const signExits = await this.signatureModel
         .findOne({
-          contract_address: signature.contract_address,
+          contract_address: formattedContractAddress(
+            signature.contract_address,
+          ),
           token_id: signature.token_id,
           signer: signer,
           status: { $in: [SignStatusEnum.LISTING, SignStatusEnum.BUYING] },
@@ -58,21 +60,29 @@ export class SignatureService {
 
       const nft = await this.nftModel
         .findOne({
-          contract_address: signature.contract_address,
-          token_id: signature.token_id,
+          nftContract: formattedContractAddress(signature.contract_address),
+          tokenId: signature.token_id,
         })
         .exec();
+      const signatureArray = JSON.parse(signature.signature4);
 
+      if (signatureArray.length > 1) {
+        signatureArray[1] = formattedContractAddress(signatureArray[1]);
+      }
+      if (signatureArray.length > 2) {
+        signatureArray[2] = formattedContractAddress(signatureArray[2]);
+      }
       const newSignature = new this.signatureModel({
         ...signature,
+        signature4: JSON.stringify(signatureArray),
         transaction_status: TxStatusEnum.PENDING,
         nft: nft._id,
       });
 
       return newSignature.save();
     } catch (error) {
-      throw new BadRequestException(error.message);
       console.log(error);
+      throw new BadRequestException(error.message);
     }
   }
 
@@ -82,7 +92,7 @@ export class SignatureService {
   ): Promise<Signature> {
     try {
       const collection = await this.collectionModel.findOne({
-        contract_address,
+        nftContract: formattedContractAddress(contract_address),
       });
 
       if (!collection) return;
@@ -90,7 +100,7 @@ export class SignatureService {
       if (collection.standard == NftCollectionStandard.ERC721) {
         const signature = await this.signatureModel
           .findOne({
-            contract_address,
+            contract_address: formattedContractAddress(contract_address),
             token_id,
             status: { $in: [SignStatusEnum.LISTING, SignStatusEnum.BUYING] },
           })
@@ -100,7 +110,7 @@ export class SignatureService {
       } else {
         const signature = await this.signatureModel
           .find({
-            contract_address,
+            contract_address: formattedContractAddress(contract_address),
             token_id,
             status: { $in: [SignStatusEnum.LISTING, SignStatusEnum.BUYING] },
           })
@@ -112,7 +122,6 @@ export class SignatureService {
       }
     } catch (error) {
       throw new BadRequestException(error.message);
-      console.log(error);
     }
   }
 
@@ -123,7 +132,7 @@ export class SignatureService {
   ): Promise<Signature> {
     try {
       const collection = await this.collectionModel.findOne({
-        contract_address,
+        contract_address: formattedContractAddress(contract_address),
       });
 
       if (!collection) return;
@@ -131,7 +140,7 @@ export class SignatureService {
       if (collection.standard == NftCollectionStandard.ERC721) {
         const signature = await this.signatureModel
           .findOne({
-            contract_address,
+            contract_address: formattedContractAddress(contract_address),
             token_id,
             status: { $in: [SignStatusEnum.LISTING, SignStatusEnum.BUYING] },
           })
@@ -141,7 +150,7 @@ export class SignatureService {
       } else {
         const signature = await this.signatureModel
           .find({
-            contract_address,
+            contract_address: formattedContractAddress(contract_address),
             token_id,
             signer: owner_address,
             status: { $in: [SignStatusEnum.LISTING, SignStatusEnum.BUYING] },
@@ -153,7 +162,7 @@ export class SignatureService {
         if (signature.length === 0) {
           const sign = await this.signatureModel
             .findOne({
-              contract_address,
+              contract_address: formattedContractAddress(contract_address),
               token_id,
               status: { $in: [SignStatusEnum.LISTING] },
             })
@@ -165,7 +174,6 @@ export class SignatureService {
       }
     } catch (error) {
       throw new BadRequestException(error.message);
-      console.log(error);
     }
   }
 
@@ -176,7 +184,7 @@ export class SignatureService {
     try {
       const signature = await this.signatureModel
         .find({
-          contract_address,
+          contract_address: formattedContractAddress(contract_address),
           token_id,
           status: { $in: [SignStatusEnum.LISTING, SignStatusEnum.BUYING] },
         })
@@ -185,7 +193,6 @@ export class SignatureService {
       return signature;
     } catch (error) {
       throw new BadRequestException(error.message);
-      console.log(error);
     }
   }
 
@@ -196,7 +203,7 @@ export class SignatureService {
     try {
       const signature = await this.signatureModel
         .find({
-          contract_address,
+          contract_address: formattedContractAddress(contract_address),
           token_id,
           status: SignStatusEnum.BID,
         })
@@ -205,7 +212,6 @@ export class SignatureService {
       return signature;
     } catch (error) {
       throw new BadRequestException(error.message);
-      console.log(error);
     }
   }
 
@@ -227,14 +233,14 @@ export class SignatureService {
         await this.signatureModel.findByIdAndUpdate(signature_id, {
           status: SignStatusEnum.BUYING,
           transaction_hash: transaction_hash,
-          buyer_address: buyer_address,
+          buyer_address: formattedContractAddress(buyer_address),
         });
       } else {
         if (amount == signature.amount) {
           await this.signatureModel.findByIdAndUpdate(signature_id, {
             status: SignStatusEnum.BUYING,
             transaction_hash: transaction_hash,
-            buyer_address: buyer_address,
+            buyer_address: formattedContractAddress(buyer_address),
           });
         } else {
           await this.signatureModel.findByIdAndUpdate(signature_id, {
@@ -247,7 +253,7 @@ export class SignatureService {
             status: SignStatusEnum.BUYING,
             amount: amount,
             transaction_hash: transaction_hash,
-            buyer_address: buyer_address,
+            buyer_address: formattedContractAddress(buyer_address),
           }).save();
         }
       }
@@ -389,9 +395,10 @@ export class SignatureService {
 
   async getOrdersByAddress(address: string) {
     try {
+      const formatAdress = formattedContractAddress(address);
       const signatures = await this.signatureModel
         .find({
-          signer: address,
+          signer: formatAdress,
           status: SignStatusEnum.LISTING,
         })
         .populate('nftcollections')
@@ -405,9 +412,10 @@ export class SignatureService {
 
   async getBidByAddress(address: string) {
     try {
+      const formatAdress = formattedContractAddress(address);
       const signatures = await this.signatureModel
         .find({
-          signer: address,
+          signer: formatAdress,
           status: SignStatusEnum.BID,
         })
         .populate('nftcollections')
@@ -448,7 +456,9 @@ export class SignatureService {
     const filter: any = {};
     const result = new BaseResultPagination<any>();
     if (contract_address) {
-      filter.contract_address = query.contract_address;
+      filter.contract_address = formattedContractAddress(
+        query.contract_address,
+      );
     }
     if (minPrice || maxPrice) {
       filter.price = {};
@@ -560,7 +570,8 @@ export class SignatureService {
     const matchConditions: any = {}; // Dynamically build match conditions
 
     if (contract_address) {
-      matchConditions.contract_address = contract_address;
+      matchConditions.contract_address =
+        formattedContractAddress(contract_address);
     }
 
     if (minPrice || maxPrice) {

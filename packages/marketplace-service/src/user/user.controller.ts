@@ -80,6 +80,7 @@ export class UsersController {
     @Query() query: QueryUserActivity,
   ): Promise<BaseResultPagination<SignatureDTO>> {
     try {
+      console.log('query', query);
       const data = await this.userService.getUserActivity(query);
       return data;
     } catch (error) {
