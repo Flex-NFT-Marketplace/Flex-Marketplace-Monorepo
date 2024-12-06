@@ -259,6 +259,7 @@ export class SignatureService {
     }
   }
 
+  // Bidding
   async updateSignatureBid(
     updateSignatureDTO: UpdateSignatureDTO,
     signer: string,
@@ -270,9 +271,11 @@ export class SignatureService {
     if (!signature) {
       throw new BadRequestException('Signature not found');
     }
-    if (formattedContractAddress(signature.signer) !== signer) {
-      throw new BadRequestException('This Signature not belong to you');
-    }
+    console.log('Signature Data', signature.signer, '///', signer);
+
+    // if (formattedContractAddress(signature.buyer_address) !== signer) {
+    //   throw new BadRequestException('This Signature not belong to you');
+    // }
     const collectionModel = await this.collectionModel
       .findOne({ nftContract: signature.contract_address })
       .exec();
