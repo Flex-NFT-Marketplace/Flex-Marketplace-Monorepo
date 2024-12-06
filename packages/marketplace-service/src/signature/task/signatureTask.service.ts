@@ -9,7 +9,7 @@ export class CronService {
 
   constructor(private readonly signatureService: SignatureService) {}
 
-  @Cron(CronExpression.EVERY_10_SECONDS)
+  @Cron(CronExpression.EVERY_5_SECONDS)
   async handleCron() {
     if (this.isJobTxRunning) {
       return;

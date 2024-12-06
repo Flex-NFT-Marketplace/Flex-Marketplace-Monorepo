@@ -347,6 +347,7 @@ export class SignatureService {
                     {
                       _id: { $ne: signature.id },
                       token_id: signature.token_id,
+                      contract_address: signature.contract_address,
                       status: SignStatusEnum.BID,
                     },
                     {
