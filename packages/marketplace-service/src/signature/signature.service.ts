@@ -273,9 +273,9 @@ export class SignatureService {
     }
     console.log('Signature Data', signature.signer, '///', signer);
 
-    // if (formattedContractAddress(signature.buyer_address) !== signer) {
-    //   throw new BadRequestException('This Signature not belong to you');
-    // }
+    if (formattedContractAddress(signature.buyer_address) !== signer) {
+      throw new BadRequestException('Can not bid this signature');
+    }
     const collectionModel = await this.collectionModel
       .findOne({ nftContract: signature.contract_address })
       .exec();
