@@ -1,3 +1,4 @@
+import { formattedContractAddress } from './../../../shared/utils/formatContractAddress';
 import {
   BadRequestException,
   Body,
@@ -93,7 +94,7 @@ export class SignatureController {
     return new BaseResult(res);
   }
 
-  // @JWT()
+  @JWT()
   @Put('/bid')
   async updateSignatureBid(
     @Body() updateSignDTO: UpdateSignatureDTO,
@@ -102,7 +103,7 @@ export class SignatureController {
     try {
       const res = await this.signatureService.updateSignatureBid(
         updateSignDTO,
-        token.sub,
+        formattedContractAddress(token.sub),
       );
       return new BaseResult(res);
     } catch (error) {
@@ -128,7 +129,10 @@ export class SignatureController {
     @User() token: iInfoToken,
   ) {
     try {
-      await this.signatureService.cancelSignature(signatureId, token.sub);
+      await this.signatureService.cancelSignature(
+        signatureId,
+        formattedContractAddress(token.sub),
+      );
       return new BaseResult(true);
     } catch (error) {
       return new BadRequestException(error.message);
