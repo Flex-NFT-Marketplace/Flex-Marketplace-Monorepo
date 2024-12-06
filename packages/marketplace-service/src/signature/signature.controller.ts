@@ -31,15 +31,19 @@ export class SignatureController {
     @Body() signatureDTO: SignatureDTO,
     @User() token: iInfoToken,
   ) {
-    const res = await this.signatureService.createSignature(
-      signatureDTO,
-      token.sub,
-    );
+    try {
+      const res = await this.signatureService.createSignature(
+        signatureDTO,
+        token.sub,
+      );
 
-    if (!res) {
-      return new BadRequestException();
+      if (!res) {
+        return new BadRequestException();
+      }
+      return new BaseResult(res);
+    } catch (error) {
+      throw new BadRequestException(error.message);
     }
-    return new BaseResult(res);
   }
 
   @Get('/activity')

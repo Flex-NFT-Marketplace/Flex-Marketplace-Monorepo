@@ -484,20 +484,20 @@ export class SignatureService {
         filter.price.$lte = Number(maxPrice);
       }
     }
-    if (status) {
-      filter.status = query.status;
+    if (!status) {
+      filter.status = { $in: ['SOLD', 'BIDDING', 'BUYING', 'LISTING'] };
     }
 
     let sortQuery = {};
     switch (sortPrice) {
       case 'asc':
-        sortQuery = { price: 1, updatedAt: -1 };
+        sortQuery = { price: 1, createdAt: -1 };
         break;
       case 'desc':
-        sortQuery = { price: -1, updatedAt: -1 };
+        sortQuery = { price: -1, createdAt: -1 };
         break;
       default:
-        sortQuery = { updatedAt: -1 };
+        sortQuery = { createdAt: -1 };
     }
 
     const total = await this.signatureModel.countDocuments(filter);
@@ -509,61 +509,8 @@ export class SignatureService {
       .populate(['nft'])
       .exec();
 
-    // console.log('dataItems', dataItems);
     result.data = new PaginationDto(dataItems, total, page, size);
-    // console.log('dataItems', dataItems);
-    // try {
-    //   const agg = [
-    //     {
-    //       $match: {
-    //         ...(contract_address != '' && {
-    //           contract_address: contract_address,
-    //         }),
-    //         price: { $gte: Number(minPrice), $lte: Number(maxPrice) },
-    //         ...(status === 'LISTED'
-    //           ? { status: 'LISTING' }
-    //           : { status: { $ne: 'ORDER_CANCEL' } }),
-    //       },
-    //     },
-    //     {
-    //       $sort: sortQuery,
-    //     },
-    //     {
-    //       $lookup: {
-    //         from: 'nftcollections', // Tên của bộ sưu tập NFT
-    //         localField: 'nft', // Trường từ các tài liệu đầu vào trong giai đoạn $lookup
-    //         foreignField: '_id', // Trường từ các tài liệu trong bộ sưu tập "from"
-    //         as: 'nft', // Trường mảng thêm vào các tài liệu đầu vào chứa các tài liệu khớp từ bộ sưu tập "from"
-    //       },
-    //     },
-    //     {
-    //       $unwind: {
-    //         path: '$nft',
-    //         preserveNullAndEmptyArrays: true,
-    //       },
-    //     },
-    //     {
-    //       $skip: (page - 1) * size,
-    //     },
-    //     {
-    //       $limit: size,
-    //     },
-    //   ];
 
-    //   const nfts = await this.signatureModel.aggregate(agg);
-
-    //   const totalDocuments = await this.signatureModel.countDocuments().exec();
-
-    //   const totalPages = Math.ceil(totalDocuments / size);
-
-    //   let nextPage = Number(page) + 1;
-
-    //   if (nextPage > 10) nextPage = -1;
-
-    //   return { data: nfts, totalPages: totalPages, nextPage: nextPage };
-    // } catch (error) {
-    //   this.logger.error(error);
-    // }
     console.log('Data', result);
     return result;
   }
