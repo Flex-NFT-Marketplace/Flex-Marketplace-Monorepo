@@ -263,7 +263,7 @@ export class SignatureService {
     updateSignatureDTO: UpdateSignatureDTO,
     signer: string,
   ): Promise<void> {
-    const { signature_id, transaction_hash, amount } = updateSignatureDTO;
+    const { signature_id, transaction_hash } = updateSignatureDTO;
 
     const signature = await this.signatureModel.findById(signature_id).exec();
 
@@ -278,17 +278,12 @@ export class SignatureService {
       .exec();
 
     if (collectionModel.standard == NftCollectionStandard.ERC721) {
+      console.log('updateSignatureBid -> signature_id', signature_id);
       await this.signatureModel
-        .findByIdAndUpdate(
-          signature_id,
-          {
-            status: SignStatusEnum.BIDDING,
-            transaction_hash: transaction_hash,
-          },
-          {
-            new: true,
-          },
-        )
+        .findByIdAndUpdate(signature_id, {
+          status: SignStatusEnum.BIDDING,
+          transaction_hash: transaction_hash,
+        })
         .exec();
     }
   }
@@ -347,7 +342,7 @@ export class SignatureService {
                 await this.signatureModel
                   .updateMany(
                     {
-                      contract_address: signature.contract_address,
+                      _id: { $ne: signature.id },
                       token_id: signature.token_id,
                       status: SignStatusEnum.BID,
                     },

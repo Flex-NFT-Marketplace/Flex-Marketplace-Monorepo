@@ -93,7 +93,7 @@ export class SignatureController {
     return new BaseResult(res);
   }
 
-  @JWT()
+  // @JWT()
   @Put('/bid')
   async updateSignatureBid(
     @Body() updateSignDTO: UpdateSignatureDTO,
