@@ -270,7 +270,7 @@ export class SignatureService {
     if (!signature) {
       throw new BadRequestException('Signature not found');
     }
-    if (signature.signer !== signer) {
+    if (formattedContractAddress(signature.signer) !== signer) {
       throw new BadRequestException('This Signature not belong to you');
     }
     const collectionModel = await this.collectionModel
