@@ -1,5 +1,5 @@
 import { BaseQueryParams } from '@app/shared/types';
-import { IsOptional, IsHexadecimal } from 'class-validator';
+import { IsOptional, IsHexadecimal, IsBoolean } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class GetCollectiblesDto extends BaseQueryParams {
@@ -12,4 +12,9 @@ export class GetCollectiblesDto extends BaseQueryParams {
   @IsHexadecimal()
   @IsOptional()
   creator?: string;
+
+  @ApiProperty()
+  @IsBoolean()
+  @IsOptional()
+  isHaveSet?: boolean;
 }

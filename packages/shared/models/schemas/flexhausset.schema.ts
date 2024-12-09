@@ -1,7 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { BaseSchema } from './base.schema';
 import { NftCollectionDocument } from './nftcollection.schema';
-import { SchemaTypes } from 'mongoose';
+import { SchemaTypes, Document } from 'mongoose';
 import { UserDocument } from './user.schema';
 import { ApiProperty } from '@nestjs/swagger';
 

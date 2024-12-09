@@ -2172,20 +2172,19 @@ export class NftItemService {
       collectibles: { $in: [nftCollection._id] },
     });
 
-    if (set) {
-      const newDrop: FlexHausDrop = {
-        collectible: nftCollection,
-        dropType,
-        secureAmount,
-        topSupporters,
-        set,
-      };
+    const newDrop: FlexHausDrop = {
+      collectible: nftCollection,
+      creator: nftCollection.owner,
+      dropType,
+      secureAmount,
+      topSupporters,
+      set,
+    };
 
-      await this.flexHausDropModel.findOneAndUpdate(
-        { collectible: nftCollection },
-        { $set: newDrop },
-        { upsert: true, new: true },
-      );
-    }
+    await this.flexHausDropModel.findOneAndUpdate(
+      { collectible: nftCollection },
+      { $set: newDrop },
+      { upsert: true, new: true },
+    );
   }
 }
