@@ -145,6 +145,9 @@ export class SignatureService {
             token_id,
             status: { $in: [SignStatusEnum.LISTING, SignStatusEnum.BUYING] },
           })
+          .sort({
+            updatedAt: -1,
+          })
           .exec();
 
         return signature;
@@ -156,7 +159,7 @@ export class SignatureService {
             signer: owner_address,
             status: { $in: [SignStatusEnum.LISTING, SignStatusEnum.BUYING] },
           })
-          .sort({ price: 1 })
+          .sort({ price: 1, updatedAt: -1 })
           .limit(1)
           .exec();
 
@@ -166,6 +169,9 @@ export class SignatureService {
               contract_address: formattedContractAddress(contract_address),
               token_id,
               status: { $in: [SignStatusEnum.LISTING] },
+            })
+            .sort({
+              updatedAt: -1,
             })
             .exec();
           return sign;
@@ -189,6 +195,9 @@ export class SignatureService {
           token_id,
           status: { $in: [SignStatusEnum.LISTING, SignStatusEnum.BUYING] },
         })
+        .sort({
+          updatedAt: -1,
+        })
         .exec();
 
       return signature;
@@ -207,6 +216,9 @@ export class SignatureService {
           contract_address: formattedContractAddress(contract_address),
           token_id,
           status: SignStatusEnum.BID,
+        })
+        .sort({
+          updatedAt: -1,
         })
         .exec();
 

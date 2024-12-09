@@ -54,20 +54,23 @@ export class NftService {
     if (query.name) {
       filter.name = { $regex: `${query.name}`, $options: 'i' };
     }
+
+    //todo add attributes filter or
     if (query.attributes) {
       filter = {
         $and: [
           filter,
           {
             $or: query.attributes.map(attr => ({
-              'attributes.value': attr.value,
-              'attributes.trait_type': attr.trait_type,
+              $and: [
+                { 'attributes.trait_type': attr.trait_type },
+                { 'attributes.value': attr.value },
+              ],
             })),
           },
         ],
       };
     }
-
     filter.isBurned = query.isBurned ? query.isBurned : false;
     filter.amount = { $gt: 0 };
     const count = await this.nftModel.countDocuments(filter);
@@ -78,133 +81,330 @@ export class NftService {
     }
     const now = Date.now();
 
-    const items = await this.nftModel
-      .find(filter)
-      .sort(query.sort)
-      .skip(query.skipIndex)
-      .limit(query.size)
-      .populate([
-        {
-          path: 'owner',
-          select: [
-            'address',
-            'username',
-            'isVerified',
-            'email',
-            'avatar',
-            'cover',
-            'about',
-            'socials',
-            'isVerified',
+    // const items = await this.nftModel
+    //   .find(filter)
+    //   .sort(query.sort)
+    //   .skip(query.skipIndex)
+    //   .limit(query.size)
+    //   .populate([
+    //     {
+    //       path: 'owner',
+    //       select: [
+    //         'address',
+    //         'username',
+    //         'isVerified',
+    //         'email',
+    //         'avatar',
+    //         'cover',
+    //         'about',
+    //         'socials',
+    //         'isVerified',
+    //       ],
+    //     },
+    //     {
+    //       path: 'creator',
+    //       select: [
+    //         'address',
+    //         'username',
+    //         'isVerified',
+    //         'email',
+    //         'avatar',
+    //         'cover',
+    //         'about',
+    //         'socials',
+    //         'isVerified',
+    //       ],
+    //     },
+    //     {
+    //       path: 'nftCollection',
+    //       select: [
+    //         'name',
+    //         'symbol',
+    //         'verified',
+    //         'standard',
+    //         'description',
+    //         'avatar',
+    //         'key',
+    //       ],
+    //     },
+    //   ])
+    //   .exec();
+    let sortQuery = {};
+
+    switch (query.sortPrice) {
+      case 'asc':
+        sortQuery = { lowest_signature_price: 1 };
+        break;
+      case 'desc':
+        sortQuery = { lowest_signature_price: -1 };
+        break;
+      default:
+        sortQuery = { createdAt: 1 };
+    }
+
+    // const pipeline: any[] = [
+    //   {
+    //     $match: filter,
+    //   },
+    //   {
+    //     $facet: {
+    //       nfts_with_signatures: [
+    //         {
+    //           $lookup: {
+    //             from: 'signatures',
+    //             let: { nft_id: '$_id' },
+    //             pipeline: [
+    //               {
+    //                 $match: {
+    //                   $expr: { $eq: ['$nft', '$$nft_id'] },
+    //                 },
+    //               },
+    //               {
+    //                 $sort: { price: 1 },
+    //               },
+    //               {
+    //                 $limit: 1,
+    //               },
+    //             ],
+    //             as: 'signatures',
+    //           },
+    //         },
+    //         {
+    //           $unwind: {
+    //             path: '$signatures',
+    //             preserveNullAndEmptyArrays: true,
+    //           },
+    //         },
+    //         {
+    //           $match: {
+    //             'signatures.status': 'LISTING',
+    //             'signatures.price': {
+    //               $gte: Number(query.minPrice) || 0,
+    //               $lte: Number(query.maxPrice) || Number.MAX_VALUE,
+    //             },
+    //           },
+    //         },
+    //         {
+    //           $lookup: {
+    //             from: 'owners', // The collection where owner details are stored
+    //             localField: 'owner',
+    //             foreignField: '_id',
+    //             as: 'ownerData',
+    //           },
+    //         },
+    //         {
+    //           $unwind: {
+    //             path: '$ownerData',
+    //             preserveNullAndEmptyArrays: true,
+    //           },
+    //         },
+    //         {
+    //           $project: {
+    //             _id: 1,
+    //             contract_address: '$nftContract',
+    //             token_id: '$tokenId',
+    //             name: 1,
+    //             description: 1,
+    //             external_url: 1,
+    //             attributes: 1,
+    //             image_url: 1,
+    //             owner: '$ownerData',
+    //             lowest_signature_price: '$signatures.price',
+    //             signatures: '$signatures',
+    //             createdAt: 1,
+    //           },
+    //         },
+    //         {
+    //           $sort: sortQuery,
+    //         },
+    //       ],
+    //       nfts_without_signatures: [
+    //         {
+    //           $lookup: {
+    //             from: 'signatures',
+    //             localField: '_id',
+    //             foreignField: 'nft',
+    //             as: 'signatures',
+    //           },
+    //         },
+    //         {
+    //           $match: {
+    //             signatures: { $size: 0 },
+    //           },
+    //         },
+    //       ],
+    //     },
+    //   },
+    //   {
+    //     $project: {
+    //       nfts:
+    //         query.status === 'LISTING'
+    //           ? '$nfts_with_signatures'
+    //           : {
+    //               $concatArrays: [
+    //                 '$nfts_with_signatures',
+    //                 '$nfts_without_signatures',
+    //               ],
+    //             },
+    //     },
+    //   },
+    //   { $unwind: '$nfts' },
+    //   { $replaceRoot: { newRoot: '$nfts' } },
+    //   { $skip: Number(query.skipIndex) || 0 },
+    //   { $limit: Number(query.size) || 10 },
+    // ];
+    const pipeline: any[] = [
+      {
+        $match: filter, // Ensure `filter` is properly constructed
+      },
+      {
+        $lookup: {
+          from: 'signatures',
+          let: { nft_id: '$_id' },
+          pipeline: [
+            {
+              $match: {
+                $expr: { $eq: ['$nft', '$$nft_id'] },
+              },
+            },
+            { $sort: { price: 1, updatedAt: -1 } },
+            { $limit: 1 },
           ],
+          as: 'signatures',
         },
-        {
-          path: 'creator',
-          select: [
-            'address',
-            'username',
-            'isVerified',
-            'email',
-            'avatar',
-            'cover',
-            'about',
-            'socials',
-            'isVerified',
-          ],
+      },
+      {
+        $unwind: {
+          path: '$signatures',
+          preserveNullAndEmptyArrays: true,
         },
-        {
-          path: 'nftCollection',
-          select: [
-            'name',
-            'symbol',
-            'verified',
-            'standard',
-            'description',
-            'avatar',
-            'key',
-          ],
+      },
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'owner',
+          foreignField: '_id',
+          as: 'ownerData',
         },
-      ])
-      .exec();
+      },
+      {
+        $unwind: {
+          path: '$ownerData',
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $project: {
+          _id: 1,
+          nftContract: '$nftContract',
+          tokenId: '$tokenId',
+          name: 1,
+          description: 1,
+          image: 1,
+          attributes: 1,
+          burnedAt: 1,
+          amount: 1,
+          royaltyRate: 1,
+          lowestPrice: '$signatures.price',
+          owner: {
+            username: '$ownerData.username',
+            avatar: '$ownerData.avatar',
+            address: '$ownerData.address',
+          },
+          createdAt: 1,
+        },
+      },
+      {
+        $sort: sortQuery,
+      },
+      { $skip: Number(query.skipIndex) || 0 },
+      { $limit: Number(query.size) || 10 },
+    ];
+
+    const nfts = await this.nftModel.aggregate(pipeline);
 
     const afterAlterItem = [];
-    await arraySliceProcess(
-      items,
-      async slicedItems => {
-        await Promise.all(
-          slicedItems.map(async item => {
-            const currentResult: any = {
-              nftData: {},
-              orderData: {},
-            };
-            if (item.image === undefined) {
-              try {
-                const newItem = await this.metadataService.loadMetadata(
-                  item._id,
-                );
-                if (newItem) {
-                  currentResult.nftData = newItem;
-                  // afterAlterItem.push(newItem);
-                } else {
+    try {
+      await arraySliceProcess(
+        nfts,
+        async slicedItems => {
+          await Promise.all(
+            slicedItems.map(async item => {
+              const currentResult: any = {
+                nftData: {},
+                orderData: {},
+              };
+              if (item.image === undefined) {
+                try {
+                  const newItem = await this.metadataService.loadMetadata(
+                    item._id,
+                  );
+                  if (newItem) {
+                    currentResult.nftData = newItem;
+                    // afterAlterItem.push(newItem);
+                  } else {
+                    // afterAlterItem.push(item);
+                    currentResult.nftData = item;
+                  }
+                } catch (error) {
                   // afterAlterItem.push(item);
                   currentResult.nftData = item;
                 }
-              } catch (error) {
+              } else {
                 // afterAlterItem.push(item);
                 currentResult.nftData = item;
               }
-            } else {
-              // afterAlterItem.push(item);
-              currentResult.nftData = item;
-            }
 
-            if (typeof item.tokenId === 'number') {
-              item.tokenId = String(item.tokenId);
-              await item.save();
-            }
-            //Todo code of signatureService
-            let bestAsk: any;
+              if (typeof item.tokenId === 'number') {
+                item.tokenId = String(item.tokenId);
+                await item.save();
+              }
+              //Todo code of signatureService
+              let bestAsk: any;
 
-            if (item.owner.username != '') {
-              bestAsk = await this.signatureService.getSignatureByOwner(
+              if (item.owner.username != '') {
+                bestAsk = await this.signatureService.getSignatureByOwner(
+                  item.nftContract,
+                  item.tokenId,
+                  item.owner.username,
+                );
+              } else {
+                bestAsk = await this.signatureService.getSignature(
+                  item.nftContract,
+                  item.tokenId,
+                );
+              }
+              const listAsk = await this.signatureService.getSignatures(
                 item.nftContract,
                 item.tokenId,
-                item.owner.username,
               );
-            } else {
-              bestAsk = await this.signatureService.getSignature(
+
+              const listBid = await this.signatureService.getBidSignatures(
                 item.nftContract,
                 item.tokenId,
               );
-            }
-            const listAsk = await this.signatureService.getSignatures(
-              item.nftContract,
-              item.tokenId,
-            );
 
-            const listBid = await this.signatureService.getBidSignatures(
-              item.nftContract,
-              item.tokenId,
-            );
+              const orderData = {
+                bestAsk,
+                listAsk,
+                listBid,
+              };
 
-            const orderData = {
-              bestAsk,
-              listAsk,
-              listBid,
-            };
-
-            // const existingItem = afterAlterItem[index] || {};
-            // afterAlterItem[index] = {
-            //   nftData: existingItem,
-            //   orderData: orderData,
-            // };
-            currentResult.orderData = orderData;
-            afterAlterItem.push(currentResult);
-          }),
-        );
-      },
-      query.size,
-    );
+              // const existingItem = afterAlterItem[index] || {};
+              // afterAlterItem[index] = {
+              //   nftData: existingItem,
+              //   orderData: orderData,
+              // };
+              currentResult.orderData = orderData;
+              afterAlterItem.push(currentResult);
+            }),
+          );
+        },
+        query.size,
+      );
+    } catch (error) {
+      console.log('Error Fetching', error);
+    }
 
     result.data = new PaginationDto(
       afterAlterItem,

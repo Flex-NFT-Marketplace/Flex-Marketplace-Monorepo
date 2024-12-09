@@ -1,4 +1,4 @@
-import { Attribute, MarketType } from '@app/shared/models';
+import { Attribute, SignStatusEnum } from '@app/shared/models';
 import { BaseQueryParams } from '@app/shared/types/base.queryparams';
 import { ApiProperty } from '@nestjs/swagger';
 import {
@@ -42,19 +42,13 @@ export class NftFilterQueryParams extends BaseQueryParams {
   @IsOptional()
   @ApiProperty()
   @IsHexadecimal()
-  @IsNotEmpty()
-  nftContract?: string;
+  nftContract: string;
 
   @IsOptional()
   @ApiProperty({ type: String, required: false, minimum: 1 })
   @IsString()
   @IsNotEmpty()
   tokenId?: string;
-
-  @IsOptional()
-  @ApiProperty({ enum: MarketType, example: MarketType.NotForSale })
-  @IsEnum(MarketType)
-  marketType?: MarketType;
 
   @IsOptional()
   @ApiProperty()
@@ -67,4 +61,29 @@ export class NftFilterQueryParams extends BaseQueryParams {
   @ApiProperty({ type: Boolean, required: false })
   @IsBoolean()
   isBurned?: boolean;
+
+  @ApiProperty({
+    required: false,
+  })
+  @IsOptional()
+  sortPrice?: string;
+
+  @ApiProperty({
+    required: false,
+  })
+  @IsOptional()
+  minPrice?: number;
+
+  @ApiProperty({
+    required: false,
+  })
+  @IsOptional()
+  maxPrice?: number;
+
+  @ApiProperty({
+    required: false,
+  })
+  @IsEnum([SignStatusEnum])
+  @IsOptional()
+  status?: SignStatusEnum;
 }
