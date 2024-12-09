@@ -1,4 +1,4 @@
-import { NftCollections } from '@app/shared/models';
+import { FlexHausDrop, NftCollections } from '@app/shared/models';
 import { BaseResult, BaseResultPagination } from '@app/shared/types';
 import { Controller, Get, Post, Body } from '@nestjs/common';
 import {
@@ -11,7 +11,9 @@ import {
 import { GetCollectiblesDto } from './dto/queryCollectibles.dto';
 import { CollectibleService } from './collectible.service';
 
+@ApiTags('FlexHausCollectible')
 @Controller('collectible')
+@ApiExtraModels(BaseResult, FlexHausDrop, NftCollections, BaseResultPagination)
 export class CollectibleController {
   constructor(private readonly collectibleService: CollectibleService) {}
 
@@ -34,7 +36,7 @@ export class CollectibleController {
                     items: {
                       type: 'array',
                       items: {
-                        $ref: getSchemaPath(NftCollections),
+                        $ref: getSchemaPath(FlexHausDrop),
                       },
                     },
                   },

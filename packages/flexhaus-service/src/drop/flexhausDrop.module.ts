@@ -4,6 +4,8 @@ import { UserService } from '../user/user.service';
 import { FlexDropController } from './flexhausDrop.controller';
 import { MongooseModule } from '@nestjs/mongoose';
 import {
+  FlexHausDrop,
+  FlexHausDropSchema,
   FlexHausSet,
   FlexHausSetSchema,
   NftCollectionSchema,
@@ -18,6 +20,7 @@ import {
       { name: FlexHausSet.name, schema: FlexHausSetSchema },
       { name: NftCollections.name, schema: NftCollectionSchema },
       { name: Users.name, schema: UserSchema },
+      { name: FlexHausDrop.name, schema: FlexHausDropSchema },
     ]),
   ],
   providers: [FlexDropService, UserService],

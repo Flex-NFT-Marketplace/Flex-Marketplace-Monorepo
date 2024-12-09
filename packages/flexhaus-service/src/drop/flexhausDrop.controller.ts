@@ -22,6 +22,7 @@ import { FlexHausSet, FlexHausSetDocument } from '@app/shared/models';
 import { JWT, User, iInfoToken } from '@app/shared/modules';
 import { GetFlexHausSetDto } from './dto/getSet.dto';
 import { isHexadecimal } from 'class-validator';
+import { AddCollectible } from './dto/addCollectible';
 
 @ApiTags('FlexHausDrop')
 @Controller('flexhaus-drop')
@@ -65,6 +66,70 @@ export class FlexDropController {
     @User() user: iInfoToken,
   ): Promise<BaseResult<FlexHausSetDocument>> {
     return await this.flexDropService.createNewSet(user.sub, body);
+  }
+
+  @JWT()
+  @Post('add-collectible')
+  @ApiOperation({
+    summary: 'Add Collectible to a set',
+  })
+  @ApiOkResponse({
+    schema: {
+      allOf: [
+        {
+          $ref: getSchemaPath(BaseResult),
+        },
+        {
+          properties: {
+            data: {
+              allOf: [
+                {
+                  $ref: getSchemaPath(FlexHausSet),
+                },
+              ],
+            },
+          },
+        },
+      ],
+    },
+  })
+  async addCollectible(
+    @Body() body: AddCollectible,
+    @User() user: iInfoToken,
+  ): Promise<BaseResult<FlexHausSetDocument>> {
+    return await this.flexDropService.addCollectible(user.sub, body);
+  }
+
+  @JWT()
+  @Post('remove-collectible')
+  @ApiOperation({
+    summary: 'Remove Collectible from a set',
+  })
+  @ApiOkResponse({
+    schema: {
+      allOf: [
+        {
+          $ref: getSchemaPath(BaseResult),
+        },
+        {
+          properties: {
+            data: {
+              allOf: [
+                {
+                  $ref: getSchemaPath(FlexHausSet),
+                },
+              ],
+            },
+          },
+        },
+      ],
+    },
+  })
+  async removeCollectible(
+    @Body() body: AddCollectible,
+    @User() user: iInfoToken,
+  ): Promise<BaseResult<FlexHausSetDocument>> {
+    return await this.flexDropService.removeCollectible(user.sub, body);
   }
 
   @Post('get-sets')

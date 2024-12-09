@@ -2,6 +2,8 @@ import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import {
+  FlexHausDrop,
+  FlexHausDropDocument,
   FlexHausSet,
   FlexHausSetDocument,
   NftCollectionDocument,
@@ -13,12 +15,15 @@ import { formattedContractAddress } from '@app/shared/utils';
 import { UserService } from '../user/user.service';
 import { GetFlexHausSetDto } from './dto/getSet.dto';
 import { PaginationDto } from '@app/shared/types/pagination.dto';
+import { AddCollectible } from './dto/addCollectible';
 
 @Injectable()
 export class FlexDropService {
   constructor(
     @InjectModel(FlexHausSet.name)
     private readonly flexHausSetModel: Model<FlexHausSetDocument>,
+    @InjectModel(FlexHausDrop.name)
+    private readonly flexHausDropModel: Model<FlexHausDropDocument>,
     @InjectModel(NftCollections.name)
     private readonly nftCollectionModel: Model<NftCollectionDocument>,
     private readonly userService: UserService,
@@ -30,7 +35,6 @@ export class FlexDropService {
   ): Promise<BaseResult<FlexHausSetDocument>> {
     const { collectible, startTime } = body;
     const formatedCollectible = formattedContractAddress(collectible);
-    const filter = {};
 
     const collectibleDocument = await this.nftCollectionModel.findOne({
       nftContract: formatedCollectible,
@@ -138,6 +142,92 @@ export class FlexDropService {
 
     result.data = new PaginationDto(items, total, page, size);
     return result;
+  }
+
+  async addCollectible(
+    user: string,
+    body: AddCollectible,
+  ): Promise<BaseResult<FlexHausSetDocument>> {
+    const { setId, collectible } = body;
+
+    const userDocument = await this.userService.getOrCreateUser(user);
+    const set = await this.flexHausSetModel.findOne({
+      _id: setId,
+      creator: userDocument,
+    });
+    if (!set) {
+      throw new HttpException('Set not found', HttpStatus.NOT_FOUND);
+    }
+
+    const collectibleDocument = await this.nftCollectionModel.findOne({
+      nftContract: formattedContractAddress(collectible),
+      isFlexHausCollectible: true,
+    });
+
+    if (!collectibleDocument) {
+      throw new HttpException('Collectible not found', HttpStatus.NOT_FOUND);
+    }
+
+    set.collectibles.push(collectibleDocument);
+
+    return await this.flexHausSetModel.findOneAndUpdate(
+      { _id: setId, creator: userDocument },
+      { $set: { collectibles: set.collectibles } },
+      { new: true },
+    );
+  }
+
+  async removeCollectible(
+    user: string,
+    body: AddCollectible,
+  ): Promise<BaseResult<FlexHausSetDocument>> {
+    const { setId, collectible } = body;
+
+    const userDocument = await this.userService.getOrCreateUser(user);
+    const set = await this.flexHausSetModel
+      .findOne({
+        _id: setId,
+        creator: userDocument,
+      })
+      .populate([{ path: 'collectibles', select: ['nftContract'] }]);
+    if (!set) {
+      throw new HttpException('Set not found', HttpStatus.NOT_FOUND);
+    }
+
+    const collectibleDocument = await this.nftCollectionModel.findOne({
+      nftContract: formattedContractAddress(collectible),
+      isFlexHausCollectible: true,
+    });
+
+    if (!collectibleDocument) {
+      throw new HttpException('Collectible not found', HttpStatus.NOT_FOUND);
+    }
+
+    if (
+      !set.collectibles.find(
+        i => i.nftContract === collectibleDocument.nftContract,
+      )
+    ) {
+      throw new HttpException(
+        'Collectible not found from set',
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    set.collectibles = set.collectibles.filter(
+      i => i.nftContract !== collectibleDocument.nftContract,
+    );
+
+    await this.flexHausDropModel.findOneAndUpdate(
+      { collectible: collectibleDocument },
+      { $set: { set: null } },
+    );
+
+    return await this.flexHausSetModel.findOneAndUpdate(
+      { _id: setId, creator: userDocument },
+      { $set: { collectibles: set.collectibles } },
+      { new: true },
+    );
   }
 
   async getSetById(id: string): Promise<BaseResult<FlexHausSetDocument>> {
