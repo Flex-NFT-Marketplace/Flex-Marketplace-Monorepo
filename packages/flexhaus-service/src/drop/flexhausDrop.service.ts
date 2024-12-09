@@ -139,4 +139,44 @@ export class FlexDropService {
     result.data = new PaginationDto(items, total, page, size);
     return result;
   }
+
+  async getSetById(id: string): Promise<BaseResult<FlexHausSetDocument>> {
+    const set = await this.flexHausSetModel.findOne({ _id: id }).populate([
+      {
+        path: 'collectibles',
+        select: [
+          'name',
+          'symbol',
+          'key',
+          'nftContract',
+          'cover',
+          'avatar',
+          'featuredImage',
+          'description',
+          'attributesMap',
+          'standard',
+          'status',
+          'verified',
+          'externalLink',
+        ],
+      },
+      {
+        path: 'creator',
+        select: [
+          'address',
+          'username',
+          'email',
+          'avatar',
+          'cover',
+          'about',
+          'socials',
+          'isVerified',
+        ],
+      },
+    ]);
+    if (!set) {
+      throw new HttpException('Set not found', HttpStatus.NOT_FOUND);
+    }
+    return new BaseResult(set);
+  }
 }

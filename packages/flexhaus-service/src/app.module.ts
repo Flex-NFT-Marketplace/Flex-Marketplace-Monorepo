@@ -6,6 +6,7 @@ import { CacheModule } from '@nestjs/cache-manager';
 import { FlexHausDropModule } from './drop/flexhausDrop.module';
 import { JwtStrategy } from '@app/shared/modules';
 import { Users, UserSchema } from '@app/shared/models';
+import { CollectibleModule } from './collectible/collectible.module';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { Users, UserSchema } from '@app/shared/models';
     MongooseModule.forFeature([{ name: Users.name, schema: UserSchema }]),
     CacheModule.register({ isGlobal: true }),
     FlexHausDropModule,
+    CollectibleModule,
   ],
   controllers: [],
   providers: [JwtStrategy],

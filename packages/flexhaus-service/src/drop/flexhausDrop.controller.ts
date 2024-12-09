@@ -5,13 +5,23 @@ import {
   getSchemaPath,
   ApiOkResponse,
 } from '@nestjs/swagger';
-import { Controller, Get, Body, Post, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Body,
+  Post,
+  Query,
+  Param,
+  HttpException,
+  HttpStatus,
+} from '@nestjs/common';
 import { BaseResult, BaseResultPagination } from '@app/shared/types';
 import { CreateSetDto } from './dto/createSet.dto';
 import { FlexDropService } from './flexhausDrop.service';
 import { FlexHausSet, FlexHausSetDocument } from '@app/shared/models';
 import { JWT, User, iInfoToken } from '@app/shared/modules';
 import { GetFlexHausSetDto } from './dto/getSet.dto';
+import { isHexadecimal } from 'class-validator';
 
 @ApiTags('FlexHausDrop')
 @Controller('flexhaus-drop')
@@ -72,7 +82,14 @@ export class FlexDropController {
             data: {
               allOf: [
                 {
-                  $ref: getSchemaPath(FlexHausSet),
+                  properties: {
+                    items: {
+                      type: 'array',
+                      items: {
+                        $ref: getSchemaPath(FlexHausSet),
+                      },
+                    },
+                  },
                 },
               ],
             },
@@ -85,5 +102,16 @@ export class FlexDropController {
     @Query() query: GetFlexHausSetDto,
   ): Promise<BaseResultPagination<FlexHausSetDocument>> {
     return await this.flexDropService.getSets(query);
+  }
+
+  @Get('get-set-by-id/:id')
+  async getSetById(
+    @Param('id') id: string,
+  ): Promise<BaseResult<FlexHausSetDocument>> {
+    if (!isHexadecimal(id)) {
+      throw new HttpException('Invalid id', HttpStatus.BAD_REQUEST);
+    }
+
+    return await this.flexDropService.getSetById(id);
   }
 }
