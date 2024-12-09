@@ -465,15 +465,14 @@ export class SignatureService {
       maxPrice,
       status,
       page,
+      token_id,
       size,
     } = query;
-
+    console.log('What Rogn', query);
     const filter: any = {};
     const result = new BaseResultPagination<any>();
     if (contract_address) {
-      filter.contract_address = formattedContractAddress(
-        query.contract_address,
-      );
+      filter.contract_address = formattedContractAddress(contract_address);
     }
     if (minPrice || maxPrice) {
       filter.price = {};
@@ -484,8 +483,19 @@ export class SignatureService {
         filter.price.$lte = Number(maxPrice);
       }
     }
+    if (token_id) {
+      filter.token_id = token_id;
+    }
     if (!status) {
-      filter.status = { $in: ['SOLD', 'BIDDING', 'BUYING', 'LISTING'] };
+      filter.status = {
+        $in: [
+          SignStatusEnum.SOLD,
+          SignStatusEnum.BID,
+          SignStatusEnum.BIDDING,
+          SignStatusEnum.LISTING,
+          SignStatusEnum.BUYING,
+        ],
+      };
     }
 
     let sortQuery = {};
@@ -497,21 +507,20 @@ export class SignatureService {
         sortQuery = { price: -1, createdAt: -1 };
         break;
       default:
-        sortQuery = { createdAt: -1 };
+        sortQuery = { updatedAt: -1 };
     }
 
     const total = await this.signatureModel.countDocuments(filter);
     const dataItems = await this.signatureModel
       .find(filter)
       .sort(sortQuery)
-      .skip(page)
+      .skip((page - 1) * size)
       .limit(size)
       .populate(['nft'])
       .exec();
 
     result.data = new PaginationDto(dataItems, total, page, size);
 
-    console.log('Data', result);
     return result;
   }
 

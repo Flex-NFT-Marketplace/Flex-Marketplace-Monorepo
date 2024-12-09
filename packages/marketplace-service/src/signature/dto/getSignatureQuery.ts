@@ -1,4 +1,4 @@
-import { IsEnum, IsHexadecimal, IsOptional } from 'class-validator';
+import { IsEnum, IsHexadecimal, IsOptional, IsString } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { BaseQueryParams } from '@app/shared/types';
 import { SignStatusEnum } from '@app/shared/models';
@@ -10,6 +10,13 @@ export class GetSignatureActivityQueryDTO extends BaseQueryParams {
   @IsOptional()
   @IsHexadecimal()
   contract_address?: string;
+
+  @ApiProperty({
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  token_id?: string;
 
   @ApiProperty({
     required: false,
