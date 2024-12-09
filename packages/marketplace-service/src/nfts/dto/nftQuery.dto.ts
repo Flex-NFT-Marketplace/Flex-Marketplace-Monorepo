@@ -23,13 +23,7 @@ export class AttributeDto implements Attribute {
   @ApiProperty()
   @IsDefined()
   @IsNotEmpty()
-  value: any;
-
-  @ApiProperty()
-  @IsString()
-  @IsOptional()
-  @IsNotEmpty()
-  display_type?: string;
+  value: string;
 }
 
 export class NftFilterQueryParams extends BaseQueryParams {

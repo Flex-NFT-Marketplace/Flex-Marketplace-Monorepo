@@ -11,7 +11,7 @@ import { Model } from 'mongoose';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
 import { BaseResultPagination } from '@app/shared/types';
-import { Timeout } from '@nestjs/schedule';
+import { Cron, CronExpression } from '@nestjs/schedule';
 
 @Injectable()
 export class NftCollectionTaskService {
@@ -23,7 +23,7 @@ export class NftCollectionTaskService {
     @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
   ) {}
   private readonly logger = new Logger(NftCollectionTaskService.name);
-  @Timeout(12 * 60 * 60 * 1000)
+  @Cron(CronExpression.EVERY_12_HOURS)
   async handleLoadingData() {
     try {
       const query: TrendingNftCollectionsQueryDto = {

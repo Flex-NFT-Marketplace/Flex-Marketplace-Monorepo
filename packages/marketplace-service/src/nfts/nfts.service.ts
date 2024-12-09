@@ -59,7 +59,7 @@ export class NftService {
         $and: [
           filter,
           {
-            $and: query.attributes.map(attr => ({
+            $or: query.attributes.map(attr => ({
               'attributes.value': attr.value,
               'attributes.trait_type': attr.trait_type,
             })),
