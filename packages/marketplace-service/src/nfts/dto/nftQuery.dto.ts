@@ -39,7 +39,6 @@ export class NftFilterQueryParams extends BaseQueryParams {
   @IsNotEmpty()
   owner?: string;
 
-  @IsOptional()
   @ApiProperty()
   @IsHexadecimal()
   nftContract: string;
@@ -83,7 +82,7 @@ export class NftFilterQueryParams extends BaseQueryParams {
   @ApiProperty({
     required: false,
   })
-  @IsEnum([SignStatusEnum])
+  @IsEnum(['ALL', SignStatusEnum.LISTING, SignStatusEnum.SOLD])
   @IsOptional()
-  status?: SignStatusEnum;
+  status?: string;
 }

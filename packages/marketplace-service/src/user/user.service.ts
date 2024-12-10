@@ -166,10 +166,14 @@ export class UserService {
       .skip(skipIndex)
       .limit(size)
       .sort(sort)
-      .populate('nft')
+      .populate([
+        {
+          path: 'nft',
+          populate: 'nftCollection',
+        },
+      ])
       .exec();
 
-    console.log('WHat Wrong ', items);
     result.data = new PaginationDto(items, 1, page, size);
 
     return result;
