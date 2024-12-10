@@ -40,8 +40,9 @@ export class NftFilterQueryParams extends BaseQueryParams {
   owner?: string;
 
   @ApiProperty()
+  @IsOptional()
   @IsHexadecimal()
-  nftContract: string;
+  nftContract?: string;
 
   @IsOptional()
   @ApiProperty({ type: String, required: false, minimum: 1 })
