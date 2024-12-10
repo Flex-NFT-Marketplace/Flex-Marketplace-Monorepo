@@ -8,11 +8,8 @@ import {
   IsEnum,
   IsBoolean,
   IsArray,
-  ValidateNested,
-  IsDefined,
   IsNotEmpty,
 } from 'class-validator';
-import { Type } from 'class-transformer';
 
 export class AttributeDto implements Attribute {
   @ApiProperty()
@@ -21,9 +18,9 @@ export class AttributeDto implements Attribute {
   trait_type: string;
 
   @ApiProperty()
-  @IsDefined()
+  @IsArray()
   @IsNotEmpty()
-  value: string;
+  value: string[];
 }
 
 export class NftFilterQueryParams extends BaseQueryParams {
@@ -53,8 +50,6 @@ export class NftFilterQueryParams extends BaseQueryParams {
   @IsOptional()
   @ApiProperty()
   @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => AttributeDto)
   attributes?: AttributeDto[];
 
   @IsOptional()

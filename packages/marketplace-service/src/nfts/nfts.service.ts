@@ -55,7 +55,6 @@ export class NftService {
       filter.name = { $regex: `${query.name}`, $options: 'i' };
     }
 
-    //todo add attributes filter or
     if (query.attributes) {
       filter = {
         $and: [
@@ -64,7 +63,7 @@ export class NftService {
             $or: query.attributes.map(attr => ({
               $and: [
                 { 'attributes.trait_type': attr.trait_type },
-                { 'attributes.value': attr.value },
+                { 'attributes.value': { $in: attr.value } },
               ],
             })),
           },
