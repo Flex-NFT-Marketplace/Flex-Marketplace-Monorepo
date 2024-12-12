@@ -84,10 +84,10 @@ export class NftService {
 
     switch (query.sortPrice) {
       case 'asc':
-        sortQuery = { lowest_signature_price: 1 };
+        sortQuery = { lowestPrice: 1 };
         break;
       case 'desc':
-        sortQuery = { lowest_signature_price: -1 };
+        sortQuery = { lowestPrice: -1 };
         break;
       default:
         sortQuery = { createdAt: 1 };
@@ -97,147 +97,92 @@ export class NftService {
       {
         $match: filter, // Ensure `filter` is properly constructed
       },
-      // { $skip: query.skipIndex },
-      // { $limit: query.size },
       {
-        $facet: {
-          nfts_with_signatures: [
-            {
-              $lookup: {
-                from: 'signatures',
-                let: { nft_id: '$_id' },
-                pipeline: [
-                  {
-                    $match: {
-                      $expr: { $eq: ['$nft', '$$nft_id'] },
-                    },
-                  },
-                  { $sort: { price: 1, updatedAt: -1 } },
-                  { $limit: 1 },
-                ],
-                as: 'signatures',
-              },
-            },
-            {
-              $unwind: {
-                path: '$signatures',
-                preserveNullAndEmptyArrays: true,
-              },
-            },
-            {
-              $lookup: {
-                from: 'users', // The collection where owner details are stored
-                localField: 'owner',
-                foreignField: '_id',
-                as: 'ownerData',
-              },
-            },
-            {
-              $unwind: {
-                path: '$ownerData',
-                preserveNullAndEmptyArrays: true,
-              },
-            },
+        $lookup: {
+          from: 'signatures',
+          let: { nft_id: '$_id' },
+          pipeline: [
             {
               $match: {
-                'signatures.status': 'LISTING',
-                'signatures.price': {
-                  $gte: Number(query.minPrice) || 0,
-                  $lte: Number(query.maxPrice) || Number.MAX_VALUE,
+                $expr: {
+                  $and: [
+                    { $eq: ['$nft', '$$nft_id'] },
+                    { $eq: ['$status', 'LISTING'] },
+                    {
+                      $and: [
+                        { $gt: ['$price', Number(query.minPrice) || 0] },
+                        {
+                          $lte: [
+                            '$price',
+                            Number(query.maxPrice) || Number.MAX_VALUE,
+                          ],
+                        },
+                      ],
+                    },
+                  ],
                 },
               },
             },
-            {
-              $project: {
-                _id: 1,
-                nftContract: '$nftContract',
-                tokenId: '$tokenId',
-                name: 1,
-                description: 1,
-                image: 1,
-                attributes: 1,
-                burnedAt: 1,
-                amount: 1,
-                royaltyRate: 1,
-                lowestPrice: '$signatures.price',
-                owner: {
-                  username: '$ownerData.username',
-                  avatar: '$ownerData.avatar',
-                  address: '$ownerData.address',
-                },
-                createdAt: 1,
-              },
-            },
-            {
-              $sort: sortQuery,
-            },
+            { $sort: { price: 1, updatedAt: -1 } },
+            { $limit: 1 },
           ],
-          nfts_without_signatures: [
-            // {
-            //   $lookup: {
-            //     from: 'signatures',
-            //     localField: '_id',
-            //     foreignField: 'nft',
-            //     as: 'signatures',
-            //   },
-            // },
-            // {
-            //   $match: {
-            //     signatures: { $size: 0 },
-            //   },
-            // },
-            {
-              $lookup: {
-                from: 'users', // The collection where owner details are stored
-                localField: 'owner',
-                foreignField: '_id',
-                as: 'ownerData',
-              },
-            },
-            {
-              $unwind: {
-                path: '$ownerData',
-                preserveNullAndEmptyArrays: true,
-              },
-            },
-            {
-              $project: {
-                _id: 1,
-                nftContract: '$nftContract',
-                tokenId: '$tokenId',
-                name: 1,
-                description: 1,
-                image: 1,
-                attributes: 1,
-                burnedAt: 1,
-                amount: 1,
-                royaltyRate: 1,
-                owner: {
-                  username: '$ownerData.username',
-                  avatar: '$ownerData.avatar',
-                  address: '$ownerData.address',
-                },
-                createdAt: 1,
-              },
-            },
-          ],
+          as: 'signatures',
+        },
+      },
+      {
+        $unwind: {
+          path: '$signatures',
+          preserveNullAndEmptyArrays: true,
         },
       },
       {
         $project: {
-          nfts:
-            query.status === 'LISTING'
-              ? '$nfts_with_signatures'
-              : {
-                  $concatArrays: [
-                    '$nfts_with_signatures',
-                    '$nfts_without_signatures',
-                  ],
-                },
+          _id: 1,
+          nftContract: '$nftContract',
+          tokenId: '$tokenId',
+          name: 1,
+          description: 1,
+          image: 1,
+          attributes: 1,
+          burnedAt: 1,
+          amount: 1,
+          royaltyRate: 1,
+          lowestPrice: '$signatures.price',
+          owner: 1,
+          createdAt: 1,
         },
       },
-      { $unwind: '$nfts' },
-      { $replaceRoot: { newRoot: '$nfts' } },
+      {
+        $sort: sortQuery,
+      },
+      {
+        $skip: query.skipIndex,
+      },
+      {
+        $limit: query.size,
+      },
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'owner',
+          foreignField: '_id',
+          pipeline: [
+            {
+              $project: {
+                _id: 0,
+                address: 1,
+                username: 1,
+                isVerified: 1,
+                avatar: 1,
+              },
+            },
+          ],
+          as: 'owner',
+        },
+      },
+      {
+        $unwind: '$owner',
+      },
     ];
 
     const nfts = await this.nftModel.aggregate(pipeline);
