@@ -84,7 +84,7 @@ export class NftService {
 
     switch (query.sortPrice) {
       case 'asc':
-        sortQuery = { lowestPrice: 1 };
+        sortQuery = { sortPrice: 1 };
         break;
       case 'desc':
         sortQuery = { lowestPrice: -1 };
@@ -153,6 +153,11 @@ export class NftService {
         },
       },
       {
+        $addFields: {
+          sortPrice: { $ifNull: ['$lowestPrice', Infinity] },
+        },
+      },
+      {
         $sort: sortQuery,
       },
       {
@@ -182,6 +187,11 @@ export class NftService {
       },
       {
         $unwind: '$owner',
+      },
+      {
+        $project: {
+          sortPrice: 0,
+        },
       },
     ];
 
