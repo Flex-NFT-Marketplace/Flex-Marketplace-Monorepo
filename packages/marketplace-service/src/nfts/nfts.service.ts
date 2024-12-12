@@ -231,7 +231,10 @@ export class NftService {
 
               if (typeof item.tokenId === 'number') {
                 item.tokenId = String(item.tokenId);
-                await item.save();
+                await this.nftModel.findOneAndUpdate(
+                  { _id: item._id },
+                  { $set: { tokenId: String(item.tokenId) } },
+                );
               }
               //Todo code of signatureService
               let bestAsk: any;
