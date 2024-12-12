@@ -1,5 +1,5 @@
 import { InjectModel } from '@nestjs/mongoose';
-import { NftDocument, NftDto, Nfts } from '@app/shared/models';
+import { NftDocument, NftDto, Nfts, Signature } from '@app/shared/models';
 import { PaginationDto } from '@app/shared/types/pagination.dto';
 import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import { Model } from 'mongoose';
@@ -20,6 +20,8 @@ export class NftService {
   constructor(
     @InjectModel(Nfts.name)
     private readonly nftModel: Model<NftDocument>,
+    @InjectModel(Signature.name)
+    private readonly signatureModel: Model<Signature>,
     private readonly userService: UserService,
     private readonly metadataService: MetadataService,
     private readonly signatureService: SignatureService,
@@ -30,6 +32,9 @@ export class NftService {
   ): Promise<BaseResultPagination<NftDto>> {
     const result = new BaseResultPagination<NftDto>();
     let filter: any = {};
+    let filterSign: any = {
+      status: 'LISTING',
+    };
     if (query.owner) {
       if (isValidObjectId(query.owner)) {
         filter.owner = query.owner;
@@ -44,12 +49,14 @@ export class NftService {
     }
     if (query.nftContract) {
       filter.nftContract = formattedContractAddress(query.nftContract);
+      filterSign.contract_address = formattedContractAddress(query.nftContract);
     }
     if (query.tokenId) {
       filter['$or'] = [
         { tokenId: query.tokenId },
         { tokenId: Number(query.tokenId) },
       ];
+      filterSign.token_id = query.tokenId;
     }
     if (query.name) {
       filter.name = { $regex: `${query.name}`, $options: 'i' };
@@ -72,7 +79,10 @@ export class NftService {
     }
     filter.isBurned = query.isBurned ? query.isBurned : false;
     filter.amount = { $gt: 0 };
-    const count = await this.nftModel.countDocuments(filter);
+    const count =
+      query.status === 'ALL'
+        ? await this.nftModel.countDocuments(filter)
+        : await this.signatureModel.countDocuments(filterSign);
 
     if (count === 0 || query.size === 0) {
       result.data = new PaginationDto([], count, query.page, query.size);
@@ -132,7 +142,7 @@ export class NftService {
       {
         $unwind: {
           path: '$signatures',
-          preserveNullAndEmptyArrays: true,
+          preserveNullAndEmptyArrays: query.status == 'ALL' ? true : false,
         },
       },
       {
