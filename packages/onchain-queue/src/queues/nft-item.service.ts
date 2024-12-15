@@ -2091,6 +2091,25 @@ export class NftItemService {
       { $set: history },
       { upsert: true, new: true },
     );
+    await this.signatureModel
+      .updateMany(
+        {
+          token_id: tokenId,
+          contract_address: collection,
+          status: {
+            $in: [
+              SignStatusEnum.BID,
+              SignStatusEnum.LISTING,
+              SignStatusEnum.BUYING,
+              SignStatusEnum.BIDDING,
+            ],
+          },
+        },
+        {
+          status: SignStatusEnum.ORDER_CANCEL,
+        },
+      )
+      .exec();
   }
 
   async processItemUnstaked(
