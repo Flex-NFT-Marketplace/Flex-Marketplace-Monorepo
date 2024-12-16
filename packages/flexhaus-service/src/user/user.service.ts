@@ -8,6 +8,7 @@ import { formattedContractAddress } from '@app/shared/utils';
 @Injectable()
 export class UserService {
   constructor(@InjectModel(Users.name) private userModel: Model<Users>) {}
+
   async getOrCreateUser(userAddress: string): Promise<UserDocument> {
     const formatAddress = formattedContractAddress(userAddress);
 

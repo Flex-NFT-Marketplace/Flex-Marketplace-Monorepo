@@ -7,6 +7,7 @@ import { FlexHausDropModule } from './drop/flexhausDrop.module';
 import { JwtStrategy } from '@app/shared/modules';
 import { Users, UserSchema } from '@app/shared/models';
 import { CollectibleModule } from './collectible/collectible.module';
+import { FlexHausEventModule } from './event/flexhausEvent.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { CollectibleModule } from './collectible/collectible.module';
     CacheModule.register({ isGlobal: true }),
     FlexHausDropModule,
     CollectibleModule,
+    FlexHausEventModule,
   ],
   controllers: [],
   providers: [JwtStrategy],

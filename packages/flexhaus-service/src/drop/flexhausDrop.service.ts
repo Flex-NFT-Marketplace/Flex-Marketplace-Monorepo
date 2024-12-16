@@ -4,6 +4,8 @@ import { Model } from 'mongoose';
 import {
   FlexHausDrop,
   FlexHausDropDocument,
+  FlexHausEventDocument,
+  FlexHausEvents,
   FlexHausSet,
   FlexHausSetDocument,
   NftCollectionDocument,
@@ -26,6 +28,8 @@ export class FlexDropService {
     private readonly flexHausDropModel: Model<FlexHausDropDocument>,
     @InjectModel(NftCollections.name)
     private readonly nftCollectionModel: Model<NftCollectionDocument>,
+    @InjectModel(FlexHausEvents.name)
+    private readonly flexHausEventModel: Model<FlexHausEventDocument>,
     private readonly userService: UserService,
   ) {}
 
@@ -33,8 +37,25 @@ export class FlexDropService {
     user: string,
     body: CreateSetDto,
   ): Promise<BaseResult<FlexHausSetDocument>> {
-    const { collectible, startTime } = body;
+    const { collectible, startTime, eventId } = body;
     const formatedCollectible = formattedContractAddress(collectible);
+    const creatorDocument = await this.userService.getOrCreateUser(user);
+
+    const eventDocument = await this.flexHausEventModel.findOne({
+      _id: eventId,
+      creator: creatorDocument,
+    });
+
+    if (!eventDocument) {
+      throw new HttpException('Event not found', HttpStatus.NOT_FOUND);
+    }
+
+    if (startTime < eventDocument.snapshotTime) {
+      throw new HttpException(
+        'Start time must be greater than snapshot time',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
 
     const collectibleDocument = await this.nftCollectionModel.findOne({
       nftContract: formatedCollectible,
@@ -48,11 +69,11 @@ export class FlexDropService {
       );
     }
 
-    const creatorDocument = await this.userService.getOrCreateUser(user);
     const newSet: FlexHausSet = {
       collectibles: [collectibleDocument],
       startTime,
       creator: creatorDocument,
+      event: eventDocument,
     };
     const setDocument = await this.flexHausSetModel.findOneAndUpdate(
       {
