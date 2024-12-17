@@ -20,6 +20,9 @@ export class FlexHausEvents extends BaseSchema {
 
   @Prop()
   snapshotTime: number;
+
+  @Prop({ default: false })
+  isCancelled?: boolean;
 }
 
 export const flexHausEventSchema = SchemaFactory.createForClass(FlexHausEvents);

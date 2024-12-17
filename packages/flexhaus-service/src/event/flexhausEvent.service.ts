@@ -20,23 +20,36 @@ export class FlexHausEventService {
     body: CreateEventDto,
   ): Promise<BaseResult<FlexHausEvents>> {
     const { snapshotTime, perks, startTime } = body;
+    if (startTime > snapshotTime) {
+      throw new HttpException(
+        'The start time must be less than the snapshot time',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
 
     const creatorDocument = await this.userService.getOrCreateUser(user);
-    const event: FlexHausEvents = {
+
+    const exitedEv = await this.flexHausEventModel.findOne({
+      creator: creatorDocument,
+      snapshotTime: { $gte: startTime },
+    });
+
+    if (exitedEv) {
+      throw new HttpException(
+        'The previous event must be ended before creating a new one',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    const event = new this.flexHausEventModel({
       creator: creatorDocument,
       perks,
       startTime,
       snapshotTime,
-    };
+    });
 
-    const eventDocument = await this.flexHausEventModel.findOneAndUpdate(
-      {
-        creator: creatorDocument,
-      },
-      { $set: event },
-      { upsert: true, new: true },
-    );
+    await event.save();
 
-    return new BaseResult(eventDocument);
+    return new BaseResult(event);
   }
 }
