@@ -44,6 +44,7 @@ export class FlexDropService {
     const eventDocument = await this.flexHausEventModel.findOne({
       _id: eventId,
       creator: creatorDocument,
+      isCancelled: false,
     });
 
     if (!eventDocument) {
@@ -90,7 +91,7 @@ export class FlexDropService {
   async getSets(
     query: GetFlexHausSetDto,
   ): Promise<BaseResultPagination<FlexHausSetDocument>> {
-    const { page, size, skipIndex } = query;
+    const { page, size, skipIndex, sort } = query;
     const result: BaseResultPagination<FlexHausSetDocument> =
       new BaseResultPagination();
     const filter: any = {};
@@ -115,51 +116,133 @@ export class FlexDropService {
       filter.creator = user;
     }
 
-    const total = await this.flexHausSetModel.countDocuments(filter);
+    let total = 0;
+    if (query.isCancelled !== undefined) {
+      const count = await this.flexHausSetModel.aggregate([
+        { $match: filter },
+        {
+          $lookup: {
+            from: 'events',
+            localField: 'event',
+            foreignField: '_id',
+            pipeline: [
+              {
+                $match: {
+                  $expr: { $eq: ['$isCancelled', query.isCancelled] },
+                },
+              },
+            ],
+            as: 'event',
+          },
+        },
+        {
+          $unwind: '$event',
+        },
+        {
+          $group: {
+            _id: 0,
+            total: {
+              $sum: 1,
+            },
+          },
+        },
+      ]);
+
+      total = count.length > 0 ? count[0].total : 0;
+    } else {
+      total = await this.flexHausSetModel.countDocuments(filter);
+    }
+
     if (total == 0) {
       result.data = new PaginationDto([], 0, page, size);
       return result;
     }
 
-    const items = await this.flexHausSetModel
-      .find(
-        filter,
-        {},
-        { sort: { startTime: 1 }, skip: skipIndex, limit: size },
-      )
-      .populate([
-        {
-          path: 'collectibles',
-          select: [
-            'name',
-            'symbol',
-            'key',
-            'nftContract',
-            'cover',
-            'avatar',
-            'featuredImage',
-            'description',
-            'attributesMap',
-            'standard',
-            'status',
-            'verified',
-            'externalLink',
-          ],
+    const items = await this.flexHausSetModel.aggregate([
+      { $match: filter },
+      {
+        $lookup: {
+          from: 'events',
+          localField: 'event',
+          foreignField: '_id',
+          pipeline:
+            query.isCancelled !== undefined
+              ? [
+                  {
+                    $match: {
+                      $expr: {
+                        $eq: ['$isCancelled', query.isCancelled],
+                      },
+                    },
+                  },
+                ]
+              : [],
+          as: 'event',
         },
-        {
-          path: 'creator',
-          select: [
-            'address',
-            'username',
-            'email',
-            'avatar',
-            'cover',
-            'about',
-            'socials',
-            'isVerified',
+      },
+      {
+        $unwind: '$event',
+      },
+      {
+        $sort: sort,
+      },
+      {
+        $skip: skipIndex,
+      },
+      {
+        $limit: size,
+      },
+      {
+        $lookup: {
+          from: 'nftcollections',
+          localField: '_id',
+          foreignField: 'nftCollection',
+          pipeline: [
+            {
+              $project: {
+                name: 1,
+                symbol: 1,
+                key: 1,
+                nftContract: 1,
+                cover: 1,
+                avatar: 1,
+                featuredImage: 1,
+                description: 1,
+                attributesMap: 1,
+                standard: 1,
+                status: 1,
+                verified: 1,
+                externalLink: 1,
+              },
+            },
           ],
+          as: 'collectibles',
         },
-      ]);
+      },
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'creator',
+          foreignField: 'address',
+          pipeline: [
+            {
+              $project: {
+                address: 1,
+                username: 1,
+                email: 1,
+                avatar: 1,
+                cover: 1,
+                about: 1,
+                socials: 1,
+                isVerified: 1,
+              },
+            },
+          ],
+          as: 'creator',
+        },
+      },
+      { $unwind: '$creator' },
+    ]);
 
     result.data = new PaginationDto(items, total, page, size);
     return result;
@@ -172,12 +255,18 @@ export class FlexDropService {
     const { setId, collectible } = body;
 
     const userDocument = await this.userService.getOrCreateUser(user);
-    const set = await this.flexHausSetModel.findOne({
-      _id: setId,
-      creator: userDocument,
-    });
+    const set = await this.flexHausSetModel
+      .findOne({
+        _id: setId,
+        creator: userDocument,
+      })
+      .populate(['event']);
     if (!set) {
       throw new HttpException('Set not found', HttpStatus.NOT_FOUND);
+    }
+
+    if (set.event.isCancelled) {
+      throw new HttpException('Event is cancelled', HttpStatus.BAD_REQUEST);
     }
 
     const collectibleDocument = await this.nftCollectionModel.findOne({
@@ -210,9 +299,14 @@ export class FlexDropService {
         _id: setId,
         creator: userDocument,
       })
+      .populate(['event'])
       .populate([{ path: 'collectibles', select: ['nftContract'] }]);
     if (!set) {
       throw new HttpException('Set not found', HttpStatus.NOT_FOUND);
+    }
+
+    if (set.event.isCancelled) {
+      throw new HttpException('Event is cancelled', HttpStatus.BAD_REQUEST);
     }
 
     const collectibleDocument = await this.nftCollectionModel.findOne({
@@ -283,6 +377,9 @@ export class FlexDropService {
           'socials',
           'isVerified',
         ],
+      },
+      {
+        path: 'event',
       },
     ]);
     if (!set) {

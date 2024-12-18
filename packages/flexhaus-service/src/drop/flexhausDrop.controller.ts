@@ -164,7 +164,7 @@ export class FlexDropController {
     },
   })
   async getSets(
-    @Query() query: GetFlexHausSetDto,
+    @Body() query: GetFlexHausSetDto,
   ): Promise<BaseResultPagination<FlexHausSetDocument>> {
     return await this.flexDropService.getSets(query);
   }

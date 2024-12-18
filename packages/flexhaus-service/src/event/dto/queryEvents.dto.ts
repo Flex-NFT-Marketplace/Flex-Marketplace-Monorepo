@@ -1,13 +1,8 @@
 import { BaseQueryParams } from '@app/shared/types';
+import { IsBoolean, IsHexadecimal, IsOptional } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
-import { IsHexadecimal, IsOptional, IsBoolean } from 'class-validator';
 
-export class GetFlexHausSetDto extends BaseQueryParams {
-  @ApiProperty()
-  @IsHexadecimal()
-  @IsOptional()
-  collectible?: string;
-
+export class QueryEventsDto extends BaseQueryParams {
   @ApiProperty()
   @IsHexadecimal()
   @IsOptional()
