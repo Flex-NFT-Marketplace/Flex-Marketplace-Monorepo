@@ -16,7 +16,7 @@ export class FlexHausSubscription extends BaseSchema {
   creator: UserDocument;
 
   @Prop({ default: false })
-  isUnSubscribe!: boolean;
+  isUnSubscribe?: boolean;
 }
 
 export const flexHausSubscriptionSchema =

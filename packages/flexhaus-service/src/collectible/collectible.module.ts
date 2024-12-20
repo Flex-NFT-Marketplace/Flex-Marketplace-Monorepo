@@ -6,10 +6,12 @@ import { MongooseModule } from '@nestjs/mongoose';
 import {
   FlexHausDrop,
   FlexHausDropSchema,
+  FlexHausSubscription,
   NftCollectionSchema,
   NftCollections,
   UserSchema,
   Users,
+  flexHausSubscriptionSchema,
 } from '@app/shared/models';
 
 @Module({
@@ -18,6 +20,7 @@ import {
       { name: NftCollections.name, schema: NftCollectionSchema },
       { name: Users.name, schema: UserSchema },
       { name: FlexHausDrop.name, schema: FlexHausDropSchema },
+      { name: FlexHausSubscription.name, schema: flexHausSubscriptionSchema },
     ]),
   ],
   controllers: [CollectibleController],

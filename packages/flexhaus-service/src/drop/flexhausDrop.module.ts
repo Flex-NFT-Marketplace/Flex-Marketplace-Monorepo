@@ -9,11 +9,13 @@ import {
   FlexHausEvents,
   FlexHausSet,
   FlexHausSetSchema,
+  FlexHausSubscription,
   NftCollectionSchema,
   NftCollections,
   UserSchema,
   Users,
   flexHausEventSchema,
+  flexHausSubscriptionSchema,
 } from '@app/shared/models';
 
 @Module({
@@ -24,6 +26,7 @@ import {
       { name: Users.name, schema: UserSchema },
       { name: FlexHausDrop.name, schema: FlexHausDropSchema },
       { name: FlexHausEvents.name, schema: flexHausEventSchema },
+      { name: FlexHausSubscription.name, schema: flexHausSubscriptionSchema },
     ]),
   ],
   providers: [FlexDropService, UserService],

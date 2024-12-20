@@ -5,6 +5,8 @@ import {
   FlexHausEvents,
   UserSchema,
   Users,
+  flexHausSubscriptionSchema,
+  FlexHausSubscription,
 } from '@app/shared/models';
 import { FlexHausEventService } from './flexhausEvent.service';
 import { UserService } from '../user/user.service';
@@ -15,6 +17,7 @@ import { FlexHausEventController } from './flexhausEvent.controller';
     MongooseModule.forFeature([
       { name: FlexHausEvents.name, schema: flexHausEventSchema },
       { name: Users.name, schema: UserSchema },
+      { name: FlexHausSubscription.name, schema: flexHausSubscriptionSchema },
     ]),
   ],
   providers: [FlexHausEventService, UserService],

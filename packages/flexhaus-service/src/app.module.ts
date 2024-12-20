@@ -8,6 +8,7 @@ import { JwtStrategy } from '@app/shared/modules';
 import { Users, UserSchema } from '@app/shared/models';
 import { CollectibleModule } from './collectible/collectible.module';
 import { FlexHausEventModule } from './event/flexhausEvent.module';
+import { UserModule } from './user/user.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { FlexHausEventModule } from './event/flexhausEvent.module';
     FlexHausDropModule,
     CollectibleModule,
     FlexHausEventModule,
+    UserModule,
   ],
   controllers: [],
   providers: [JwtStrategy],
