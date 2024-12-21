@@ -13,6 +13,7 @@ import * as web3 from 'web3';
 export type ContractDeployedReturnValue = {
   address: string;
   deployer: string;
+  isFlexHausCollectible: boolean;
 };
 
 export const decodeContractDeployed = (
@@ -33,6 +34,7 @@ export const decodeContractDeployed = (
     deployer: formattedContractAddress(
       num.toHex(parsedEvent.ContractDeployed.deployer as BigNumberish),
     ),
+    isFlexHausCollectible: false,
   };
 
   return returnValue;
@@ -66,6 +68,7 @@ export type ERC721TransferReturnValue = {
   timestamp: number;
   isFlexDropMinted?: boolean;
   isWarpcastMinted?: boolean;
+  isClaimCollectible?: boolean;
   price?: number;
   phaseId?: number;
 };
@@ -768,6 +771,100 @@ export const decodeClaimPoint = (
   };
 
   console.log(returnValues);
+
+  return returnValues;
+};
+
+export const decodeUpdateCollectible = (
+  txReceipt: any,
+  provider: Provider,
+  timestamp: number,
+): ContractDeployedReturnValue => {
+  const contractInstance = new Contract(
+    ABIS.FlexHausFactoryABI,
+    txReceipt.events[0].from_address,
+    provider,
+  );
+
+  const parsedEvent =
+    contractInstance.parseEvents(txReceipt)[0].UpdateCollectible;
+  const returnValues: ContractDeployedReturnValue = {
+    address: formattedContractAddress(
+      num.toHex(parsedEvent.collectible as BigNumberish),
+    ),
+    deployer: formattedContractAddress(
+      num.toHex(parsedEvent.creator as BigNumberish),
+    ),
+    isFlexHausCollectible: true,
+  };
+
+  return returnValues;
+};
+
+export type UpdateDropReturnValue = {
+  collectible: string;
+  dropType: number;
+  secureAmount: string;
+  topSupporters: number;
+  startTime: number;
+  updateAt: number;
+};
+
+export const decodeUpdateDrop = (
+  txReceipt: any,
+  provider: Provider,
+  timestamp: number,
+): UpdateDropReturnValue => {
+  const contractInstance = new Contract(
+    ABIS.FlexHausFactoryABI,
+    txReceipt.events[0].from_address,
+    provider,
+  );
+
+  const parsedEvent = contractInstance.parseEvents(txReceipt)[0].UpdateDrop;
+  const returnValues: UpdateDropReturnValue = {
+    collectible: formattedContractAddress(
+      num.toHex(parsedEvent.collectible as BigNumberish),
+    ),
+    dropType: Number((parsedEvent.drop_type as bigint).toString()),
+    secureAmount: (parsedEvent.secure_amount as bigint).toString(),
+    topSupporters: Number((parsedEvent.top_supporters as bigint).toString()),
+    startTime: Number((parsedEvent.start_time as bigint).toString()) * 1e3,
+    updateAt: timestamp,
+  };
+
+  return returnValues;
+};
+
+export type ClaimCollectibleReturnValue = {
+  collectible: string;
+  recipient: string;
+};
+
+export const decodeClaimCollectible = (
+  txReceipt: any,
+  provider: Provider,
+  timestamp: number,
+): ClaimCollectibleReturnValue => {
+  const flexHausFactoryAddress = formattedContractAddress(
+    txReceipt.events[0].from_address,
+  );
+  const contractInstance = new Contract(
+    ABIS.FlexHausFactoryABI,
+    flexHausFactoryAddress,
+    provider,
+  );
+
+  const parsedEvent =
+    contractInstance.parseEvents(txReceipt)[0].ClaimCollectible;
+  const returnValues: ClaimCollectibleReturnValue = {
+    collectible: formattedContractAddress(
+      num.toHex(parsedEvent.collectible as BigNumberish),
+    ),
+    recipient: formattedContractAddress(
+      num.toHex(parsedEvent.recipient as BigNumberish),
+    ),
+  };
 
   return returnValues;
 };

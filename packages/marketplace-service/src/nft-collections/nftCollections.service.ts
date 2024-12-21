@@ -10,7 +10,9 @@ import {
   NftCollectionDocument,
   NftCollectionDto,
   NftCollections,
+  NftCollectionStats,
   Nfts,
+  Signature,
 } from '@app/shared/models';
 import { Model } from 'mongoose';
 import { PaginationDto } from '@app/shared/types/pagination.dto';
@@ -65,6 +67,10 @@ export class NftCollectionsService {
     private readonly erc721UpdateMetadataQueue: Queue<LogsReturnValues>,
     @InjectQueue(ONCHAIN_QUEUES.QUEUE_UPDATE_METADATA_1155)
     private readonly erc1155UpdateMetadataQueue: Queue<LogsReturnValues>,
+    @InjectModel(NftCollectionStats.name)
+    private readonly nftCollectionStatsModel: Model<NftCollectionStats>,
+    @InjectModel(Signature.name)
+    private readonly signatureModel: Model<Signature>,
     private readonly onchainQueueService: OnchainQueueService,
     private readonly userService: UserService,
     private readonly web3Service: Web3Service,
@@ -376,11 +382,25 @@ export class NftCollectionsService {
         $unwind: '$statistic',
       },
       {
+        $lookup: {
+          from: 'nftcollections',
+          localField: '_id',
+          foreignField: 'nftContract',
+          as: 'collectionInfo',
+        },
+      },
+      {
+        $unwind: {
+          path: '$collectionInfo', // Unwind the array to get a single object
+          preserveNullAndEmptyArrays: true, // Keep the document if no match is found
+        },
+      },
+      {
         $project: {
           _id: 0,
-          nftContract: '$_id',
-          oneDayVol: '$statistic.vol1D',
-          sevenDayVol: '$statistic.vol7D',
+          // nftContract: '$_id',
+          oneDayVol: { $divide: ['$statistic.vol1D', 1e18] },
+          sevenDayVol: { $divide: ['$statistic.vol7D', 1e18] },
           oneDayChange: {
             $cond: {
               if: { $gt: ['$statistic.volPre1D', 0] },
@@ -443,7 +463,15 @@ export class NftCollectionsService {
               },
             },
           },
-          totalVol: 1,
+          totalVol: { $divide: ['$totalVol', 1e18] },
+          nftCollection: {
+            nftContract: '$_id',
+            name: `$collectionInfo.name`,
+            avatar: `$collectionInfo.avatar`,
+            cover: `$collectionInfo.cover`,
+            description: `$collectionInfo.description`,
+            symbol: `$collectionInfo.symbol`,
+          },
         },
       },
     ]);
@@ -468,13 +496,16 @@ export class NftCollectionsService {
     const { page, size, skipIndex } = query;
 
     const result = new BaseResultPagination<TrendingNftCollectionsDto>();
+
     const oneDay = Date.now() - 86400000;
+    // const sevenDay = Date.now() - 7 * 86400000;
+
     const filter: any = { type: HistoryType.Sale };
     if (query.nftContract) {
       filter.nftContract = formattedContractAddress(query.nftContract);
     }
 
-    const trendingNFTCollection = await this.historyModel.aggregate([
+    const trendingNftCollection = await this.historyModel.aggregate([
       {
         $match: filter,
       },
@@ -485,17 +516,6 @@ export class NftCollectionsService {
             $sum: '$price',
           },
         },
-      },
-      {
-        $sort: {
-          totalVol: -1,
-        },
-      },
-      {
-        $skip: skipIndex,
-      },
-      {
-        $limit: size,
       },
       {
         $lookup: {
@@ -540,6 +560,31 @@ export class NftCollectionsService {
                     },
                   },
                 },
+                // vol7D: {
+                //   $sum: {
+                //     $cond: {
+                //       if: {
+                //         $gte: ['$timestamp', sevenDay],
+                //       },
+                //       then: '$price',
+                //       else: 0,
+                //     },
+                //   },
+                // },
+                // volPre7D: {
+                //   $sum: {
+                //     $cond: {
+                //       if: {
+                //         $and: [
+                //           { $gte: ['$timestamp', sevenDay - 7 * 86400000] },
+                //           { $lt: ['$timestamp', sevenDay] },
+                //         ],
+                //       },
+                //       then: '$price',
+                //       else: 0,
+                //     },
+                //   },
+                // },
               },
             },
           ],
@@ -551,53 +596,68 @@ export class NftCollectionsService {
       },
       {
         $lookup: {
-          from: 'nfts', // Name of the `nft` collection
-          localField: '_id', // The `nftContract` in the aggregated result
-          foreignField: 'nftContract', // The `nftContract` in the `nfts` collection
-          as: 'nftDetails', // Output array for joined data
+          from: 'nftcollections', // Reference to the `nftCollection` collection
+          localField: '_id',
+          foreignField: 'nftContract',
+          as: 'collectionInfo',
         },
       },
       {
         $unwind: {
-          path: '$nftDetails', // Flatten the `nftDetails` array
-          preserveNullAndEmptyArrays: true, // Preserve results with no matches
-        },
-      },
-      {
-        $match: {
-          $or: [
-            { 'nftDetails.isBurned': false },
-            { 'nftDetails.amount': { $gt: 0 } },
-          ], // Exclude burned or zero-amount NFTs
-        },
-      },
-      {
-        $group: {
-          _id: '$_id', // Group by `nftContract`
-          totalVol: { $first: '$totalVol' }, // Preserve total volume
-          totalOwners: { $addToSet: '$nftDetails.owner' }, // Collect unique owners
-          totalNfts: { $sum: '$nftDetails.amount' }, // Sum of all NFT amounts
+          path: '$collectionInfo',
+          preserveNullAndEmptyArrays: true,
         },
       },
       {
         $lookup: {
-          from: 'nftcollections', // Name of the `nftCollection` collection
-          localField: '_id', // Field in the current collection (`nftContract`)
-          foreignField: 'nftContract', // Field in the `nftCollection` collection
-          as: 'collectionInfo', // Output array field name for joined data
+          from: 'nfts',
+          let: { nftContract: '$_id' },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ['$nftContract', '$$nftContract'] },
+
+                    // { $or: [{ isBurned: false }, { amount: { $gt: 0 } }] },
+                  ],
+                },
+              },
+            },
+            {
+              $group: {
+                _id: '$owner',
+                totalNFT: { $sum: '$amount' },
+              },
+            },
+            {
+              $group: {
+                _id: null,
+                totalOwners: { $sum: 1 },
+                totalNfts: { $sum: '$totalNFT' },
+              },
+            },
+            {
+              $project: {
+                _id: 0,
+                owners: '$totalOwners',
+                supply: '$totalNfts',
+              },
+            },
+          ],
+          as: 'ownershipStats',
         },
       },
       {
         $unwind: {
-          path: '$collectionInfo', // Unwind the array to get a single object
-          preserveNullAndEmptyArrays: true, // Keep the document if no match is found
+          path: '$ownershipStats',
+          preserveNullAndEmptyArrays: true,
         },
       },
       {
         $project: {
-          _id: 0,
-          nftContract: '$_id',
           oneDayVol: '$statistic.vol1D',
+          // sevenDayVol: '$statistic.vol7D',
           oneDayChange: {
             $cond: {
               if: { $gt: ['$statistic.volPre1D', 0] },
@@ -629,23 +689,68 @@ export class NftCollectionsService {
               },
             },
           },
-          totalVol: 1,
-          totalOwners: { $size: '$totalOwners' },
-          totalSupply: `$totalNfts`,
+          // sevenDayChange: {
+          //   $cond: {
+          //     if: { $gt: ['$statistic.volPre7D', 0] },
+          //     then: {
+          //       $divide: [
+          //         {
+          //           $multiply: [
+          //             {
+          //               $subtract: ['$statistic.vol7D', '$statistic.volPre7D'],
+          //             },
+          //             100,
+          //           ],
+          //         },
+          //         '$statistic.volPre7D',
+          //       ],
+          //     },
+          //     else: {
+          //       $divide: [
+          //         {
+          //           $multiply: [
+          //             {
+          //               $subtract: ['$statistic.vol7D', '$statistic.volPre7D'],
+          //             },
+          //             100,
+          //           ],
+          //         },
+          //         1,
+          //       ],
+          //     },
+          //   },
+          // },
+          totalVol: '$totalVol',
           nftCollection: {
+            nftContract: '$_id',
             name: `$collectionInfo.name`,
             avatar: `$collectionInfo.avatar`,
             cover: `$collectionInfo.cover`,
-            descipriton: `$collectionInfo.description`,
+            description: `$collectionInfo.description`,
             symbol: `$collectionInfo.symbol`,
           },
+          owners: '$ownershipStats.owners',
+          supply: '$ownershipStats.supply',
         },
+      },
+      {
+        $sort: {
+          oneDayChange: -1,
+          oneDayVol: -1,
+        },
+      },
+      {
+        $skip: skipIndex,
+      },
+      {
+        $limit: size,
       },
     ]);
 
     const total = await this.nftCollectionModel.countDocuments(filter);
+
     result.data = new PaginationDto<TrendingNftCollectionsDto>(
-      trendingNFTCollection,
+      trendingNftCollection,
       total,
       Number(page),
       Number(size),
@@ -676,8 +781,10 @@ export class NftCollectionsService {
           ],
         },
         'paymentTokens',
+        'nftCollectionStats',
       ]);
 
+    console.log('Data NFT Collection Detail', data);
     if (!data) {
       throw new HttpException('Collection not found', HttpStatus.NOT_FOUND);
     }
@@ -1048,5 +1155,275 @@ export class NftCollectionsService {
       ]);
 
     return newCollection;
+  }
+
+  async updateAllNftCollectionStatsData() {
+    const nftCollections = await this.nftCollectionModel.find();
+    const oneDay = Date.now() - 86400000;
+    const sevenDays = Date.now() - 7 * 86400000;
+    for (const nftCollection of nftCollections) {
+      const nftCollectionStats = await this.computeNftCollectionStats(
+        nftCollection.nftContract,
+        oneDay,
+        sevenDays,
+      );
+      if (nftCollectionStats != undefined) {
+        const nftCollectionStatsDocument =
+          await this.nftCollectionStatsModel.findOneAndUpdate(
+            { nftContract: nftCollection.nftContract },
+            nftCollectionStats,
+            { upsert: true, new: true },
+          );
+
+        console.log('Updated NFT Collection Stats: ', nftCollectionStats);
+        await this.nftCollectionModel.findOneAndUpdate(
+          {
+            nftContract: nftCollection.nftContract,
+          },
+          {
+            $set: {
+              nftCollectionStats: nftCollectionStatsDocument,
+            },
+          },
+        );
+      }
+    }
+  }
+
+  async getOrCreateNftCollectionStats(
+    nftContract: string,
+  ): Promise<NftCollectionStats> {
+    const formattedAddress = formattedContractAddress(nftContract);
+    const nftCollections = await this.nftCollectionModel.findOne({
+      nftContract: formattedAddress,
+    });
+    if (!nftCollections) {
+      throw new HttpException(
+        'NFT Collection Stats not found',
+        HttpStatus.NOT_FOUND,
+      );
+    }
+    const oneDay = Date.now() - 86400000;
+    const sevenDays = Date.now() - 7 * 86400000;
+    const computeNftCollectionStats = await this.computeNftCollectionStats(
+      formattedAddress,
+      oneDay,
+      sevenDays,
+    );
+    if (computeNftCollectionStats != undefined) {
+      const nftCollectionStatsDocument =
+        await this.nftCollectionStatsModel.findOneAndUpdate(
+          { nftContract: formattedAddress },
+          computeNftCollectionStats,
+          { upsert: true, new: true },
+        );
+      await this.nftCollectionModel.findOneAndUpdate(
+        {
+          nftContract: formattedAddress,
+        },
+        {
+          $set: {
+            nftCollectionStats: nftCollectionStatsDocument,
+          },
+        },
+      );
+      return nftCollectionStatsDocument;
+    }
+
+    const newNftCollectionStats: NftCollectionStats = {
+      nftContract: formattedAddress,
+      bestOffer: 0,
+      nftCount: 0,
+      ownerCount: 0,
+      totalVolume: 0,
+      totalListingCount: 0,
+      floorPrice: 0,
+      stats1D: {
+        saleCount: 0,
+        volume: 0,
+        avgPrice: 0,
+        volChange: 0,
+      },
+      stats7D: {
+        saleCount: 0,
+        volume: 0,
+        avgPrice: 0,
+        volChange: 0,
+      },
+      lastUpdated: Date.now(),
+    };
+    const nftCollectionStatsDocument =
+      await this.nftCollectionStatsModel.create(newNftCollectionStats);
+    await this.nftCollectionModel.findOneAndUpdate(
+      {
+        nftContract: formattedAddress,
+      },
+      {
+        $set: {
+          nftCollectionStats: nftCollectionStatsDocument,
+        },
+      },
+    );
+    return nftCollectionStatsDocument;
+  }
+  async computeNftCollectionStats(
+    nftContract: string,
+    oneDay: number,
+    sevenDays: number,
+  ): Promise<NftCollectionStats> {
+    try {
+      const stats = await this.historyModel.aggregate([
+        {
+          $match: {
+            nftContract,
+            type: HistoryType.Sale,
+            timestamp: { $gte: sevenDays - 7 * 86400000 },
+          },
+        },
+        {
+          $group: {
+            _id: '$nftContract',
+            vol1D: {
+              $sum: {
+                $cond: [{ $gte: ['$timestamp', oneDay] }, '$price', 0],
+              },
+            },
+            volPre1D: {
+              $sum: {
+                $cond: [
+                  {
+                    $and: [
+                      { $gte: ['$timestamp', oneDay - 86400000] },
+                      { $lt: ['$timestamp', oneDay] },
+                    ],
+                  },
+                  '$price',
+                  0,
+                ],
+              },
+            },
+            vol7D: {
+              $sum: {
+                $cond: [{ $gte: ['$timestamp', sevenDays] }, '$price', 0],
+              },
+            },
+            volPre7D: {
+              $sum: {
+                $cond: [
+                  {
+                    $and: [
+                      { $gte: ['$timestamp', sevenDays - 7 * 86400000] },
+                      { $lt: ['$timestamp', sevenDays] },
+                    ],
+                  },
+                  '$price',
+                  0,
+                ],
+              },
+            },
+            totalVol: { $sum: '$price' },
+            saleCount1D: {
+              $sum: { $cond: [{ $gte: ['$timestamp', oneDay] }, 1, 0] },
+            },
+            saleCount7D: {
+              $sum: { $cond: [{ $gte: ['$timestamp', sevenDays] }, 1, 0] },
+            },
+          },
+        },
+        {
+          $group: {
+            _id: '$_id',
+            totalVol: { $first: '$totalVol' },
+            saleCount1D: { $first: '$saleCount1D' },
+            saleCount7D: { $first: '$saleCount7D' },
+          },
+        },
+        {
+          $lookup: {
+            from: 'nftcollections',
+            localField: '_id',
+            foreignField: 'nftContract',
+            as: 'collectionInfo',
+          },
+        },
+        {
+          $unwind: {
+            path: '$collectionInfo',
+            preserveNullAndEmptyArrays: true,
+          },
+        },
+      ]);
+      const statsSignature = await this.signatureModel.aggregate([
+        {
+          $match: {
+            contract_address: nftContract,
+            is_burned: { $ne: true }, // Exclude burned entries
+          },
+        },
+        {
+          $facet: {
+            floorPrice: [
+              { $match: { status: 'LISTING' } },
+              { $group: { _id: null, minPrice: { $min: '$price' } } },
+            ],
+            bestOffer: [
+              { $match: { status: { $in: ['BID', 'BIDDING'] } } },
+              { $group: { _id: null, maxPrice: { $max: '$price' } } },
+            ],
+            totalListingCount: [
+              { $match: { status: 'LISTING' } },
+              { $count: 'count' },
+            ],
+            saleCount: [{ $match: { status: 'SOLD' } }, { $count: 'count' }],
+          },
+        },
+        {
+          $project: {
+            floorPrice: { $arrayElemAt: ['$floorPrice.minPrice', 0] },
+            bestOffer: { $arrayElemAt: ['$bestOffer.maxPrice', 0] },
+            totalListingCount: {
+              $arrayElemAt: ['$totalListingCount.count', 0],
+            },
+            saleCount: { $arrayElemAt: ['$saleCount.count', 0] },
+          },
+        },
+      ]);
+      const totalOwner = await this.getTotalOwners(nftContract);
+      const result = stats[0];
+
+      const result2 = statsSignature[0];
+      return {
+        nftContract,
+        bestOffer: result2?.bestOffer || 0,
+        nftCount: totalOwner.supply || 0,
+        ownerCount: totalOwner.owners || 0,
+        totalVolume: result?.totalVol / 1e18 || 0,
+        totalListingCount: result2?.totalListingCount || 0,
+        floorPrice: result2?.floorPrice || 0,
+        stats1D: {
+          saleCount: result?.saleCount1D || 0,
+          volume: result?.vol1D || 0,
+          avgPrice:
+            result?.vol1D && totalOwner.supply
+              ? result?.vol1D / totalOwner.supply
+              : 0,
+          volChange:
+            result?.volPre1D && result?.vol1D
+              ? ((result?.vol1D - result?.volPre1D) / result?.volPre1D) * 100
+              : 0,
+        },
+        stats7D: {
+          saleCount: result?.saleCount7D || 0,
+          volume: result?.vol7D || 0,
+          avgPrice: result?.vol7D / (totalOwner.supply || 1),
+          volChange: result?.volPre7D
+            ? ((result?.vol7D - result?.volPre7D) / result?.volPre7D) * 100
+            : 0,
+        },
+        lastUpdated: Date.now(),
+      };
+    } catch (error) {
+      return undefined;
+    }
   }
 }

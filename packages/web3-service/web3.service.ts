@@ -21,6 +21,7 @@ import {
   ERC721TransferReturnValue,
   decodeCancelAllOrders,
   decodeCancelOrder,
+  decodeClaimCollectible,
   decodeClaimPoint,
   decodeContractDeployed,
   decodeCreatorPayoutUpdated,
@@ -36,6 +37,8 @@ import {
   decodePhaseDropUpdated,
   decodeTakerAsk,
   decodeTakerBid,
+  decodeUpdateCollectible,
+  decodeUpdateDrop,
   decodeUpgradedContract,
 } from './decodeEvent';
 import { BURN_ADDRESS, NftCollectionStandard } from '@app/shared/models';
@@ -449,6 +452,51 @@ export class Web3Service {
             ...txReceiptFilter,
             eventType: EventType.CLAIM_POINT,
             returnValues: decodeClaimPoint(
+              txReceiptFilter,
+              provider,
+              timestamp,
+            ),
+          });
+        } else if (
+          event.keys.includes(EventTopic.UPDATE_COLLECTIBLE) &&
+          chain.flexHausFactoryContracts.includes(
+            formattedContractAddress(event.from_address),
+          )
+        ) {
+          eventWithTypes.push({
+            ...txReceiptFilter,
+            eventType: EventType.DEPLOY_CONTRACT,
+            returnValues: decodeUpdateCollectible(
+              txReceiptFilter,
+              provider,
+              timestamp,
+            ),
+          });
+        } else if (
+          event.keys.includes(EventTopic.UPDATE_DROP) &&
+          chain.flexHausFactoryContracts.includes(
+            formattedContractAddress(event.from_address),
+          )
+        ) {
+          eventWithTypes.push({
+            ...txReceiptFilter,
+            eventType: EventType.UPDATE_DROP,
+            returnValues: decodeUpdateDrop(
+              txReceiptFilter,
+              provider,
+              timestamp,
+            ),
+          });
+        } else if (
+          event.keys.includes(EventTopic.CLAIM_COLLECTIBLE) &&
+          chain.flexHausFactoryContracts.includes(
+            formattedContractAddress(event.from_address),
+          )
+        ) {
+          eventWithTypes.push({
+            ...txReceiptFilter,
+            eventType: EventType.CLAIM_COLLECTIBLE,
+            returnValues: decodeClaimCollectible(
               txReceiptFilter,
               provider,
               timestamp,

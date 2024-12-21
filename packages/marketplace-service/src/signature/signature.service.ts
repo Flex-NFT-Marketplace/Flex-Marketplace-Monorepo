@@ -1,13 +1,13 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 
-// import { StarkscanService } from 'src/starkscan/starkscan.service';
 import { RpcProvider } from 'starknet';
 import { SignatureDTO, UpdateSignatureDTO } from './dto/signature.dto';
 import {
   NftCollections,
   NftCollectionStandard,
+  NftCollectionStats,
   Nfts,
 } from '@app/shared/models';
 import {
@@ -16,6 +16,11 @@ import {
   TxStatusEnum,
 } from '@app/shared/models/schemas/signature.schema';
 import { RPC_PROVIDER } from '@app/shared/constants';
+import { GetSignatureActivityQueryDTO } from './dto/getSignatureQuery';
+import { BaseResultPagination } from '@app/shared/types';
+import { PaginationDto } from '@app/shared/types/pagination.dto';
+import { NftCollectionsService } from '../nft-collections/nftCollections.service';
+import { formattedContractAddress } from '@app/shared/utils';
 
 @Injectable()
 export class SignatureService {
@@ -27,6 +32,9 @@ export class SignatureService {
     @InjectModel(NftCollections.name)
     private collectionModel: Model<NftCollections>,
     @InjectModel(Signature.name) private signatureModel: Model<Signature>,
+    @InjectModel(NftCollectionStats.name)
+    private collectionStatsModel: Model<NftCollectionStats>,
+    private colelctionService: NftCollectionsService,
   ) {
     this.provider = new RpcProvider({
       nodeUrl:
@@ -35,13 +43,15 @@ export class SignatureService {
     });
   }
 
-  async createSignature(signature: SignatureDTO) {
+  async createSignature(signature: SignatureDTO, signer: string) {
     try {
       const signExits = await this.signatureModel
         .findOne({
-          contract_address: signature.contract_address,
+          contract_address: formattedContractAddress(
+            signature.contract_address,
+          ),
           token_id: signature.token_id,
-          signer: signature.signer,
+          signer: signer,
           status: { $in: [SignStatusEnum.LISTING, SignStatusEnum.BUYING] },
         })
         .exec();
@@ -50,13 +60,22 @@ export class SignatureService {
 
       const nft = await this.nftModel
         .findOne({
-          contract_address: signature.contract_address,
-          token_id: signature.token_id,
+          nftContract: formattedContractAddress(signature.contract_address),
+          tokenId: signature.token_id,
         })
         .exec();
+      const signatureArray = JSON.parse(signature.signature4);
 
+      if (signatureArray.length > 1) {
+        signatureArray[1] = formattedContractAddress(signatureArray[1]);
+      }
+      if (signatureArray.length > 2) {
+        signatureArray[2] = formattedContractAddress(signatureArray[2]);
+      }
       const newSignature = new this.signatureModel({
         ...signature,
+        signer: formattedContractAddress(signer),
+        signature4: JSON.stringify(signatureArray),
         transaction_status: TxStatusEnum.PENDING,
         nft: nft._id,
       });
@@ -64,6 +83,7 @@ export class SignatureService {
       return newSignature.save();
     } catch (error) {
       console.log(error);
+      throw new BadRequestException(error.message);
     }
   }
 
@@ -73,7 +93,7 @@ export class SignatureService {
   ): Promise<Signature> {
     try {
       const collection = await this.collectionModel.findOne({
-        contract_address,
+        nftContract: formattedContractAddress(contract_address),
       });
 
       if (!collection) return;
@@ -81,7 +101,7 @@ export class SignatureService {
       if (collection.standard == NftCollectionStandard.ERC721) {
         const signature = await this.signatureModel
           .findOne({
-            contract_address,
+            contract_address: formattedContractAddress(contract_address),
             token_id,
             status: { $in: [SignStatusEnum.LISTING, SignStatusEnum.BUYING] },
           })
@@ -91,7 +111,7 @@ export class SignatureService {
       } else {
         const signature = await this.signatureModel
           .find({
-            contract_address,
+            contract_address: formattedContractAddress(contract_address),
             token_id,
             status: { $in: [SignStatusEnum.LISTING, SignStatusEnum.BUYING] },
           })
@@ -102,7 +122,7 @@ export class SignatureService {
         return signature[0];
       }
     } catch (error) {
-      console.log(error);
+      throw new BadRequestException(error.message);
     }
   }
 
@@ -113,7 +133,7 @@ export class SignatureService {
   ): Promise<Signature> {
     try {
       const collection = await this.collectionModel.findOne({
-        contract_address,
+        nftContract: formattedContractAddress(contract_address),
       });
 
       if (!collection) return;
@@ -121,9 +141,12 @@ export class SignatureService {
       if (collection.standard == NftCollectionStandard.ERC721) {
         const signature = await this.signatureModel
           .findOne({
-            contract_address,
+            contract_address: formattedContractAddress(contract_address),
             token_id,
             status: { $in: [SignStatusEnum.LISTING, SignStatusEnum.BUYING] },
+          })
+          .sort({
+            updatedAt: -1,
           })
           .exec();
 
@@ -131,21 +154,24 @@ export class SignatureService {
       } else {
         const signature = await this.signatureModel
           .find({
-            contract_address,
+            contract_address: formattedContractAddress(contract_address),
             token_id,
             signer: owner_address,
             status: { $in: [SignStatusEnum.LISTING, SignStatusEnum.BUYING] },
           })
-          .sort({ price: 1 })
+          .sort({ price: 1, updatedAt: -1 })
           .limit(1)
           .exec();
 
         if (signature.length === 0) {
           const sign = await this.signatureModel
             .findOne({
-              contract_address,
+              contract_address: formattedContractAddress(contract_address),
               token_id,
               status: { $in: [SignStatusEnum.LISTING] },
+            })
+            .sort({
+              updatedAt: -1,
             })
             .exec();
           return sign;
@@ -154,7 +180,7 @@ export class SignatureService {
         return signature[0];
       }
     } catch (error) {
-      console.log(error);
+      throw new BadRequestException(error.message);
     }
   }
 
@@ -165,15 +191,18 @@ export class SignatureService {
     try {
       const signature = await this.signatureModel
         .find({
-          contract_address,
+          contract_address: formattedContractAddress(contract_address),
           token_id,
           status: { $in: [SignStatusEnum.LISTING, SignStatusEnum.BUYING] },
+        })
+        .sort({
+          updatedAt: -1,
         })
         .exec();
 
       return signature;
     } catch (error) {
-      console.log(error);
+      throw new BadRequestException(error.message);
     }
   }
 
@@ -184,85 +213,93 @@ export class SignatureService {
     try {
       const signature = await this.signatureModel
         .find({
-          contract_address,
+          contract_address: formattedContractAddress(contract_address),
           token_id,
           status: SignStatusEnum.BID,
+        })
+        .sort({
+          updatedAt: -1,
         })
         .exec();
 
       return signature;
     } catch (error) {
-      console.log(error);
+      throw new BadRequestException(error.message);
     }
   }
 
   async updateSignature(updateSignatureDTO: UpdateSignatureDTO): Promise<void> {
-    try {
-      const { signature_id, transaction_hash, buyer_address, amount } =
-        updateSignatureDTO;
+    const { signature_id, transaction_hash, buyer_address, amount } =
+      updateSignatureDTO;
 
-      const signature = await this.signatureModel.findById(signature_id).exec();
+    const signature = await this.signatureModel.findById(signature_id).exec();
 
-      //   const schema = await this.collectionService.getSchema(
-      //     signature.contract_address,
-      //   );
-      const collectionModel = await this.collectionModel
-        .findOne({ contract_address: signature.contract_address })
-        .exec();
+    //   const schema = await this.collectionService.getSchema(
+    //     signature.contract_address,
+    //   );
+    const collectionModel = await this.collectionModel
+      .findOne({ nftContract: signature.contract_address })
+      .exec();
 
-      if (collectionModel.standard == NftCollectionStandard.ERC721) {
+    if (collectionModel.standard == NftCollectionStandard.ERC721) {
+      await this.signatureModel.findByIdAndUpdate(signature_id, {
+        status: SignStatusEnum.BUYING,
+        transaction_hash: transaction_hash,
+        buyer_address: formattedContractAddress(buyer_address),
+      });
+    } else {
+      if (amount == signature.amount) {
         await this.signatureModel.findByIdAndUpdate(signature_id, {
           status: SignStatusEnum.BUYING,
           transaction_hash: transaction_hash,
-          buyer_address: buyer_address,
+          buyer_address: formattedContractAddress(buyer_address),
         });
       } else {
-        if (amount == signature.amount) {
-          await this.signatureModel.findByIdAndUpdate(signature_id, {
-            status: SignStatusEnum.BUYING,
-            transaction_hash: transaction_hash,
-            buyer_address: buyer_address,
-          });
-        } else {
-          await this.signatureModel.findByIdAndUpdate(signature_id, {
-            amount: signature.amount - amount,
-          });
+        await this.signatureModel.findByIdAndUpdate(signature_id, {
+          amount: signature.amount - amount,
+        });
 
-          new this.signatureModel({
-            ...signature.toObject(),
-            _id: undefined, // Ensure a new ID is generated for the new document
-            status: SignStatusEnum.BUYING,
-            amount: amount,
-            transaction_hash: transaction_hash,
-            buyer_address: buyer_address,
-          }).save();
-        }
+        new this.signatureModel({
+          ...signature.toObject(),
+          _id: undefined, // Ensure a new ID is generated for the new document
+          status: SignStatusEnum.BUYING,
+          amount: amount,
+          transaction_hash: transaction_hash,
+          buyer_address: formattedContractAddress(buyer_address),
+        }).save();
       }
-    } catch (error) {
-      console.log(error);
     }
   }
 
+  // Bidding
   async updateSignatureBid(
     updateSignatureDTO: UpdateSignatureDTO,
+    signer: string,
   ): Promise<void> {
-    try {
-      const { signature_id, transaction_hash, amount } = updateSignatureDTO;
+    const { signature_id, transaction_hash } = updateSignatureDTO;
 
-      const signature = await this.signatureModel.findById(signature_id).exec();
+    const signature = await this.signatureModel.findById(signature_id).exec();
 
-      const collectionModel = await this.collectionModel
-        .findOne({ contract_address: signature.contract_address })
-        .exec();
+    if (!signature) {
+      throw new BadRequestException('Signature not found');
+    }
+    console.log('Signature Data', signature.signer, '///', signer);
 
-      if (collectionModel.standard == NftCollectionStandard.ERC721) {
-        await this.signatureModel.findByIdAndUpdate(signature_id, {
+    if (formattedContractAddress(signature.buyer_address) !== signer) {
+      throw new BadRequestException('Can not bid this signature');
+    }
+    const collectionModel = await this.collectionModel
+      .findOne({ nftContract: signature.contract_address })
+      .exec();
+
+    if (collectionModel.standard == NftCollectionStandard.ERC721) {
+      console.log('updateSignatureBid -> signature_id', signature_id);
+      await this.signatureModel
+        .findByIdAndUpdate(signature_id, {
           status: SignStatusEnum.BIDDING,
           transaction_hash: transaction_hash,
-        });
-      }
-    } catch (error) {
-      this.logger.error(error);
+        })
+        .exec();
     }
   }
 
@@ -311,6 +348,38 @@ export class SignatureService {
                 this.logger.log(
                   'Synced tx status to SOLD: ' + signature.transaction_hash,
                 );
+
+                const dataExist =
+                  await this.colelctionService.getOrCreateNftCollectionStats(
+                    signature.contract_address,
+                  );
+                const avgPrice = dataExist.floorPrice / dataExist.totalVolume;
+                await this.signatureModel
+                  .updateMany(
+                    {
+                      _id: { $ne: signature.id },
+                      token_id: signature.token_id,
+                      contract_address: signature.contract_address,
+                      status: SignStatusEnum.BID,
+                    },
+                    {
+                      status: SignStatusEnum.ORDER_CANCEL,
+                    },
+                  )
+                  .exec();
+
+                await this.collectionStatsModel
+                  .findOneAndUpdate(
+                    {
+                      nftContract: dataExist.nftContract,
+                    },
+                    {
+                      $inc: {
+                        floorPrice: avgPrice,
+                      },
+                    },
+                  )
+                  .exec();
                 break;
             }
           }
@@ -324,27 +393,39 @@ export class SignatureService {
     }
   }
 
-  async cancelSignature(signature_id: string) {
+  async cancelSignature(signature_id: string, signer: string) {
     try {
+      const exist = await this.signatureModel.findById(signature_id).exec();
+      if (!exist) {
+        throw new BadRequestException('Signature not found');
+      }
+
+      if (formattedContractAddress(exist.signer) !== signer) {
+        throw new BadRequestException('This Signature not belong to you');
+      }
       const res = await this.signatureModel
         .findByIdAndUpdate(
-          signature_id,
+          {
+            _id: signature_id,
+          },
           { status: SignStatusEnum.ORDER_CANCEL },
           { new: true },
         )
         .exec();
-
+      console.log('Cancel Signature', res);
       return res;
     } catch (error) {
       this.logger.error(error);
+      throw new BadRequestException(error.message);
     }
   }
 
   async getOrdersByAddress(address: string) {
     try {
+      const formatAdress = formattedContractAddress(address);
       const signatures = await this.signatureModel
         .find({
-          signer: address,
+          signer: formatAdress,
           status: SignStatusEnum.LISTING,
         })
         .populate('nftcollections')
@@ -358,9 +439,10 @@ export class SignatureService {
 
   async getBidByAddress(address: string) {
     try {
+      const formatAdress = formattedContractAddress(address);
       const signatures = await this.signatureModel
         .find({
-          signer: address,
+          signer: formatAdress,
           status: SignStatusEnum.BID,
         })
         .populate('nftcollections')
@@ -387,81 +469,182 @@ export class SignatureService {
     }
   };
 
-  async getNFTActivity(
-    contract_address: string,
-    page: number = 1,
-    limit: number = 50,
-    sortPrice: string = 'asc',
-    minPrice: number = 0,
-    maxPrice: number = 1000,
-    status: string = 'ALL',
-    search: string = '',
-  ) {
-    let sortQuery = {};
+  async getNFTActivity(query: GetSignatureActivityQueryDTO) {
+    const {
+      contract_address,
+      sortPrice,
+      minPrice,
+      maxPrice,
+      status,
+      page,
+      token_id,
+      size,
+    } = query;
+    console.log('What Rogn', query);
+    const filter: any = {};
+    const result = new BaseResultPagination<any>();
+    if (contract_address) {
+      filter.contract_address = formattedContractAddress(contract_address);
+    }
+    if (minPrice || maxPrice) {
+      filter.price = {};
+      if (minPrice) {
+        filter.price.$gte = Number(minPrice);
+      }
+      if (maxPrice) {
+        filter.price.$lte = Number(maxPrice);
+      }
+    }
+    if (token_id) {
+      filter.token_id = token_id;
+    }
+    if (!status) {
+      filter.status = {
+        $in: [
+          SignStatusEnum.SOLD,
+          SignStatusEnum.BID,
+          SignStatusEnum.BIDDING,
+          SignStatusEnum.LISTING,
+          SignStatusEnum.BUYING,
+        ],
+      };
+    }
 
+    let sortQuery = {};
     switch (sortPrice) {
       case 'asc':
-        sortQuery = { price: 1, updatedAt: -1 };
+        sortQuery = { price: 1, createdAt: -1 };
         break;
       case 'desc':
-        sortQuery = { price: -1, updatedAt: -1 };
+        sortQuery = { price: -1, createdAt: -1 };
         break;
       default:
         sortQuery = { updatedAt: -1 };
     }
 
-    try {
-      const agg = [
-        {
-          $match: {
-            ...(contract_address != '' && {
-              contract_address: contract_address,
-            }),
-            price: { $gte: Number(minPrice), $lte: Number(maxPrice) },
-            ...(status === 'LISTED'
-              ? { status: 'LISTING' }
-              : { status: { $ne: 'ORDER_CANCEL' } }),
-          },
-        },
-        {
-          $sort: sortQuery,
-        },
-        {
-          $lookup: {
-            from: 'nftcollections', // Tên của bộ sưu tập NFT
-            localField: 'nft', // Trường từ các tài liệu đầu vào trong giai đoạn $lookup
-            foreignField: '_id', // Trường từ các tài liệu trong bộ sưu tập "from"
-            as: 'nft', // Trường mảng thêm vào các tài liệu đầu vào chứa các tài liệu khớp từ bộ sưu tập "from"
-          },
-        },
-        {
-          $unwind: {
-            path: '$nft',
-            preserveNullAndEmptyArrays: true, // Đặt thành false nếu bạn muốn lọc ra các tài liệu không khớp trong $lookup
-          },
-        },
-        {
-          $skip: (page - 1) * limit,
-        },
-        {
-          $limit: limit,
-        },
-      ];
+    const total = await this.signatureModel.countDocuments(filter);
+    const dataItems = await this.signatureModel
+      .find(filter)
+      .sort(sortQuery)
+      .skip((page - 1) * size)
+      .limit(size)
+      .populate(['nft'])
+      .exec();
 
-      const nfts = await this.signatureModel.aggregate(agg);
+    result.data = new PaginationDto(dataItems, total, page, size);
 
-      const totalDocuments = await this.signatureModel.countDocuments().exec();
+    return result;
+  }
 
-      const totalPages = Math.ceil(totalDocuments / limit);
+  async getNftCollectionActivity(query: GetSignatureActivityQueryDTO) {
+    const {
+      contract_address,
+      sortPrice = 'desc', // default descending
+      minPrice,
+      maxPrice,
+      status,
+      page,
+      size,
+    } = query;
+    const result = new BaseResultPagination<any>();
+    const skip = (page - 1) * size;
+    const limit = size;
 
-      let nextPage = Number(page) + 1;
+    const matchConditions: any = {}; // Dynamically build match conditions
 
-      if (nextPage > 10) nextPage = -1;
-
-      return { data: nfts, totalPages: totalPages, nextPage: nextPage };
-    } catch (error) {
-      this.logger.error(error);
+    if (contract_address) {
+      matchConditions.contract_address =
+        formattedContractAddress(contract_address);
     }
+
+    if (minPrice || maxPrice) {
+      matchConditions.price = {};
+      if (minPrice) matchConditions.price.$gte = Number(minPrice);
+      if (maxPrice) matchConditions.price.$lte = Number(maxPrice);
+    }
+
+    if (status) {
+      matchConditions.status = status;
+    }
+
+    const activities = await this.signatureModel.aggregate([
+      { $match: matchConditions },
+      {
+        $lookup: {
+          from: 'nfts',
+          localField: 'nft',
+          foreignField: '_id',
+          as: 'nftDetails',
+        },
+      },
+      { $unwind: { path: '$nftDetails', preserveNullAndEmptyArrays: true } },
+      {
+        $lookup: {
+          from: 'nftcollections',
+          localField: 'nftDetails.nftContract',
+          foreignField: 'nftContract',
+          as: 'collectionDetails',
+        },
+      },
+      {
+        $unwind: {
+          path: '$collectionDetails',
+          preserveNullAndEmptyArrays: false,
+        },
+      },
+      {
+        $match: {
+          contract_address: { $ne: null }, // Exclude documents with null contract_address
+          'collectionDetails.name': { $ne: null }, // Exclude documents with null collection name
+        },
+      },
+      {
+        $group: {
+          _id: '$contract_address',
+          name: { $first: '$collectionDetails.name' },
+          avatar: { $first: '$collectionDetails.avatar' },
+          cover: { $first: '$collectionDetails.cover' },
+          symbol: { $first: '$collectionDetails.symbol' },
+          activities: {
+            $push: {
+              contract_address: '$contract_address',
+              name: '$name',
+              token_id: '$token_id',
+              price: '$price',
+              amount: '$amount',
+              status: '$status',
+              buyer_address: '$buyer_address',
+              transaction_hash: '$transaction_hash',
+              createdAt: '$createdAt',
+            },
+          },
+        },
+      },
+      {
+        $addFields: {
+          activities: { $slice: ['$activities', 10] }, // Limit activities to 10
+        },
+      },
+      {
+        $project: {
+          _id: 0, // Exclude MongoDB default `_id`
+          contract_address: '$_id',
+          name: 1,
+          avatar: 1,
+          cover: 1,
+          symbol: 1,
+          activities: 1,
+        },
+      },
+      { $sort: { 'activities.createdAt': sortPrice === 'asc' ? 1 : -1 } },
+      { $skip: skip },
+      { $limit: limit },
+    ]);
+
+    // Total count for meta information
+    const total = await this.signatureModel.countDocuments(matchConditions);
+    result.data = new PaginationDto(activities, total, page, size);
+    return result;
   }
 
   //todo Hide

@@ -5,9 +5,15 @@ import {
   Chains,
   DropPhaseSchema,
   DropPhases,
+  FlexHausDrop,
+  FlexHausDropSchema,
+  FlexHausSet,
+  FlexHausSetSchema,
   Histories,
   HistorySchema,
   NftCollectionSchema,
+  NftCollectionStats,
+  NftCollectionStatsSchema,
   NftCollections,
   NftSchema,
   Nfts,
@@ -19,6 +25,8 @@ import {
   PaymentTokens,
   SaleSchema,
   Sales,
+  Signature,
+  SignatureSchema,
   Staking,
   StakingSchema,
   UserSchema,
@@ -35,10 +43,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { Web3Service } from '@app/web3-service/web3.service';
 import { NftItemService } from './nft-item.service';
 import { UserService } from '../users/user.service';
-import {
-  ERC721MintProcessor,
-  ERC721UpdateMetadataProcessor,
-} from './processors';
+import { ERC721UpdateMetadataProcessor } from './processors';
 
 @Module({
   imports: [
@@ -55,6 +60,16 @@ import {
       { name: Histories.name, schema: HistorySchema },
       { name: DropPhases.name, schema: DropPhaseSchema },
       { name: Staking.name, schema: StakingSchema },
+      { name: FlexHausSet.name, schema: FlexHausSetSchema },
+      { name: FlexHausDrop.name, schema: FlexHausDropSchema },
+      {
+        name: Signature.name,
+        schema: SignatureSchema,
+      },
+      {
+        name: NftCollectionStats.name,
+        schema: NftCollectionStatsSchema,
+      },
     ]),
     BullModule.registerQueue(
       {

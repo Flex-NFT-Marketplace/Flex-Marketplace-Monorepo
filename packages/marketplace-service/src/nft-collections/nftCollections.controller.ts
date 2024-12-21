@@ -118,12 +118,16 @@ export class NftCollectionsController {
     },
   })
   async getNFTCollectionDetail(@Param('nftContract') nftContract: string) {
-    if (!isHexadecimal(nftContract)) {
-      throw new HttpException('Invalid Nft Contract', HttpStatus.BAD_REQUEST);
+    try {
+      if (!isHexadecimal(nftContract)) {
+        throw new HttpException('Invalid Nft Contract', HttpStatus.BAD_REQUEST);
+      }
+      const data =
+        await this.nftCollectionService.getNFTCollectionDetail(nftContract);
+      return data;
+    } catch (error) {
+      console.log('WHat Wrong', error);
     }
-    const data =
-      await this.nftCollectionService.getNFTCollectionDetail(nftContract);
-    return new BaseResult(data);
   }
 
   @Post('holders')
@@ -244,7 +248,7 @@ export class NftCollectionsController {
     let data = await this.cacheManager.get(key);
     if (!data) {
       data = await this.nftCollectionService.getTopNFTCollection(query);
-      await this.cacheManager.set(key, data, 60 * 60 * 1e3);
+      await this.cacheManager.set(key, data, 12 * 60 * 60 * 1e3);
     }
     return data;
   }
@@ -283,11 +287,12 @@ export class NftCollectionsController {
   async getTrendingNftCollection(
     @Body() query: TrendingNftCollectionsQueryDto,
   ): Promise<BaseResultPagination<TrendingNftCollectionsDto>> {
-    const key = `trending-nft-collection- ${JSON.stringify({ ...query })}`;
+    const key = `trending-nft-collection-${JSON.stringify({ ...query })}`;
+    console.log('Key', key);
     let data = await this.cacheManager.get(key);
     if (!data) {
       data = await this.nftCollectionService.getTrendingNFTCollections(query);
-      await this.cacheManager.set(key, data, 60 * 60 * 1e3);
+      await this.cacheManager.set(key, data, 12 * 60 * 60 * 1e3);
     }
     return data;
   }
@@ -344,6 +349,39 @@ export class NftCollectionsController {
       );
 
       return new BaseResult(true);
+    } catch (error) {
+      throw new Error(error);
+    }
+  }
+
+  // @Post('update-all-nftsCollection-stats')
+  // @ApiOperation({
+  //   summary: 'update All NFTs Collection stats !TODO Not use',
+  // })
+  // async updateAllNFTsCollectionStats() {
+  //   try {
+  //     await this.nftCollectionService.updateAllNftCollectionStatsData();
+  //   } catch (error) {
+  //     console.log('What Wrog', error);
+  //     throw new BadRequestException(error);
+  //   }
+  // }
+
+  @Post('update-nftCollection-stats/:nftContract')
+  @ApiOperation({
+    summary: 'update NFT Collection stats',
+  })
+  async updateNFTCollectionStats(@Param('nftContract') nftContract: string) {
+    try {
+      if (!isHexadecimal(nftContract)) {
+        throw new Error('Invalid Address');
+      }
+
+      const data =
+        await this.nftCollectionService.getOrCreateNftCollectionStats(
+          nftContract,
+        );
+      return new BaseResult(data);
     } catch (error) {
       throw new Error(error);
     }

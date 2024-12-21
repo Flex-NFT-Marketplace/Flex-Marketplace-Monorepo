@@ -15,6 +15,7 @@ import unframedAbi from '../abis/unframed.abi.json';
 import stakingAbi from '../abis/staking.abi.json';
 import erc20Abi from '../abis/erc20.abi.json';
 import openeditionAbi from '../abis/openedition.abi.json';
+import flexhausfactoryAbi from '../abis/flexhausfactory.json';
 
 export enum EventTopic {
   CONTRACT_DEPLOYED = '0x26b160f10156dea0639bec90696772c640b9706a47f5b8c52ea1abe5858b34d',
@@ -37,6 +38,9 @@ export enum EventTopic {
   ITEAM_STAKED = '0x274d1271c850a2be85bad3edc8ed6f31cd6065b02bd477fcf5b50bfb8b54026',
   ITEM_UNSTAKED = '0x303ee27f547520a00c69018a89934e75955cc560b82ccf2fc8b3a23dbca4036',
   CLAIM_POINT = '0xc8ca6112db318b80e9f2761ac4d56b0d3c5a589fecd1edc97734247e2fff3c',
+  UPDATE_COLLECTIBLE = '0x349ac603fe6fbbc9dbbebaba27cc5129e7ac677bb3180ccfb52135cf0868603',
+  UPDATE_DROP = '0x10a0bd6b55c5d2f3fd4710fcb4df351b6839575a54139f1426d1e3118ed5339',
+  CLAIM_COLLECTIBLE = '0x32fc35666f7ad6c2a9d2729137be42c4a09ba8f3e2150d4e13726a5e7225d27',
 }
 
 export enum InterfaceId {
@@ -69,6 +73,8 @@ export enum EventType {
   ITEM_STAKED = 'ITEM_STAKED',
   ITEM_UNSTAKED = 'ITEM_UNSTAKED',
   CLAIM_POINT = 'CLAIM_POINT',
+  UPDATE_DROP = 'UPDATE_DROP',
+  CLAIM_COLLECTIBLE = 'CLAIM_COLLECTIBLE',
 }
 export type LogsReturnValues = SuccessfulTransactionReceiptResponse & {
   returnValues: any;
@@ -93,4 +99,5 @@ export const ABIS = {
   StakingABI: stakingAbi,
   Erc20ABI: erc20Abi,
   OpeneditionABI: openeditionAbi,
+  FlexHausFactoryABI: flexhausfactoryAbi,
 };

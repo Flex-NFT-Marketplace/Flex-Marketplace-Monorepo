@@ -81,6 +81,9 @@ export class Chains extends BaseSchema {
   stakingContracts: string[];
 
   @Prop()
+  flexHausFactoryContracts: string[];
+
+  @Prop()
   delayBlock: number;
 }
 

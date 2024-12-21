@@ -17,7 +17,14 @@ export class SystemService {
   async getBannerTop() {
     const system = await this.systemModel
       .findOne()
-      .populate('nftCollectionBanner')
+      .populate({
+        path: 'nftCollectionBanner',
+        select:
+          'nftContract nftCollectionStats name symbol avatar cover description standard',
+        populate: {
+          path: 'nftCollectionStats',
+        },
+      })
       .exec();
 
     if (system) {

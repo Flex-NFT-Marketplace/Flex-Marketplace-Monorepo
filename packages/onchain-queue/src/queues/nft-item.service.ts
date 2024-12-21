@@ -23,6 +23,15 @@ import {
   SaleDocument,
   Sales,
   Staking,
+  Signature,
+  SignatureDocument,
+  SignStatusEnum,
+  NftCollectionStats,
+  NftCollectionStatsDocument,
+  FlexHausSet,
+  FlexHausDrop,
+  FlexHausSetDocument,
+  FlexHausDropDocument,
 } from '@app/shared/models';
 import {
   CancelAllOrdersReturnValue,
@@ -36,6 +45,7 @@ import {
   PayerUpdatedReturnValue,
   PhaseDropUpdatedReturnValue,
   SaleReturnValue,
+  UpdateDropReturnValue,
   UpgradedContractReturnValue,
 } from '@app/web3-service/decodeEvent';
 import { EventType, LogsReturnValues } from '@app/web3-service/types';
@@ -71,6 +81,15 @@ export class NftItemService {
     private readonly dropPhaseModel: Model<DropPhaseDocument>,
     @InjectModel(Staking.name)
     private readonly stakingModel: Model<Staking>,
+    @InjectModel(Signature.name)
+    private readonly signatureModel: Model<SignatureDocument>,
+    @InjectModel(NftCollectionStats.name)
+    private readonly nftCollectionStats: Model<NftCollectionStatsDocument>,
+
+    @InjectModel(FlexHausSet.name)
+    private readonly flexHausSetModel: Model<FlexHausSetDocument>,
+    @InjectModel(FlexHausDrop.name)
+    private readonly flexHausDropModel: Model<FlexHausDropDocument>,
     @InjectQueue(QUEUE_METADATA)
     private readonly fetchMetadataQueue: Queue<string>,
     private readonly web3Service: Web3Service,
@@ -105,6 +124,7 @@ export class NftItemService {
     process[EventType.UPDATE_METADATA_1155] = this.processNft1155UpdateMetadata;
     process[EventType.ITEM_STAKED] = this.processItemStaked;
     process[EventType.ITEM_UNSTAKED] = this.processItemUnstaked;
+    process[EventType.UPDATE_DROP] = this.processUpdateDrop;
 
     await process[log.eventType].call(this, log, chain, index);
   }
@@ -160,9 +180,50 @@ export class NftItemService {
       );
     return nftCollectionDocument;
   }
+  async getOrCreateNftCollectionStats(nftAddress: string) {
+    const nftCollectionStats = await this.nftCollectionStats.findOne({
+      nftContract: nftAddress,
+    });
 
+    if (nftCollectionStats) {
+      return nftCollectionStats;
+    }
+
+    const nftCollectionStatsEntity: NftCollectionStats = {
+      nftContract: nftAddress,
+      bestOffer: 0,
+      nftCount: 0,
+      ownerCount: 0,
+      totalVolume: 0,
+      totalListingCount: 0,
+      floorPrice: 0,
+      stats1D: {
+        saleCount: 0,
+        volume: 0,
+        avgPrice: 0,
+        volChange: 0,
+      },
+      stats7D: {
+        saleCount: 0,
+        volume: 0,
+        avgPrice: 0,
+        volChange: 0,
+      },
+      lastUpdated: 0,
+    };
+
+    const nftCollectionStatsDocument =
+      await this.nftCollectionModel.findOneAndUpdate(
+        {
+          nftContract: nftCollectionStatsEntity.nftContract,
+        },
+        { $set: nftCollectionStatsEntity },
+        { upsert: true, new: true },
+      );
+    return nftCollectionStatsDocument;
+  }
   async processContractDeployed(log: LogsReturnValues, chain: ChainDocument) {
-    const { address, deployer } =
+    const { address, deployer, isFlexHausCollectible } =
       log.returnValues as ContractDeployedReturnValue;
 
     const nftInfo = await this.web3Service.getNFTCollectionDetail(
@@ -200,6 +261,7 @@ export class NftItemService {
         collaboratories: [],
         isNonFungibleFlexDropToken,
         contractUri,
+        isFlexHausCollectible,
         dropPhases: [],
         attributesMap: [],
       };
@@ -288,6 +350,7 @@ export class NftItemService {
       price,
       isFlexDropMinted,
       isWarpcastMinted,
+      isClaimCollectible,
       phaseId,
     } = log.returnValues as ERC721TransferReturnValue;
 
@@ -354,7 +417,9 @@ export class NftItemService {
         ? HistoryType.FlexDropMint
         : isWarpcastMinted
           ? HistoryType.WarpcastMint
-          : HistoryType.Mint,
+          : isClaimCollectible
+            ? HistoryType.ClaimCollectible
+            : HistoryType.Mint,
       phaseId: phaseId ? phaseId : null,
     };
 
@@ -409,12 +474,12 @@ export class NftItemService {
     );
     let nftDocument: NftDocument = null;
 
-    let owner = await this.web3Service.getERC721Owner(
+    const owner = await this.web3Service.getERC721Owner(
       nftAddress,
       tokenId,
       chain.rpc,
     );
-    let ownerDocument = owner
+    const ownerDocument = owner
       ? await this.userService.getOrCreateUser(owner)
       : null;
     if (existedNft) {
@@ -545,6 +610,23 @@ export class NftItemService {
       { upsert: true, new: true },
     );
 
+    await this.signatureModel.findOneAndUpdate(
+      {
+        contract_address: nftAddress,
+        token_id: tokenId,
+      },
+      {
+        $set: {
+          is_burned: true,
+          is_burned_tx_hash: log.transaction_hash,
+        },
+      },
+      {
+        upsert: true,
+        new: true,
+      },
+    );
+
     this.logger.debug(`nft burned ${nftAddress}: ${tokenId} at - ${timestamp}`);
   }
 
@@ -642,6 +724,24 @@ export class NftItemService {
       },
       { $set: history },
       { upsert: true, new: true },
+    );
+
+    await this.signatureModel.findOneAndUpdate(
+      {
+        contract_address: nftAddress,
+        token_id: tokenId,
+      },
+      {
+        $set: {
+          status: SignStatusEnum.SOLD,
+          transaction_hash: log.transaction_hash,
+          buyer_address: to,
+        },
+      },
+      {
+        upsert: true,
+        new: true,
+      },
     );
 
     if (updateNfts.length > 0) {
@@ -867,7 +967,22 @@ export class NftItemService {
       { $set: history },
       { upsert: true, new: true },
     );
-
+    await this.signatureModel.findOneAndUpdate(
+      {
+        contract_address: nftAddress,
+        token_id: tokenId,
+      },
+      {
+        $set: {
+          is_burned: true,
+          is_burned_tx_hash: log.transaction_hash,
+        },
+      },
+      {
+        upsert: true,
+        new: true,
+      },
+    );
     this.logger.debug(
       `${value} nft burned ${nftAddress}: ${tokenId} ${from} -> ${to} - ${timestamp}`,
     );
@@ -1000,6 +1115,24 @@ export class NftItemService {
       { upsert: true, new: true },
     );
 
+    await this.signatureModel.findOneAndUpdate(
+      {
+        contract_address: nftAddress,
+        token_id: tokenId,
+      },
+      {
+        $set: {
+          status: SignStatusEnum.SOLD,
+          transaction_hash: log.transaction_hash,
+          buyer_address: to,
+        },
+      },
+      {
+        upsert: true,
+        new: true,
+      },
+    );
+
     if (newNfts.length > 0) {
       await this.nftModel.insertMany(newNfts);
     }
@@ -1086,7 +1219,7 @@ export class NftItemService {
     if (offerDocument) {
       await this.offerModel.findOneAndUpdate(
         { _id: offerDocument._id },
-        { $set: { status: OfferStatus.cancelled } },
+        { $set: { status: OfferStatus.Cancelled } },
       );
 
       newNftDocument = await this.nftModel.findOne({
@@ -1202,7 +1335,7 @@ export class NftItemService {
     const offerDocuments = await this.offerModel.find({
       buyer: userDocument,
       saltNonce: { $lt: newMinNonce },
-      status: OfferStatus.pending,
+      status: OfferStatus.Pending,
     });
 
     if (offerDocuments.length > 0) {
@@ -1213,7 +1346,7 @@ export class NftItemService {
               _id: offer._id,
             },
             update: {
-              status: OfferStatus.cancelled,
+              status: OfferStatus.Cancelled,
             },
           },
         });
@@ -1311,8 +1444,8 @@ export class NftItemService {
       : null;
 
     await this.offerModel.updateMany(
-      { seller: sellerUser, status: OfferStatus.pending },
-      { $set: { status: OfferStatus.cancelled } },
+      { seller: sellerUser, status: OfferStatus.Pending },
+      { $set: { status: OfferStatus.Cancelled } },
     );
 
     if (sellerNft) {
@@ -1647,14 +1780,14 @@ export class NftItemService {
             },
             update: {
               remainingAmount: 0,
-              status: OfferStatus.accepted,
+              status: OfferStatus.Accepted,
             },
           },
         });
 
         await this.offerModel.updateMany(
-          { _id: { $ne: offer._id }, status: OfferStatus.pending },
-          { $set: { status: OfferStatus.cancelled } },
+          { _id: { $ne: offer._id }, status: OfferStatus.Pending },
+          { $set: { status: OfferStatus.Cancelled } },
         );
       }
 
@@ -1762,7 +1895,7 @@ export class NftItemService {
                   remainingUsage == 0
                     ? {
                         remainingAmount: remainingUsage,
-                        status: OfferStatus.accepted,
+                        status: OfferStatus.Accepted,
                       }
                     : {
                         remainingAmount: remainingUsage,
@@ -1776,9 +1909,9 @@ export class NftItemService {
           {
             _id: { $ne: offer._id },
             remainingAmount: { $gt: sellerNft.amount },
-            status: OfferStatus.pending,
+            status: OfferStatus.Pending,
           },
-          { $set: { status: OfferStatus.cancelled } },
+          { $set: { status: OfferStatus.Cancelled } },
         );
       } catch (error) {}
     }
@@ -1958,6 +2091,25 @@ export class NftItemService {
       { $set: history },
       { upsert: true, new: true },
     );
+    await this.signatureModel
+      .updateMany(
+        {
+          token_id: tokenId,
+          contract_address: collection,
+          status: {
+            $in: [
+              SignStatusEnum.BID,
+              SignStatusEnum.LISTING,
+              SignStatusEnum.BUYING,
+              SignStatusEnum.BIDDING,
+            ],
+          },
+        },
+        {
+          status: SignStatusEnum.ORDER_CANCEL,
+        },
+      )
+      .exec();
   }
 
   async processItemUnstaked(
@@ -2022,6 +2174,35 @@ export class NftItemService {
         index,
       },
       { $set: history },
+      { upsert: true, new: true },
+    );
+  }
+
+  async processUpdateDrop(log: LogsReturnValues, chain: ChainDocument) {
+    const { collectible, dropType, secureAmount, topSupporters, startTime } =
+      log.returnValues as UpdateDropReturnValue;
+
+    const nftCollection = await this.getOrCreateNftCollection(
+      collectible,
+      chain,
+    );
+
+    const set = await this.flexHausSetModel.findOne({
+      collectibles: { $in: [nftCollection._id] },
+    });
+
+    const newDrop: FlexHausDrop = {
+      collectible: nftCollection,
+      creator: nftCollection.owner,
+      dropType,
+      secureAmount,
+      topSupporters,
+      set,
+    };
+
+    await this.flexHausDropModel.findOneAndUpdate(
+      { collectible: nftCollection },
+      { $set: newDrop },
       { upsert: true, new: true },
     );
   }

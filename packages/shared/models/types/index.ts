@@ -29,6 +29,7 @@ export enum HistoryType {
   Burn = 'burn',
   Stake = 'stake',
   Unstake = 'unstake',
+  ClaimCollectible = 'claimCollectible',
 }
 export enum ActivityType {
   CreateSale = 'createSale',
@@ -49,10 +50,10 @@ export enum MarketStatus {
 }
 
 export enum OfferStatus {
-  pending = 'pending',
-  accepted = 'accepted',
-  cancelled = 'cancelled',
-  expired = 'expired',
+  Pending = 'pending',
+  Accepted = 'accepted',
+  Cancelled = 'cancelled',
+  Expired = 'expired',
 }
 
 export enum CategoryType {

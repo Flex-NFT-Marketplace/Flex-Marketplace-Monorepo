@@ -1,3 +1,4 @@
+import { formattedContractAddress } from './../../../shared/utils/formatContractAddress';
 import {
   BadRequestException,
   Body,
@@ -10,51 +11,66 @@ import {
 } from '@nestjs/common';
 import { SignatureDTO, UpdateSignatureDTO } from './dto/signature.dto';
 import { SignatureService } from './signature.service';
-import { ApiTags } from '@nestjs/swagger';
-import { BaseResult, BaseResultPagination } from '@app/shared/types';
-import { PaginationDto } from '@app/shared/types/pagination.dto';
+import { ApiExtraModels, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { BaseResult } from '@app/shared/types';
+
+import { GetSignatureActivityQueryDTO } from './dto/getSignatureQuery';
+import { JWT, User } from '@app/shared/modules';
+import { iInfoToken } from '@app/shared/modules/jwt/jwt.dto';
 
 @ApiTags('Signatures')
 @Controller('signatures')
+@ApiExtraModels(GetSignatureActivityQueryDTO)
 export class SignatureController {
   constructor(private readonly signatureService: SignatureService) {}
 
   //   @JWT()
+  @JWT()
   @Post()
-  async createSignature(@Body() signatureDTO: SignatureDTO) {
-    const res = await this.signatureService.createSignature(signatureDTO);
+  async createSignature(
+    @Body() signatureDTO: SignatureDTO,
+    @User() token: iInfoToken,
+  ) {
+    try {
+      const res = await this.signatureService.createSignature(
+        signatureDTO,
+        token.sub,
+      );
 
-    if (!res) {
-      return new BadRequestException();
+      if (!res) {
+        return new BadRequestException();
+      }
+      return new BaseResult(res);
+    } catch (error) {
+      throw new BadRequestException(error.message);
     }
-    return new BaseResult(res);
   }
 
   @Get('/activity')
-  async getNFTActivity(
-    @Query('contract_address') contract_address: string,
-    @Query('page') page?: number,
-    @Query('limit') limit?: number,
-    @Query('sortPrice') sortPrice?: string,
-    @Query('minPrice') minPrice?: number,
-    @Query('maxPrice') maxPrice?: number,
-    @Query('status') status?: string,
-    @Query('search') search?: string,
-  ) {
-    const res = await this.signatureService.getNFTActivity(
-      contract_address,
-      page,
-      limit,
-      sortPrice,
-      minPrice,
-      maxPrice,
-      status,
-      search,
-    );
-
-    const result = new BaseResultPagination<any>();
-    result.data = new PaginationDto<any>(res.data, res.totalPages, page, limit);
-    return result;
+  @ApiOperation({
+    summary: 'Get NFT activity signature',
+    description: 'Get nft activity signature data',
+  })
+  async getNFTActivity(@Query() query: GetSignatureActivityQueryDTO) {
+    try {
+      const res = await this.signatureService.getNFTActivity(query);
+      return res;
+    } catch (error) {
+      throw new BadRequestException(error.message);
+    }
+  }
+  @Get('actvityNftCollections')
+  @ApiOperation({
+    summary: 'Get NFT Collection activity signature',
+    description: 'Get nft CollectionActivity activity signature data',
+  })
+  async getNFTCollectionActivity(@Query() query: GetSignatureActivityQueryDTO) {
+    try {
+      const res = await this.signatureService.getNftCollectionActivity(query);
+      return res;
+    } catch (error) {
+      throw new BadRequestException(error.message);
+    }
   }
 
   @Get('bid/:contract_address/:token_id')
@@ -82,22 +98,49 @@ export class SignatureController {
     return new BaseResult(res);
   }
 
+  @JWT()
   @Put('/bid')
-  async updateSignatureBid(@Body() updateSignDTO: UpdateSignatureDTO) {
-    const res = await this.signatureService.updateSignatureBid(updateSignDTO);
-    return new BaseResult(res);
+  async updateSignatureBid(
+    @Body() updateSignDTO: UpdateSignatureDTO,
+    @User() token: iInfoToken,
+  ) {
+    try {
+      const res = await this.signatureService.updateSignatureBid(
+        updateSignDTO,
+        formattedContractAddress(token.sub),
+      );
+      return new BaseResult(res);
+    } catch (error) {
+      return new BadRequestException(error.message);
+    }
   }
 
+  @JWT()
   @Put()
   async updateSignature(@Body() updateSignDTO: UpdateSignatureDTO) {
-    const res = await this.signatureService.updateSignature(updateSignDTO);
-    return new BaseResult(res);
+    try {
+      const res = await this.signatureService.updateSignature(updateSignDTO);
+      return new BaseResult(res);
+    } catch (error) {
+      return new BadRequestException(error.message);
+    }
   }
 
+  @JWT()
   @Put('cancel_order/:signature_id')
-  async cancelSignature(@Param('signature_id') signatureId: string) {
-    await this.signatureService.cancelSignature(signatureId);
-    return new BaseResult(true);
+  async cancelSignature(
+    @Param('signature_id') signatureId: string,
+    @User() token: iInfoToken,
+  ) {
+    try {
+      await this.signatureService.cancelSignature(
+        signatureId,
+        formattedContractAddress(token.sub),
+      );
+      return new BaseResult(true);
+    } catch (error) {
+      return new BadRequestException(error.message);
+    }
   }
 
   // @Get('UpdateSignature')

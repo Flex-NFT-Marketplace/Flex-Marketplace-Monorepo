@@ -95,30 +95,30 @@ export class AuthController {
     return new BaseResult(data);
   }
 
-  @Post('/test-sign')
-  @ApiOperation({
-    summary: 'It just for testing purpose.',
-    description: 'Testing Service ',
-  })
-  @ApiOkResponse({
-    schema: {
-      allOf: [
-        {
-          properties: {
-            data: {
-              type: 'object',
-              properties: {
-                address: {
-                  type: 'string',
-                },
-                signature: { type: 'string' },
-              },
-            },
-          },
-        },
-      ],
-    },
-  })
+  // @Post('/test-sign')
+  // @ApiOperation({
+  //   summary: 'It just for testing purpose.',
+  //   description: 'Testing Service ',
+  // })
+  // @ApiOkResponse({
+  //   schema: {
+  //     allOf: [
+  //       {
+  //         properties: {
+  //           data: {
+  //             type: 'object',
+  //             properties: {
+  //               address: {
+  //                 type: 'string',
+  //               },
+  //               signature: { type: 'string' },
+  //             },
+  //           },
+  //         },
+  //       },
+  //     ],
+  //   },
+  // })
   // @ApiInternalServerErrorResponse({
   //   description: '<b>Internal server error</b>',
   //   schema: {
@@ -132,23 +132,23 @@ export class AuthController {
   //     ],
   //   },
   // })
-  async testSign(
-    @Body() testSignDto: GetSignatureTestDto,
-  ): Promise<BaseResult<any>> {
-    try {
-      const address = formattedContractAddress(testSignDto.address);
-      const user = await this.userService.getUser(address);
-      if (!user) {
-        throw new BadRequestException('User not found');
-      }
-      const data = await this.authService.testSignMessage({
-        address: address,
-        privateKey: testSignDto.privateKey,
-        nonce: user.nonce,
-      });
-      return new BaseResult({ success: true, data: data });
-    } catch (error) {
-      throw new Error(error.message);
-    }
-  }
+  // async testSign(
+  //   @Body() testSignDto: GetSignatureTestDto,
+  // ): Promise<BaseResult<any>> {
+  //   try {
+  //     const address = formattedContractAddress(testSignDto.address);
+  //     const user = await this.userService.getUser(address);
+  //     if (!user) {
+  //       throw new BadRequestException('User not found');
+  //     }
+  //     const data = await this.authService.testSignMessage({
+  //       address: address,
+  //       privateKey: testSignDto.privateKey,
+  //       nonce: user.nonce,
+  //     });
+  //     return new BaseResult({ success: true, data: data });
+  //   } catch (error) {
+  //     throw new Error(error.message);
+  //   }
+  // }
 }

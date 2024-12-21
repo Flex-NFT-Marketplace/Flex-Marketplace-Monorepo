@@ -26,7 +26,7 @@ export class JwtAdminStrategy extends PassportStrategy(Strategy, 'jwt-admin') {
     const { sub } = payload;
 
     const user = await this.userModel
-      .findOne({ address: formattedContractAddress(sub) })
+      .findOne({ address: formattedContractAddress(sub.toLocaleLowerCase()) })
       .exec();
 
     if (!user || !user.roles || !user.roles.includes(ROLE.ADMIN)) {

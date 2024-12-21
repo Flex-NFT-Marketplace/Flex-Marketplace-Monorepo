@@ -1,4 +1,4 @@
-import { Attribute, MarketType } from '@app/shared/models';
+import { Attribute, SignStatusEnum } from '@app/shared/models';
 import { BaseQueryParams } from '@app/shared/types/base.queryparams';
 import { ApiProperty } from '@nestjs/swagger';
 import {
@@ -8,11 +8,8 @@ import {
   IsEnum,
   IsBoolean,
   IsArray,
-  ValidateNested,
-  IsDefined,
   IsNotEmpty,
 } from 'class-validator';
-import { Type } from 'class-transformer';
 
 export class AttributeDto implements Attribute {
   @ApiProperty()
@@ -21,15 +18,9 @@ export class AttributeDto implements Attribute {
   trait_type: string;
 
   @ApiProperty()
-  @IsDefined()
+  @IsArray()
   @IsNotEmpty()
-  value: any;
-
-  @ApiProperty()
-  @IsString()
-  @IsOptional()
-  @IsNotEmpty()
-  display_type?: string;
+  value: string[];
 }
 
 export class NftFilterQueryParams extends BaseQueryParams {
@@ -45,10 +36,9 @@ export class NftFilterQueryParams extends BaseQueryParams {
   @IsNotEmpty()
   owner?: string;
 
-  @IsOptional()
   @ApiProperty()
+  @IsOptional()
   @IsHexadecimal()
-  @IsNotEmpty()
   nftContract?: string;
 
   @IsOptional()
@@ -58,19 +48,37 @@ export class NftFilterQueryParams extends BaseQueryParams {
   tokenId?: string;
 
   @IsOptional()
-  @ApiProperty({ enum: MarketType, example: MarketType.NotForSale })
-  @IsEnum(MarketType)
-  marketType?: MarketType;
-
-  @IsOptional()
   @ApiProperty()
   @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => AttributeDto)
   attributes?: AttributeDto[];
 
   @IsOptional()
   @ApiProperty({ type: Boolean, required: false })
   @IsBoolean()
   isBurned?: boolean;
+
+  @ApiProperty({
+    required: false,
+  })
+  @IsOptional()
+  sortPrice?: string;
+
+  @ApiProperty({
+    required: false,
+  })
+  @IsOptional()
+  minPrice?: number;
+
+  @ApiProperty({
+    required: false,
+  })
+  @IsOptional()
+  maxPrice?: number;
+
+  @ApiProperty({
+    required: false,
+  })
+  @IsEnum(['ALL', SignStatusEnum.LISTING, SignStatusEnum.SOLD])
+  @IsOptional()
+  status?: string;
 }
