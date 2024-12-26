@@ -14,6 +14,8 @@ import {
   NftCollections,
   NftSchema,
   Nfts,
+  PaymentTokenSchema,
+  PaymentTokens,
   Signature,
   SignatureSchema,
   UserSchema,
@@ -54,6 +56,10 @@ import { OnchainQueueService } from '@app/shared/utils/queue';
       {
         name: Chains.name,
         schema: ChainSchema,
+      },
+      {
+        name: PaymentTokens.name,
+        schema: PaymentTokenSchema,
       },
     ]),
     UsersModule,
