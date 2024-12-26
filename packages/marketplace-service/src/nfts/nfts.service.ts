@@ -199,12 +199,7 @@ export class NftService {
       console.log('Error Fetching', error);
     }
 
-    result.data = new PaginationDto(
-      afterAlterItem,
-      count,
-      query.page,
-      query.size,
-    );
+    result.data = new PaginationDto(nfts, count, query.page, query.size);
     console.log(`finish in ${Date.now() - now} ms`);
 
     return result;
