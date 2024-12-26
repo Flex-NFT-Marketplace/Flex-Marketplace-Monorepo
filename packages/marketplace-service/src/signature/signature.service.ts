@@ -5,10 +5,13 @@ import { Model } from 'mongoose';
 import { RpcProvider } from 'starknet';
 import { SignatureDTO, UpdateSignatureDTO } from './dto/signature.dto';
 import {
+  MarketType,
   NftCollections,
   NftCollectionStandard,
   NftCollectionStats,
   Nfts,
+  PaymentTokenDocument,
+  PaymentTokens,
 } from '@app/shared/models';
 import {
   Signature,
@@ -34,6 +37,8 @@ export class SignatureService {
     @InjectModel(Signature.name) private signatureModel: Model<Signature>,
     @InjectModel(NftCollectionStats.name)
     private collectionStatsModel: Model<NftCollectionStats>,
+    @InjectModel(PaymentTokens.name)
+    private paymentTokenModel: Model<PaymentTokenDocument>,
     private colelctionService: NftCollectionsService,
   ) {
     this.provider = new RpcProvider({
@@ -64,6 +69,21 @@ export class SignatureService {
           tokenId: signature.token_id,
         })
         .exec();
+
+      if (!nft) {
+        throw new BadRequestException('Nft not found');
+      }
+
+      const paymentTokenDocument = await this.paymentTokenModel
+        .findOne({
+          contractAddress: formattedContractAddress(signature.currency),
+        })
+        .exec();
+
+      if (!paymentTokenDocument) {
+        throw new BadRequestException('Payment Token not allowed');
+      }
+
       const signatureArray = JSON.parse(signature.signature4);
 
       if (signatureArray.length > 1) {
@@ -80,7 +100,11 @@ export class SignatureService {
         nft: nft._id,
       });
 
-      return newSignature.save();
+      nft.price = signature.price;
+      nft.paymentToken = paymentTokenDocument;
+      nft.marketType = MarketType.OnSale;
+      await nft.save();
+      return await newSignature.save();
     } catch (error) {
       console.log(error);
       throw new BadRequestException(error.message);
@@ -321,6 +345,13 @@ export class SignatureService {
           continue;
         }
 
+        const nft = await this.nftModel
+          .findOne({
+            nftContract: signature.contract_address,
+            tokenId: signature.token_id,
+          })
+          .exec();
+
         try {
           const res = await this.provider.getTransactionStatus(
             signature.transaction_hash,
@@ -383,6 +414,11 @@ export class SignatureService {
                 break;
             }
           }
+
+          nft.price = 0;
+          nft.paymentToken = null;
+          nft.marketType = MarketType.NotForSale;
+          await nft.save();
         } catch (error) {
           this.logger.log('Synced tx status error: ' + error);
           continue;
@@ -403,6 +439,19 @@ export class SignatureService {
       if (formattedContractAddress(exist.signer) !== signer) {
         throw new BadRequestException('This Signature not belong to you');
       }
+
+      const nft = await this.nftModel
+        .findOne({
+          nftContract: exist.contract_address,
+          tokenId: exist.token_id,
+        })
+        .exec();
+
+      nft.price = 0;
+      nft.paymentToken = null;
+      nft.marketType = MarketType.NotForSale;
+      await nft.save();
+
       const res = await this.signatureModel
         .findByIdAndUpdate(
           {

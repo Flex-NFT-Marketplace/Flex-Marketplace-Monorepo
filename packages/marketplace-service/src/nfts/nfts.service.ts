@@ -32,9 +32,6 @@ export class NftService {
   ): Promise<BaseResultPagination<NftDto>> {
     const result = new BaseResultPagination<NftDto>();
     let filter: any = {};
-    let filterSign: any = {
-      status: 'LISTING',
-    };
     if (query.owner) {
       if (isValidObjectId(query.owner)) {
         filter.owner = query.owner;
@@ -49,14 +46,12 @@ export class NftService {
     }
     if (query.nftContract) {
       filter.nftContract = formattedContractAddress(query.nftContract);
-      filterSign.contract_address = formattedContractAddress(query.nftContract);
     }
     if (query.tokenId) {
       filter['$or'] = [
         { tokenId: query.tokenId },
         { tokenId: Number(query.tokenId) },
       ];
-      filterSign.token_id = query.tokenId;
     }
     if (query.name) {
       filter.name = { $regex: `${query.name}`, $options: 'i' };
@@ -78,97 +73,37 @@ export class NftService {
       };
     }
     filter.isBurned = query.isBurned ? query.isBurned : false;
-    filter.amount = { $gt: 0 };
-    const count =
-      query.status === 'ALL'
-        ? await this.nftModel.countDocuments(filter)
-        : await this.signatureModel.countDocuments(filterSign);
+    if (query.status && query.status === 'LISTING') {
+      filter.price = {
+        $gt: Number(query.minPrice) || 0,
+        $lte: Number(query.maxPrice) || Number.MAX_VALUE,
+      };
+    }
 
+    const count = await this.nftModel.countDocuments(filter);
     if (count === 0 || query.size === 0) {
       result.data = new PaginationDto([], count, query.page, query.size);
       return result;
     }
+
     const now = Date.now();
 
     let sortQuery = {};
 
     switch (query.sortPrice) {
-      case 'asc':
-        sortQuery = { sortPrice: 1 };
-        break;
       case 'desc':
-        sortQuery = { lowestPrice: -1 };
+        sortQuery = { price: -1 };
         break;
       default:
-        sortQuery = { createdAt: 1 };
+        sortQuery = { price: 1 };
     }
 
-    const pipeline: any[] = [
+    const nfts = await this.nftModel.aggregate([
       {
-        $match: filter, // Ensure `filter` is properly constructed
+        $match: filter,
       },
       {
-        $lookup: {
-          from: 'signatures',
-          let: { nft_id: '$_id' },
-          pipeline: [
-            {
-              $match: {
-                $expr: {
-                  $and: [
-                    { $eq: ['$nft', '$$nft_id'] },
-                    { $eq: ['$status', 'LISTING'] },
-                    {
-                      $and: [
-                        { $gt: ['$price', Number(query.minPrice) || 0] },
-                        {
-                          $lte: [
-                            '$price',
-                            Number(query.maxPrice) || Number.MAX_VALUE,
-                          ],
-                        },
-                      ],
-                    },
-                  ],
-                },
-              },
-            },
-            { $sort: { price: 1, updatedAt: -1 } },
-            { $limit: 1 },
-          ],
-          as: 'signatures',
-        },
-      },
-      {
-        $unwind: {
-          path: '$signatures',
-          preserveNullAndEmptyArrays: query.status == 'ALL' ? true : false,
-        },
-      },
-      {
-        $project: {
-          _id: 1,
-          nftContract: '$nftContract',
-          tokenId: '$tokenId',
-          name: 1,
-          description: 1,
-          image: 1,
-          attributes: 1,
-          burnedAt: 1,
-          amount: 1,
-          royaltyRate: 1,
-          lowestPrice: '$signatures.price',
-          owner: 1,
-          createdAt: 1,
-        },
-      },
-      {
-        $addFields: {
-          sortPrice: { $ifNull: ['$lowestPrice', Infinity] },
-        },
-      },
-      {
-        $sort: sortQuery,
+        $sort: { marketType: -1, ...sortQuery },
       },
       {
         $skip: query.skipIndex,
@@ -176,36 +111,7 @@ export class NftService {
       {
         $limit: query.size,
       },
-      {
-        $lookup: {
-          from: 'users',
-          localField: 'owner',
-          foreignField: '_id',
-          pipeline: [
-            {
-              $project: {
-                _id: 0,
-                address: 1,
-                username: 1,
-                isVerified: 1,
-                avatar: 1,
-              },
-            },
-          ],
-          as: 'owner',
-        },
-      },
-      {
-        $unwind: '$owner',
-      },
-      {
-        $project: {
-          sortPrice: 0,
-        },
-      },
-    ];
-
-    const nfts = await this.nftModel.aggregate(pipeline);
+    ]);
 
     const afterAlterItem = [];
     try {

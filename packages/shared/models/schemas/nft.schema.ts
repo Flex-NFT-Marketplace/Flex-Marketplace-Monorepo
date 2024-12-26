@@ -6,6 +6,7 @@ import { Attribute, MarketType } from '../types';
 import { Document, SchemaTypes } from 'mongoose';
 import { ChainDocument } from './chain.schema';
 import { SaleDocument } from './sale.schema';
+import { PaymentTokenDocument } from './paymenttoken.schema';
 
 export type NftDocument = Nfts & Document;
 
@@ -76,12 +77,21 @@ export class Nfts extends BaseSchema {
 
   @Prop({ type: SchemaTypes.ObjectId, ref: 'Sales' })
   sale?: SaleDocument;
+
+  @Prop({ default: 0 })
+  price?: number;
+
+  @Prop({ type: SchemaTypes.ObjectId, ref: 'PaymentTokens' })
+  paymentToken?: PaymentTokenDocument;
 }
 
 export const NftSchema = SchemaFactory.createForClass(Nfts);
 NftSchema.index({ nftContract: 1, tokenId: 1 });
 NftSchema.index({ owner: 1 });
 NftSchema.index({ createdAt: 1 });
+NftSchema.index({ nftContract: 1, marketType: -1 });
+NftSchema.index({ nftContract: 1, marketType: -1, price: 1 });
+NftSchema.index({ nftContract: 1, marketType: -1, price: -1 });
 NftSchema.index({ nftContract: 1, owner: 1 });
 NftSchema.index({ nftContract: 1, isBurned: 1 });
 NftSchema.index({ nftContract: 1, amount: 1, isBurned: 1 });
