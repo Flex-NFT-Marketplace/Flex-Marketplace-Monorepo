@@ -17,6 +17,8 @@ import { SystemModule } from './system/system.module';
 import { SearchModule } from './search/search.module';
 import { StakingModule } from './staking/staking.module';
 import { NftCollectionTaskModule } from './nft-collections/task/nftCollectionTask.module';
+import { UploadModule } from './upload/upload.module';
+import { MetadataModule } from './metadata/metadata.module';
 
 @Module({
   imports: [
@@ -36,6 +38,8 @@ import { NftCollectionTaskModule } from './nft-collections/task/nftCollectionTas
     CacheModule.register({ isGlobal: true, max: 100 }),
     ScheduleModule.forRoot(),
     NftCollectionTaskModule,
+    UploadModule,
+    MetadataModule,
   ],
   controllers: [],
   providers: [],

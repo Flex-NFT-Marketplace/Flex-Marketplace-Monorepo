@@ -21,3 +21,4 @@ export * from './flexhausset.schema';
 export * from './flexhausdrop.schema';
 export * from './flexhausSubscription.schema';
 export * from './flexhausEvent.schema';
+export * from './metadata.schema';
