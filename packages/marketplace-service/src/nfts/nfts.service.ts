@@ -111,6 +111,30 @@ export class NftService {
       {
         $limit: query.size,
       },
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'owner',
+          foreignField: '_id',
+          pipeline: [
+            {
+              $project: {
+                _id: 0,
+                address: 1,
+                username: 1,
+                isVerified: 1,
+                avatar: 1,
+                cover: 1,
+                email: 1,
+                about: 1,
+                socials: 1,
+              },
+            },
+          ],
+          as: 'owner',
+        },
+      },
+      { $unwind: '$owner' },
     ]);
 
     const afterAlterItem = [];
