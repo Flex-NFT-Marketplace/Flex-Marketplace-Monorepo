@@ -1,7 +1,7 @@
 export class SignatureDTO {
-  readonly contract_address: string;
+  readonly nftContract: string;
 
-  readonly token_id: string;
+  readonly tokenId: string;
 
   readonly signature4: string;
 
@@ -11,31 +11,31 @@ export class SignatureDTO {
 
   readonly amount: number;
 
-  readonly amount_sig: number;
+  readonly amountSig: number;
 
   readonly paymentToken: string;
 
   readonly status: string;
 
-  readonly transaction_hash: string;
+  readonly transactionHash: string;
 
-  readonly transaction_status: string;
+  readonly transactionStatus: string;
 
-  readonly sell_end: number;
+  readonly sellEnd: number;
 
   // readonly signer: string;
 
-  readonly buyer_address: string;
+  readonly buyerAddress: string;
 
   readonly currency: string;
 }
 
 export class UpdateSignatureDTO {
-  readonly signature_id: string;
+  readonly signatureId: string;
 
-  readonly transaction_hash: string;
+  readonly transactionHash: string;
 
-  readonly buyer_address: string;
+  readonly buyerAddress: string;
 
   readonly amount: number;
 }
