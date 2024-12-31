@@ -460,8 +460,11 @@ export class SignatureService {
     updateSignatureDTO: UpdateSignatureDTO,
     signer: string,
   ): Promise<void> {
-    const { signatureId: signature_id, transactionHash: transaction_hash } =
-      updateSignatureDTO;
+    const {
+      signatureId: signature_id,
+      transactionHash: transaction_hash,
+      amount,
+    } = updateSignatureDTO;
 
     const signature = await this.signatureModel.findById(signature_id).exec();
 
@@ -481,10 +484,23 @@ export class SignatureService {
       console.log('updateSignatureBid -> signature_id', signature_id);
       await this.signatureModel
         .findByIdAndUpdate(signature_id, {
-          status: SignStatusEnum.BIDDING,
-          transaction_hash: transaction_hash,
+          $set: {
+            status: SignStatusEnum.BIDDING,
+            transaction_hash: transaction_hash,
+          },
         })
         .exec();
+    } else {
+      if (amount == signature.amount) {
+        await this.signatureModel
+          .findByIdAndUpdate(signature_id, {
+            $set: {
+              status: SignStatusEnum.BIDDING,
+              transaction_hash: transaction_hash,
+            },
+          })
+          .exec();
+      }
     }
   }
 
