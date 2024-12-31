@@ -1,41 +1,55 @@
+import { IsHexadecimal, IsNumber, IsString } from 'class-validator';
+
 export class SignatureDTO {
-  readonly contract_address: string;
+  @IsHexadecimal()
+  readonly nftContract: string;
 
-  readonly token_id: string;
+  @IsString()
+  readonly tokenId: string;
 
+  @IsString()
   readonly signature4: string;
 
+  @IsString()
   readonly nonce: string;
 
+  @IsNumber()
   readonly price: number;
 
+  @IsNumber()
   readonly amount: number;
 
-  readonly amount_sig: number;
+  @IsNumber()
+  readonly amountSig: number;
 
-  readonly paymentToken: string;
+  // @IsHexadecimal()
+  // readonly paymentToken: string;
 
+  @IsString()
   readonly status: string;
 
-  readonly transaction_hash: string;
+  readonly transactionHash: string;
 
-  readonly transaction_status: string;
+  @IsString()
+  readonly transactionStatus: string;
 
-  readonly sell_end: number;
+  @IsNumber()
+  readonly sellEnd: number;
 
   // readonly signer: string;
 
-  readonly buyer_address: string;
+  readonly buyerAddress: string;
 
+  @IsHexadecimal()
   readonly currency: string;
 }
 
 export class UpdateSignatureDTO {
-  readonly signature_id: string;
+  readonly signatureId: string;
 
-  readonly transaction_hash: string;
+  readonly transactionHash: string;
 
-  readonly buyer_address: string;
+  readonly buyerAddress: string;
 
   readonly amount: number;
 }

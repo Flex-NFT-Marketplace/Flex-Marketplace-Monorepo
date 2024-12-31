@@ -9,14 +9,14 @@ export class GetSignatureActivityQueryDTO extends BaseQueryParams {
   })
   @IsOptional()
   @IsHexadecimal()
-  contract_address?: string;
+  nftContract?: string;
 
   @ApiProperty({
     required: false,
   })
   @IsOptional()
   @IsString()
-  token_id?: string;
+  tokenId?: string;
 
   @ApiProperty({
     required: false,

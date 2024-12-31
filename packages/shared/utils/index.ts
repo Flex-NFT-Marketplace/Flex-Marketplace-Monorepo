@@ -5,6 +5,7 @@ export * from './arrayLimitProcess';
 export * from './promise';
 export * from './bigNumberishToText';
 export * from './getTypedDataMessage';
+export * from './string';
 
 export const typeOfVal = (val: any): AttributesMapType => {
   if (val === true || val === false) return AttributesMapType.Boolean;

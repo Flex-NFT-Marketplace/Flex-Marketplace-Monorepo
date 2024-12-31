@@ -20,13 +20,13 @@ import { iInfoToken } from '@app/shared/modules/jwt/jwt.dto';
 
 @ApiTags('Signatures')
 @Controller('signatures')
-@ApiExtraModels(GetSignatureActivityQueryDTO)
+@ApiExtraModels(GetSignatureActivityQueryDTO, SignatureDTO)
 export class SignatureController {
   constructor(private readonly signatureService: SignatureService) {}
 
   //   @JWT()
   @JWT()
-  @Post()
+  @Post('create-signature')
   async createSignature(
     @Body() signatureDTO: SignatureDTO,
     @User() token: iInfoToken,
@@ -73,10 +73,10 @@ export class SignatureController {
     }
   }
 
-  @Get('bid/:contract_address/:token_id')
+  @Get('bid/:nftContract/:tokenId')
   async getSignatureBid(
-    @Param('contract_address') contractAddress: string,
-    @Param('token_id') tokenId: string,
+    @Param('nftContract') contractAddress: string,
+    @Param('tokenId') tokenId: string,
   ) {
     const res = await this.signatureService.getBidSignatures(
       contractAddress,
@@ -86,10 +86,10 @@ export class SignatureController {
     // return new ResponseData(res, HttpStatus.SUCCESS, HttpMessage.SUCCESS);
   }
 
-  @Get(':contract_address/:token_id')
+  @Get(':nftContract/:tokenId')
   async getSignature(
-    @Param('contract_address') contractAddress: string,
-    @Param('token_id') tokenId: string,
+    @Param('nftContract') contractAddress: string,
+    @Param('tokenId') tokenId: string,
   ) {
     const res = await this.signatureService.getSignature(
       contractAddress,
@@ -127,9 +127,9 @@ export class SignatureController {
   }
 
   @JWT()
-  @Put('cancel_order/:signature_id')
+  @Put('cancel-order/:signatureId')
   async cancelSignature(
-    @Param('signature_id') signatureId: string,
+    @Param('signatureId') signatureId: string,
     @User() token: iInfoToken,
   ) {
     try {

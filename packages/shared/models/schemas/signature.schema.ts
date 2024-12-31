@@ -96,3 +96,6 @@ export class Signature {
 export const SignatureSchema = SchemaFactory.createForClass(Signature);
 SignatureSchema.index({ contract_address: 1, token_id: 1 });
 SignatureSchema.index({ signer: 1, status: 1 });
+SignatureSchema.index({ status: 1 });
+SignatureSchema.index({ price: -1, createdAt: -1 });
+SignatureSchema.index({ price: 1, createdAt: -1 });

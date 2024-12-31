@@ -5,10 +5,13 @@ import { Model } from 'mongoose';
 import { RpcProvider } from 'starknet';
 import { SignatureDTO, UpdateSignatureDTO } from './dto/signature.dto';
 import {
+  MarketType,
   NftCollections,
   NftCollectionStandard,
   NftCollectionStats,
   Nfts,
+  PaymentTokenDocument,
+  PaymentTokens,
 } from '@app/shared/models';
 import {
   Signature,
@@ -34,6 +37,8 @@ export class SignatureService {
     @InjectModel(Signature.name) private signatureModel: Model<Signature>,
     @InjectModel(NftCollectionStats.name)
     private collectionStatsModel: Model<NftCollectionStats>,
+    @InjectModel(PaymentTokens.name)
+    private paymentTokenModel: Model<PaymentTokenDocument>,
     private colelctionService: NftCollectionsService,
   ) {
     this.provider = new RpcProvider({
@@ -47,10 +52,8 @@ export class SignatureService {
     try {
       const signExits = await this.signatureModel
         .findOne({
-          contract_address: formattedContractAddress(
-            signature.contract_address,
-          ),
-          token_id: signature.token_id,
+          contract_address: formattedContractAddress(signature.nftContract),
+          token_id: signature.tokenId,
           signer: signer,
           status: { $in: [SignStatusEnum.LISTING, SignStatusEnum.BUYING] },
         })
@@ -60,10 +63,25 @@ export class SignatureService {
 
       const nft = await this.nftModel
         .findOne({
-          nftContract: formattedContractAddress(signature.contract_address),
-          tokenId: signature.token_id,
+          nftContract: formattedContractAddress(signature.nftContract),
+          tokenId: signature.tokenId,
         })
         .exec();
+
+      if (!nft) {
+        throw new BadRequestException('Nft not found');
+      }
+
+      const paymentTokenDocument = await this.paymentTokenModel
+        .findOne({
+          contractAddress: formattedContractAddress(signature.currency),
+        })
+        .exec();
+
+      if (!paymentTokenDocument) {
+        throw new BadRequestException('Payment Token not allowed');
+      }
+
       const signatureArray = JSON.parse(signature.signature4);
 
       if (signatureArray.length > 1) {
@@ -74,13 +92,53 @@ export class SignatureService {
       }
       const newSignature = new this.signatureModel({
         ...signature,
+        contract_address: formattedContractAddress(signature.nftContract),
+        token_id: signature.tokenId,
         signer: formattedContractAddress(signer),
+        amount_sig: signature.amountSig,
         signature4: JSON.stringify(signatureArray),
         transaction_status: TxStatusEnum.PENDING,
+        transaction_hash: signature.transactionHash,
+        buyer_address:
+          signature.buyerAddress === ''
+            ? ''
+            : formattedContractAddress(signature.buyerAddress),
+        sell_end: signature.sellEnd,
         nft: nft._id,
       });
 
-      return newSignature.save();
+      nft.price = signature.price;
+      nft.paymentToken = paymentTokenDocument;
+      nft.marketType = MarketType.OnSale;
+      await nft.save();
+      await newSignature.save();
+
+      return await this.signatureModel
+        .findById(newSignature._id, {
+          _id: 1,
+          nftContract: '$contract_address',
+          tokenId: '$token_id',
+          signature4: 1,
+          nonce: 1,
+          price: 1,
+          amount: 1,
+          amountSig: '$amount_sig',
+          status: 1,
+          transactionHash: '$transaction_hash',
+          transactionStatus: '$transaction_status',
+          sellEnd: '$sell_end',
+          signer: 1,
+          buyer: '$buyer_address',
+          currency: 1,
+          nft: 1,
+        })
+        .populate([
+          {
+            path: 'nft',
+            select: ['nftContract', 'tokenId', 'name', 'image', 'owner'],
+          },
+        ])
+        .exec();
     } catch (error) {
       console.log(error);
       throw new BadRequestException(error.message);
@@ -98,29 +156,86 @@ export class SignatureService {
 
       if (!collection) return;
 
-      if (collection.standard == NftCollectionStandard.ERC721) {
-        const signature = await this.signatureModel
-          .findOne({
+      const signature = await this.signatureModel.aggregate([
+        {
+          $match: {
             contract_address: formattedContractAddress(contract_address),
             token_id,
             status: { $in: [SignStatusEnum.LISTING, SignStatusEnum.BUYING] },
-          })
-          .exec();
+          },
+        },
+        {
+          $sort: {
+            price: -1,
+            updatedAt: -1,
+          },
+        },
+        {
+          $limit: 1,
+        },
+        {
+          $lookup: {
+            from: 'nfts',
+            let: {
+              contract_address: '$contract_address',
+              token_id: '$token_id',
+            },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $and: [
+                      { $eq: ['$$contract_address', '$nftContract'] },
+                      {
+                        $or: [
+                          { $eq: ['$$token_id', '$tokenId'] },
+                          { $eq: [Number('$$token_id'), '$tokenId'] },
+                        ],
+                      },
+                    ],
+                  },
+                },
+              },
+              { $limit: 1 },
+              {
+                $project: {
+                  _id: 1,
+                  nftContract: 1,
+                  tokenId: 1,
+                  name: 1,
+                  description: 1,
+                  image: 1,
+                  owner: 1,
+                },
+              },
+            ],
+            as: 'nft',
+          },
+        },
+        { $unwind: '$nft' },
+        {
+          $project: {
+            _id: 1,
+            nftContract: '$contract_address',
+            tokenId: '$token_id',
+            signature4: 1,
+            nonce: 1,
+            price: 1,
+            amount: 1,
+            amountSig: '$amount_sig',
+            status: 1,
+            transactionHash: '$transaction_hash',
+            transactionStatus: '$transaction_status',
+            sellEnd: '$sell_end',
+            signer: 1,
+            buyer: '$buyer_address',
+            currency: 1,
+            nft: 1,
+          },
+        },
+      ]);
 
-        return signature;
-      } else {
-        const signature = await this.signatureModel
-          .find({
-            contract_address: formattedContractAddress(contract_address),
-            token_id,
-            status: { $in: [SignStatusEnum.LISTING, SignStatusEnum.BUYING] },
-          })
-          .sort({ price: 1 })
-          .limit(1)
-          .exec();
-
-        return signature[0];
-      }
+      return signature[0];
     } catch (error) {
       throw new BadRequestException(error.message);
     }
@@ -211,16 +326,81 @@ export class SignatureService {
     token_id: string,
   ): Promise<Signature[]> {
     try {
-      const signature = await this.signatureModel
-        .find({
-          contract_address: formattedContractAddress(contract_address),
-          token_id,
-          status: SignStatusEnum.BID,
-        })
-        .sort({
-          updatedAt: -1,
-        })
-        .exec();
+      const signature = await this.signatureModel.aggregate([
+        {
+          $match: {
+            contract_address: formattedContractAddress(contract_address),
+            token_id,
+            status: SignStatusEnum.BID,
+          },
+        },
+        {
+          $sort: {
+            price: -1,
+            updatedAt: -1,
+          },
+        },
+        {
+          $lookup: {
+            from: 'nfts',
+            let: {
+              contract_address: '$contract_address',
+              token_id: '$token_id',
+            },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $and: [
+                      { $eq: ['$$contract_address', '$nftContract'] },
+                      {
+                        $or: [
+                          { $eq: ['$$token_id', '$tokenId'] },
+                          { $eq: [Number('$$token_id'), '$tokenId'] },
+                        ],
+                      },
+                    ],
+                  },
+                },
+              },
+              { $limit: 1 },
+              {
+                $project: {
+                  _id: 1,
+                  nftContract: 1,
+                  tokenId: 1,
+                  name: 1,
+                  description: 1,
+                  image: 1,
+                  owner: 1,
+                },
+              },
+            ],
+            as: 'nft',
+          },
+        },
+        { $unwind: '$nft' },
+        {
+          $project: {
+            _id: 1,
+            nftContract: '$contract_address',
+            tokenId: '$token_id',
+            signature4: 1,
+            nonce: 1,
+            price: 1,
+            amount: 1,
+            amountSig: '$amount_sig',
+            status: 1,
+            transactionHash: '$transaction_hash',
+            transactionStatus: '$transaction_status',
+            sellEnd: '$sell_end',
+            signer: 1,
+            buyer: '$buyer_address',
+            currency: 1,
+            nft: 1,
+          },
+        },
+      ]);
 
       return signature;
     } catch (error) {
@@ -229,8 +409,12 @@ export class SignatureService {
   }
 
   async updateSignature(updateSignatureDTO: UpdateSignatureDTO): Promise<void> {
-    const { signature_id, transaction_hash, buyer_address, amount } =
-      updateSignatureDTO;
+    const {
+      signatureId: signature_id,
+      transactionHash: transaction_hash,
+      buyerAddress: buyer_address,
+      amount,
+    } = updateSignatureDTO;
 
     const signature = await this.signatureModel.findById(signature_id).exec();
 
@@ -276,7 +460,8 @@ export class SignatureService {
     updateSignatureDTO: UpdateSignatureDTO,
     signer: string,
   ): Promise<void> {
-    const { signature_id, transaction_hash } = updateSignatureDTO;
+    const { signatureId: signature_id, transactionHash: transaction_hash } =
+      updateSignatureDTO;
 
     const signature = await this.signatureModel.findById(signature_id).exec();
 
@@ -320,6 +505,13 @@ export class SignatureService {
           console.log('No transaction hash');
           continue;
         }
+
+        const nft = await this.nftModel
+          .findOne({
+            nftContract: signature.contract_address,
+            tokenId: signature.token_id,
+          })
+          .exec();
 
         try {
           const res = await this.provider.getTransactionStatus(
@@ -383,6 +575,11 @@ export class SignatureService {
                 break;
             }
           }
+
+          nft.price = 0;
+          nft.paymentToken = null;
+          nft.marketType = MarketType.NotForSale;
+          await nft.save();
         } catch (error) {
           this.logger.log('Synced tx status error: ' + error);
           continue;
@@ -403,6 +600,19 @@ export class SignatureService {
       if (formattedContractAddress(exist.signer) !== signer) {
         throw new BadRequestException('This Signature not belong to you');
       }
+
+      const nft = await this.nftModel
+        .findOne({
+          nftContract: exist.contract_address,
+          tokenId: exist.token_id,
+        })
+        .exec();
+
+      nft.price = 0;
+      nft.paymentToken = null;
+      nft.marketType = MarketType.NotForSale;
+      await nft.save();
+
       const res = await this.signatureModel
         .findByIdAndUpdate(
           {
@@ -471,20 +681,20 @@ export class SignatureService {
 
   async getNFTActivity(query: GetSignatureActivityQueryDTO) {
     const {
-      contract_address,
+      nftContract,
       sortPrice,
       minPrice,
       maxPrice,
       status,
       page,
-      token_id,
+      tokenId,
       size,
     } = query;
     console.log('What Rogn', query);
     const filter: any = {};
     const result = new BaseResultPagination<any>();
-    if (contract_address) {
-      filter.contract_address = formattedContractAddress(contract_address);
+    if (nftContract) {
+      filter.contract_address = formattedContractAddress(nftContract);
     }
     if (minPrice || maxPrice) {
       filter.price = {};
@@ -495,8 +705,8 @@ export class SignatureService {
         filter.price.$lte = Number(maxPrice);
       }
     }
-    if (token_id) {
-      filter.token_id = token_id;
+    if (tokenId) {
+      filter.token_id = tokenId;
     }
     if (!status) {
       filter.status = {
@@ -519,17 +729,80 @@ export class SignatureService {
         sortQuery = { price: -1, createdAt: -1 };
         break;
       default:
-        sortQuery = { updatedAt: -1 };
+        sortQuery = { price: 1, createdAt: -1 };
     }
 
     const total = await this.signatureModel.countDocuments(filter);
-    const dataItems = await this.signatureModel
-      .find(filter)
-      .sort(sortQuery)
-      .skip((page - 1) * size)
-      .limit(size)
-      .populate(['nft'])
-      .exec();
+    const dataItems = await this.signatureModel.aggregate([
+      {
+        $match: filter,
+      },
+      {
+        $sort: sortQuery,
+      },
+      {
+        $skip: (page - 1) * size,
+      },
+      {
+        $limit: size,
+      },
+      {
+        $lookup: {
+          from: 'nfts',
+          let: { contract_address: '$contract_address', token_id: '$token_id' },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ['$$contract_address', '$nftContract'] },
+                    {
+                      $or: [
+                        { $eq: ['$$token_id', '$tokenId'] },
+                        { $eq: [Number('$$token_id'), '$tokenId'] },
+                      ],
+                    },
+                  ],
+                },
+              },
+            },
+            { $limit: 1 },
+            {
+              $project: {
+                _id: 1,
+                nftContract: 1,
+                tokenId: 1,
+                name: 1,
+                image: 1,
+                owner: 1,
+              },
+            },
+          ],
+          as: 'nft',
+        },
+      },
+      { $unwind: '$nft' },
+      {
+        $project: {
+          _id: 1,
+          nftContract: '$contract_address',
+          tokenId: '$token_id',
+          signature4: 1,
+          nonce: 1,
+          price: 1,
+          amount: 1,
+          amountSig: '$amount_sig',
+          status: 1,
+          transactionHash: '$transaction_hash',
+          transactionStatus: '$transaction_status',
+          sellEnd: '$sell_end',
+          signer: 1,
+          buyer: '$buyer_address',
+          currency: 1,
+          nft: 1,
+        },
+      },
+    ]);
 
     result.data = new PaginationDto(dataItems, total, page, size);
 
@@ -538,7 +811,7 @@ export class SignatureService {
 
   async getNftCollectionActivity(query: GetSignatureActivityQueryDTO) {
     const {
-      contract_address,
+      nftContract,
       sortPrice = 'desc', // default descending
       minPrice,
       maxPrice,
@@ -552,9 +825,8 @@ export class SignatureService {
 
     const matchConditions: any = {}; // Dynamically build match conditions
 
-    if (contract_address) {
-      matchConditions.contract_address =
-        formattedContractAddress(contract_address);
+    if (nftContract) {
+      matchConditions.contract_address = formattedContractAddress(nftContract);
     }
 
     if (minPrice || maxPrice) {
@@ -567,78 +839,80 @@ export class SignatureService {
       matchConditions.status = status;
     }
 
+    let sortQuery = {};
+    switch (sortPrice) {
+      case 'asc':
+        sortQuery = { price: 1, createdAt: -1 };
+        break;
+      case 'desc':
+        sortQuery = { price: -1, createdAt: -1 };
+        break;
+      default:
+        sortQuery = { price: 1, createdAt: -1 };
+    }
+
     const activities = await this.signatureModel.aggregate([
       { $match: matchConditions },
+      { $sort: sortQuery },
+      { $skip: (page - 1) * size },
+      { $limit: size },
       {
         $lookup: {
           from: 'nfts',
-          localField: 'nft',
-          foreignField: '_id',
-          as: 'nftDetails',
-        },
-      },
-      { $unwind: { path: '$nftDetails', preserveNullAndEmptyArrays: true } },
-      {
-        $lookup: {
-          from: 'nftcollections',
-          localField: 'nftDetails.nftContract',
-          foreignField: 'nftContract',
-          as: 'collectionDetails',
-        },
-      },
-      {
-        $unwind: {
-          path: '$collectionDetails',
-          preserveNullAndEmptyArrays: false,
-        },
-      },
-      {
-        $match: {
-          contract_address: { $ne: null }, // Exclude documents with null contract_address
-          'collectionDetails.name': { $ne: null }, // Exclude documents with null collection name
-        },
-      },
-      {
-        $group: {
-          _id: '$contract_address',
-          name: { $first: '$collectionDetails.name' },
-          avatar: { $first: '$collectionDetails.avatar' },
-          cover: { $first: '$collectionDetails.cover' },
-          symbol: { $first: '$collectionDetails.symbol' },
-          activities: {
-            $push: {
-              contract_address: '$contract_address',
-              name: '$name',
-              token_id: '$token_id',
-              price: '$price',
-              amount: '$amount',
-              status: '$status',
-              buyer_address: '$buyer_address',
-              transaction_hash: '$transaction_hash',
-              createdAt: '$createdAt',
+          let: { contract_address: '$contract_address', token_id: '$token_id' },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ['$$contract_address', '$nftContract'] },
+                    {
+                      $or: [
+                        { $eq: ['$$token_id', '$tokenId'] },
+                        { $eq: [Number('$$token_id'), '$tokenId'] },
+                      ],
+                    },
+                  ],
+                },
+              },
             },
-          },
+            { $limit: 1 },
+            {
+              $project: {
+                _id: 1,
+                nftContract: 1,
+                tokenId: 1,
+                name: 1,
+                description: 1,
+                image: 1,
+                owner: 1,
+              },
+            },
+          ],
+          as: 'nft',
         },
       },
-      {
-        $addFields: {
-          activities: { $slice: ['$activities', 10] }, // Limit activities to 10
-        },
-      },
+      { $unwind: '$nft' },
       {
         $project: {
-          _id: 0, // Exclude MongoDB default `_id`
-          contract_address: '$_id',
-          name: 1,
-          avatar: 1,
-          cover: 1,
-          symbol: 1,
-          activities: 1,
+          _id: 1,
+          nftContract: '$contract_address',
+          tokenId: '$token_id',
+          signature4: 1,
+          nonce: 1,
+          price: 1,
+          amount: 1,
+          amountSig: '$amount_sig',
+          status: 1,
+          transactionHash: '$transaction_hash',
+          transactionStatus: '$transaction_status',
+          sellEnd: '$sell_end',
+          signer: 1,
+          buyer: '$buyer_address',
+          currency: 1,
+          nft: 1,
         },
       },
-      { $sort: { 'activities.createdAt': sortPrice === 'asc' ? 1 : -1 } },
-      { $skip: skip },
-      { $limit: limit },
     ]);
 
     // Total count for meta information

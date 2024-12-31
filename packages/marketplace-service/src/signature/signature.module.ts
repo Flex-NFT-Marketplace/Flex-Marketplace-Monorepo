@@ -15,6 +15,8 @@ import {
   NftCollectionStatsSchema,
   Nfts,
   NftSchema,
+  PaymentTokens,
+  PaymentTokenSchema,
   Signature,
   SignatureSchema,
   Users,
@@ -44,6 +46,10 @@ import { CronService } from './task/signatureTask.service';
       {
         name: NftCollectionStats.name,
         schema: NftCollectionStatsSchema,
+      },
+      {
+        name: PaymentTokens.name,
+        schema: PaymentTokenSchema,
       },
     ]),
     NftCollectionsModule,
