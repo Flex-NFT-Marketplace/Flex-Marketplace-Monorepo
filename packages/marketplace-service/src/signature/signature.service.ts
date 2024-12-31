@@ -108,7 +108,34 @@ export class SignatureService {
       nft.paymentToken = paymentTokenDocument;
       nft.marketType = MarketType.OnSale;
       await nft.save();
-      return await newSignature.save();
+      await newSignature.save();
+
+      return await this.signatureModel
+        .findById(newSignature._id, {
+          _id: 1,
+          nftContract: '$contract_address',
+          tokenId: '$token_id',
+          signature4: 1,
+          nonce: 1,
+          price: 1,
+          amount: 1,
+          amountSig: '$amount_sig',
+          status: 1,
+          transactionHash: '$transaction_hash',
+          transactionStatus: '$transaction_status',
+          sellEnd: '$sell_end',
+          signer: 1,
+          buyer: '$buyer_address',
+          currency: 1,
+          nft: 1,
+        })
+        .populate([
+          {
+            path: 'nft',
+            select: ['nftContract', 'tokenId', 'name', 'image', 'owner'],
+          },
+        ])
+        .exec();
     } catch (error) {
       console.log(error);
       throw new BadRequestException(error.message);
