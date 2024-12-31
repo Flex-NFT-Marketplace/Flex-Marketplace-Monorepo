@@ -80,6 +80,8 @@ export class NftService {
       };
     }
 
+    filter.amount = { $gt: 0 };
+
     const count = await this.nftModel.countDocuments(filter);
     if (count === 0 || query.size === 0) {
       result.data = new PaginationDto([], count, query.page, query.size);
