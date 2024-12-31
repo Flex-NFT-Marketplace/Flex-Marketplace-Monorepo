@@ -99,7 +99,7 @@ export class SignatureService {
         signature4: JSON.stringify(signatureArray),
         transaction_status: TxStatusEnum.PENDING,
         transaction_hash: signature.transactionHash,
-        buyer_address: formattedContractAddress(signature.buyerAddress),
+        buyer_address: '',
         sell_end: signature.sellEnd,
         nft: nft._id,
       });

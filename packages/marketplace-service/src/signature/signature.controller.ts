@@ -20,7 +20,7 @@ import { iInfoToken } from '@app/shared/modules/jwt/jwt.dto';
 
 @ApiTags('Signatures')
 @Controller('signatures')
-@ApiExtraModels(GetSignatureActivityQueryDTO)
+@ApiExtraModels(GetSignatureActivityQueryDTO, SignatureDTO)
 export class SignatureController {
   constructor(private readonly signatureService: SignatureService) {}
 
