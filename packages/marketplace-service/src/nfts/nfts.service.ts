@@ -200,11 +200,11 @@ export class NftService {
               //Todo code of signatureService
               let bestAsk: any;
 
-              if (item.owner.username != '') {
+              if (item.owner.address != '') {
                 bestAsk = await this.signatureService.getSignatureByOwner(
                   item.nftContract,
                   item.tokenId,
-                  item.owner.username,
+                  item.owner.address,
                 );
               } else {
                 bestAsk = await this.signatureService.getSignature(

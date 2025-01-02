@@ -11,6 +11,14 @@ export const formattedContractAddress = (contractAddress: string) => {
   return contractAddress.toLowerCase().trim();
 };
 
+export const unformattedContractAddress = (contractAddress: string) => {
+  while (contractAddress.startsWith('0x0')) {
+    contractAddress = contractAddress.trim().replace('0x0', '0x');
+  }
+
+  return contractAddress.toLowerCase().trim();
+};
+
 // Example: 1 FRI => 10**-18 STRK
 export function formatBalance(qty: bigint, decimals: number) {
   const balance = String('0').repeat(decimals) + qty.toString();

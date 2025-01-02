@@ -23,7 +23,10 @@ import { GetSignatureActivityQueryDTO } from './dto/getSignatureQuery';
 import { BaseResultPagination } from '@app/shared/types';
 import { PaginationDto } from '@app/shared/types/pagination.dto';
 import { NftCollectionsService } from '../nft-collections/nftCollections.service';
-import { formattedContractAddress } from '@app/shared/utils';
+import {
+  formattedContractAddress,
+  unformattedContractAddress,
+} from '@app/shared/utils';
 
 @Injectable()
 export class SignatureService {
@@ -131,6 +134,8 @@ export class SignatureService {
           buyerAddress: '$buyer_address',
           currency: 1,
           nft: 1,
+          createdAt: 1,
+          updatedAt: 1,
         })
         .populate([
           {
@@ -231,6 +236,8 @@ export class SignatureService {
             buyerAddress: '$buyer_address',
             currency: 1,
             nft: 1,
+            createdAt: 1,
+            updatedAt: 1,
           },
         },
       ]);
@@ -278,6 +285,8 @@ export class SignatureService {
               buyerAddress: '$buyer_address',
               currency: 1,
               nft: 1,
+              createdAt: 1,
+              updatedAt: 1,
             },
             { sort: { updatedAt: -1 } },
           )
@@ -289,7 +298,10 @@ export class SignatureService {
           .find({
             contract_address: formattedContractAddress(contract_address),
             token_id,
-            signer: owner_address,
+            $or: [
+              { signer: owner_address },
+              { signer: unformattedContractAddress(owner_address) },
+            ],
             status: { $in: [SignStatusEnum.LISTING, SignStatusEnum.BUYING] },
           })
           .sort({ price: 1, updatedAt: -1 })
@@ -346,6 +358,8 @@ export class SignatureService {
             buyerAddress: '$buyer_address',
             currency: 1,
             nft: 1,
+            createdAt: 1,
+            updatedAt: 1,
           },
           { sort: { updatedAt: -1 } },
         )
@@ -435,6 +449,8 @@ export class SignatureService {
             buyerAddress: '$buyer_address',
             currency: 1,
             nft: 1,
+            createdAt: 1,
+            updatedAt: 1,
           },
         },
       ]);
@@ -782,7 +798,7 @@ export class SignatureService {
         sortQuery = { price: -1, createdAt: -1 };
         break;
       default:
-        sortQuery = { price: 1, createdAt: -1 };
+        sortQuery = { createdAt: -1 };
     }
 
     const total = await this.signatureModel.countDocuments(filter);
@@ -853,6 +869,8 @@ export class SignatureService {
           buyerAddress: '$buyer_address',
           currency: 1,
           nft: 1,
+          createdAt: 1,
+          updatedAt: 1,
         },
       },
     ]);
@@ -964,6 +982,8 @@ export class SignatureService {
           buyerAddress: '$buyer_address',
           currency: 1,
           nft: 1,
+          createdAt: 1,
+          updatedAt: 1,
         },
       },
     ]);
