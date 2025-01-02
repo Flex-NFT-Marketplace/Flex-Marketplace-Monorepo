@@ -137,6 +137,25 @@ export class NftService {
         },
       },
       { $unwind: '$owner' },
+      {
+        $lookup: {
+          from: 'nftcollections',
+          localField: 'nftCollection',
+          foreignField: '_id',
+          pipeline: [
+            {
+              $project: {
+                _id: 1,
+                name: 1,
+                symbol: 1,
+                standard: 1,
+              },
+            },
+          ],
+          as: 'nftCollection',
+        },
+      },
+      { $unwind: '$nftCollection' },
     ]);
 
     const afterAlterItem = [];
