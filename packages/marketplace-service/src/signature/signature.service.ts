@@ -100,7 +100,7 @@ export class SignatureService {
         transaction_status: TxStatusEnum.PENDING,
         transaction_hash: signature.transactionHash,
         buyer_address:
-          signature.buyerAddress === ''
+          !signature.buyerAddress || signature.buyerAddress === ''
             ? ''
             : formattedContractAddress(signature.buyerAddress),
         sell_end: signature.sellEnd,
