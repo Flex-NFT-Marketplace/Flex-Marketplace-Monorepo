@@ -255,14 +255,32 @@ export class SignatureService {
 
       if (collection.standard == NftCollectionStandard.ERC721) {
         const signature = await this.signatureModel
-          .findOne({
-            contract_address: formattedContractAddress(contract_address),
-            token_id,
-            status: { $in: [SignStatusEnum.LISTING, SignStatusEnum.BUYING] },
-          })
-          .sort({
-            updatedAt: -1,
-          })
+          .findOne(
+            {
+              contract_address: formattedContractAddress(contract_address),
+              token_id,
+              status: { $in: [SignStatusEnum.LISTING, SignStatusEnum.BUYING] },
+            },
+            {
+              _id: 1,
+              nftContract: '$contract_address',
+              tokenId: '$token_id',
+              signature4: 1,
+              nonce: 1,
+              price: 1,
+              amount: 1,
+              amountSig: '$amount_sig',
+              status: 1,
+              transactionHash: '$transaction_hash',
+              transactionStatus: '$transaction_status',
+              sellEnd: '$sell_end',
+              signer: 1,
+              buyerAddress: '$buyer_address',
+              currency: 1,
+              nft: 1,
+            },
+            { sort: { updatedAt: -1 } },
+          )
           .exec();
 
         return signature;
@@ -305,14 +323,33 @@ export class SignatureService {
   ): Promise<Signature[]> {
     try {
       const signature = await this.signatureModel
-        .find({
-          contract_address: formattedContractAddress(contract_address),
-          token_id,
-          status: { $in: [SignStatusEnum.LISTING, SignStatusEnum.BUYING] },
-        })
-        .sort({
-          updatedAt: -1,
-        })
+        .find(
+          {
+            contract_address: formattedContractAddress(contract_address),
+            token_id,
+            status: { $in: [SignStatusEnum.LISTING, SignStatusEnum.BUYING] },
+          },
+          {
+            _id: 1,
+            nftContract: '$contract_address',
+            tokenId: '$token_id',
+            signature4: 1,
+            nonce: 1,
+            price: 1,
+            amount: 1,
+            amountSig: '$amount_sig',
+            status: 1,
+            transactionHash: '$transaction_hash',
+            transactionStatus: '$transaction_status',
+            sellEnd: '$sell_end',
+            signer: 1,
+            buyerAddress: '$buyer_address',
+            currency: 1,
+            nft: 1,
+          },
+          { sort: { updatedAt: -1 } },
+        )
+
         .exec();
 
       return signature;
