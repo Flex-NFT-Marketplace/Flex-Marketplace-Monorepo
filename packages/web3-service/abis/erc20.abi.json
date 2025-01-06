@@ -730,7 +730,7 @@
     },
     {
       "kind": "struct",
-      "name": "openzeppelin::token::erc20_v070::erc20::ERC20::Transfer",
+      "name": "Transfer",
       "type": "event",
       "members": [
         {
@@ -962,7 +962,7 @@
         {
           "kind": "nested",
           "name": "Transfer",
-          "type": "openzeppelin::token::erc20_v070::erc20::ERC20::Transfer"
+          "type": "Transfer"
         },
         {
           "kind": "nested",

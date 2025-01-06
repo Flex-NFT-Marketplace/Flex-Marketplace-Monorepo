@@ -8,7 +8,7 @@ import {
   MarketStatus,
   MarketType,
   NftCollectionDocument,
-  NftCollectionStandard,
+  ContractStandard,
   NftCollections,
   NftDocument,
   Nfts,
@@ -32,6 +32,10 @@ import {
   FlexHausDrop,
   FlexHausSetDocument,
   FlexHausDropDocument,
+  FlexHausPayment,
+  FlexHausPaymentDocument,
+  Users,
+  UserDocument,
 } from '@app/shared/models';
 import {
   CancelAllOrdersReturnValue,
@@ -39,7 +43,7 @@ import {
   ContractDeployedReturnValue,
   CreatorPayoutUpdatedReturnValue,
   ERC1155TransferReturnValue,
-  ERC721TransferReturnValue,
+  ERC721OrERC20TransferReturnValue,
   ItemStakedReturnValue,
   ItemUnStakedReturnValue,
   PayerUpdatedReturnValue,
@@ -92,6 +96,10 @@ export class NftItemService {
     private readonly flexHausDropModel: Model<FlexHausDropDocument>,
     @InjectQueue(QUEUE_METADATA)
     private readonly fetchMetadataQueue: Queue<string>,
+    @InjectModel(FlexHausPayment.name)
+    private readonly flexHausPaymentModel: Model<FlexHausPaymentDocument>,
+    @InjectModel(Users.name)
+    private readonly userModel: Model<UserDocument>,
     private readonly web3Service: Web3Service,
     private readonly userService: UserService,
   ) {}
@@ -125,6 +133,7 @@ export class NftItemService {
     process[EventType.ITEM_STAKED] = this.processItemStaked;
     process[EventType.ITEM_UNSTAKED] = this.processItemUnstaked;
     process[EventType.UPDATE_DROP] = this.processUpdateDrop;
+    process[EventType.TRANSFER_20] = this.processErc20Transfered;
 
     await process[log.eventType].call(this, log, chain, index);
   }
@@ -336,6 +345,81 @@ export class NftItemService {
     }
   }
 
+  async processErc20Transfered(
+    log: LogsReturnValues,
+    chain: ChainDocument,
+    index: number,
+  ) {
+    const { contractAddress, to, value, timestamp } =
+      log.returnValues as ERC721OrERC20TransferReturnValue;
+    const checkHistory = await this.historyModel.findOne({
+      txHash: log.transaction_hash,
+      index,
+    });
+
+    if (checkHistory) {
+      return;
+    }
+    const now = Date.now();
+
+    const flexhausPaymentAccount = await this.flexHausPaymentModel.findOne(
+      {
+        address: to,
+        deadline: { $gt: now },
+      },
+      { _id: 1, address: 1, user: 1, deadline: 1 },
+    );
+
+    if (!flexhausPaymentAccount) {
+      return;
+    }
+
+    const paymentToken = await this.paymentTokenModel.findOne({
+      contractAddress: contractAddress,
+      isPointPaymentToken: true,
+    });
+
+    if (!paymentToken) {
+      return;
+    }
+
+    const user = await this.userModel.findById(flexhausPaymentAccount.user);
+
+    const point =
+      paymentToken.symbol === 'STRK'
+        ? Math.floor(Number(value) / Number(chain.strkPerPoint))
+        : Math.floor(Number(value) / Number(chain.ethPerPoint));
+
+    user.points += point;
+    await user.save();
+
+    const history: Histories = {
+      nft: null,
+      tokenId: null,
+      nftContract: null,
+      nftCollection: null,
+      from: null,
+      to: flexhausPaymentAccount.user,
+      amount: point,
+      price: 0,
+      priceInUsd: 0,
+      txHash: log.transaction_hash,
+      index,
+      timestamp,
+      chain,
+      type: HistoryType.BuyPoint,
+    };
+
+    await this.historyModel.findOneAndUpdate(
+      {
+        txHash: log.transaction_hash,
+        index,
+      },
+      { $set: history },
+      { upsert: true },
+    );
+  }
+
   async processNft721Minted(
     log: LogsReturnValues,
     chain: ChainDocument,
@@ -344,15 +428,15 @@ export class NftItemService {
     const {
       from,
       to,
-      tokenId,
-      nftAddress,
+      value: tokenId,
+      contractAddress: nftAddress,
       timestamp,
       price,
       isFlexDropMinted,
       isWarpcastMinted,
       isClaimCollectible,
       phaseId,
-    } = log.returnValues as ERC721TransferReturnValue;
+    } = log.returnValues as ERC721OrERC20TransferReturnValue;
 
     const nftCollection = await this.getOrCreateNftCollection(
       nftAddress,
@@ -538,8 +622,13 @@ export class NftItemService {
     chain: ChainDocument,
     index: number,
   ) {
-    const { from, to, tokenId, nftAddress, timestamp } =
-      log.returnValues as ERC721TransferReturnValue;
+    const {
+      from,
+      to,
+      value: tokenId,
+      contractAddress: nftAddress,
+      timestamp,
+    } = log.returnValues as ERC721OrERC20TransferReturnValue;
 
     const nftCollection = await this.getOrCreateNftCollection(
       nftAddress,
@@ -635,8 +724,13 @@ export class NftItemService {
     chain: ChainDocument,
     index: number,
   ) {
-    const { from, to, tokenId, nftAddress, timestamp } =
-      log.returnValues as ERC721TransferReturnValue;
+    const {
+      from,
+      to,
+      value: tokenId,
+      contractAddress: nftAddress,
+      timestamp,
+    } = log.returnValues as ERC721OrERC20TransferReturnValue;
 
     const nftCollection = await this.getOrCreateNftCollection(
       nftAddress,
@@ -1508,7 +1602,7 @@ export class NftItemService {
 
     const updateNftItems = [];
     const updateSale = [];
-    if (nftCollection.standard === NftCollectionStandard.ERC721) {
+    if (nftCollection.standard === ContractStandard.ERC721) {
       if (sellerNft) {
         updateNftItems.push({
           updateOne: {
@@ -1748,7 +1842,7 @@ export class NftItemService {
 
     const updateNftItems = [];
     const updateOffer = [];
-    if (nftCollection.standard === NftCollectionStandard.ERC721) {
+    if (nftCollection.standard === ContractStandard.ERC721) {
       if (sellerNft) {
         updateNftItems.push({
           updateOne: {

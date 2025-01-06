@@ -29,6 +29,9 @@ export class PaymentTokens extends BaseSchema {
 
   @Prop()
   isNative: boolean; // ETH and STRK
+
+  @Prop()
+  isPointPaymentToken: boolean;
 }
 
 export const PaymentTokenSchema = SchemaFactory.createForClass(PaymentTokens);

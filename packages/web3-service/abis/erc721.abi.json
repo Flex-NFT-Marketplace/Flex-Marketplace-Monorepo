@@ -594,7 +594,7 @@
   },
   {
     "kind": "struct",
-    "name": "openzeppelin::token::erc721::erc721::ERC721Component::Transfer",
+    "name": "Transfer",
     "type": "event",
     "members": [
       {
@@ -666,7 +666,7 @@
       {
         "kind": "nested",
         "name": "Transfer",
-        "type": "openzeppelin::token::erc721::erc721::ERC721Component::Transfer"
+        "type": "Transfer"
       },
       {
         "kind": "nested",

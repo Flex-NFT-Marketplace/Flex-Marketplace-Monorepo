@@ -24,6 +24,7 @@ import {
 import { isHexadecimal } from 'class-validator';
 import { BaseResultPagination } from '@app/shared/types';
 import { QuerySubscriberDto } from './dto/querySubscriber.dto';
+import { PaymentAddressDTO } from './dto/paymentAddress.dto';
 
 @ApiTags('User')
 @Controller('user')
@@ -32,6 +33,7 @@ import { QuerySubscriberDto } from './dto/querySubscriber.dto';
   FlexHausSubscription,
   SubscribeDTO,
   BaseResultPagination,
+  PaymentAddressDTO,
 )
 export class UserController {
   constructor(private readonly userService: UserService) {}
@@ -216,5 +218,35 @@ export class UserController {
     @Body() query: QuerySubscriberDto,
   ): Promise<BaseResultPagination<FlexHausSubscription>> {
     return await this.userService.getSubscribers(query);
+  }
+
+  @JWT()
+  @Post('/get-payment-wallet')
+  @ApiOperation({
+    summary: 'Get Payment Wallet By User Address',
+  })
+  @ApiOkResponse({
+    schema: {
+      allOf: [
+        {
+          $ref: getSchemaPath(BaseResult),
+        },
+        {
+          properties: {
+            data: {
+              allOf: [
+                {
+                  $ref: getSchemaPath(PaymentAddressDTO),
+                },
+              ],
+            },
+          },
+        },
+      ],
+    },
+  })
+  async getOrGenerateWallet(@User() user: iInfoToken) {
+    const data = await this.userService.getOrGeneratePaymentWallet(user.sub);
+    return new BaseResult(data);
   }
 }

@@ -14,6 +14,7 @@ import {
   Erc1155MintQueueModule,
   Erc1155TransferQueueModule,
   Erc1155UpdateMetadataQueueModule,
+  Erc20TransferQueueModule,
   Erc721BurnQueueModule,
   Erc721MintQueueModule,
   Erc721TransferQueueModule,
@@ -24,6 +25,7 @@ import {
   PhaseDropUpdatedQueueModule,
   TakerAskQueueModule,
   TakerBidQueueModule,
+  UpdateDropQueueModule,
   UpgradeContractQueueModule,
 } from './queues';
 
@@ -63,6 +65,8 @@ import {
     Erc1155UpdateMetadataQueueModule,
     ItemStakedQueueModule,
     ItemUnstakedQueueModule,
+    UpdateDropQueueModule,
+    Erc20TransferQueueModule,
   ],
   controllers: [AppController],
   providers: [AppService],

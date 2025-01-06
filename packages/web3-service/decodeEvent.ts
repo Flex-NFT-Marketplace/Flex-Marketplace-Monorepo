@@ -60,12 +60,13 @@ export const decodeUpgradedContract = (txReceipt: any, provider: Provider) => {
   return returnValue;
 };
 
-export type ERC721TransferReturnValue = {
+export type ERC721OrERC20TransferReturnValue = {
   from: string;
   to: string;
-  tokenId: string;
-  nftAddress: string;
+  value: string;
+  contractAddress: string;
   timestamp: number;
+  isKnownAsErc721: boolean;
   isFlexDropMinted?: boolean;
   isWarpcastMinted?: boolean;
   isClaimCollectible?: boolean;
@@ -73,55 +74,87 @@ export type ERC721TransferReturnValue = {
   phaseId?: number;
 };
 
-export const decodeERC721Transfer = (
+export const decodeERC721OrERC20Transfer = (
   txReceipt: any,
   provider: Provider,
   timestamp: number,
-): ERC721TransferReturnValue => {
-  const nftAddress = formattedContractAddress(txReceipt.events[0].from_address);
+): ERC721OrERC20TransferReturnValue => {
+  const contractAddress = formattedContractAddress(
+    txReceipt.events[0].from_address,
+  );
 
   try {
-    const contractInstance = new Contract(ABIS.Erc721ABI, nftAddress, provider);
+    const contractInstance = new Contract(
+      ABIS.Erc20ABI,
+      contractAddress,
+      provider,
+    );
     const parsedEvent = contractInstance.parseEvents(txReceipt)[0];
-    const returnValue: ERC721TransferReturnValue = {
+
+    const returnValue: ERC721OrERC20TransferReturnValue = {
       from: formattedContractAddress(
         num.toHex(parsedEvent.Transfer.from as BigNumberish),
       ),
       to: formattedContractAddress(
         num.toHex(parsedEvent.Transfer.to as BigNumberish),
       ),
-      tokenId: (parsedEvent.Transfer.token_id as bigint).toString(),
-      nftAddress,
+      value: (parsedEvent.Transfer.value as bigint).toString(),
+      contractAddress: contractAddress,
       timestamp,
+      isKnownAsErc721: false,
     };
 
     return returnValue;
   } catch (error) {
     try {
-      const oldVercontractInstance = new Contract(
-        ABIS.OldErc721ABI,
-        nftAddress,
+      const Erc721ContractInstance = new Contract(
+        ABIS.Erc721ABI,
+        contractAddress,
         provider,
       );
-      txReceipt.events[0].keys = [EventTopic.TRANSFER];
-      const parsedEvent = oldVercontractInstance.parseEvents(txReceipt)[0];
-      const returnValue: ERC721TransferReturnValue = {
+      txReceipt.events[0].keys.unshift(EventTopic.TRANSFER);
+      const parsedEvent = Erc721ContractInstance.parseEvents(txReceipt)[0];
+      const returnValue: ERC721OrERC20TransferReturnValue = {
         from: formattedContractAddress(
           num.toHex(parsedEvent.Transfer.from as BigNumberish),
         ),
         to: formattedContractAddress(
           num.toHex(parsedEvent.Transfer.to as BigNumberish),
         ),
-        tokenId: (
-          uint256.uint256ToBN(parsedEvent.Transfer.token_id as any) as bigint
-        ).toString(),
-        nftAddress,
+        value: (parsedEvent.Transfer.token_id as bigint).toString(),
+        contractAddress,
         timestamp,
+        isKnownAsErc721: true,
       };
-
       return returnValue;
     } catch (error) {
-      return null;
+      try {
+        const oldVercontractInstance = new Contract(
+          ABIS.OldErc721ABI,
+          contractAddress,
+          provider,
+        );
+        txReceipt.events[0].keys.unshift(EventTopic.TRANSFER);
+        const parsedEvent = oldVercontractInstance.parseEvents(txReceipt)[0];
+        const returnValue: ERC721OrERC20TransferReturnValue = {
+          from: formattedContractAddress(
+            num.toHex(parsedEvent.Transfer.from as BigNumberish),
+          ),
+          to: formattedContractAddress(
+            num.toHex(parsedEvent.Transfer.to as BigNumberish),
+          ),
+          value: (
+            uint256.uint256ToBN(parsedEvent.Transfer.token_id as any) as bigint
+          ).toString(),
+          contractAddress,
+          timestamp,
+          isKnownAsErc721: true,
+        };
+
+        return returnValue;
+      } catch (error) {
+        return null;
+      }
     }
   }
 };

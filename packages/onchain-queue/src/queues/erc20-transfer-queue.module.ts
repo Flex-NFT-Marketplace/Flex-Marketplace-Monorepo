@@ -45,7 +45,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { Web3Service } from '@app/web3-service/web3.service';
 import { NftItemService } from './nft-item.service';
 import { UserService } from '../users/user.service';
-import { ERC1155TransferProcessor } from './processors';
+import { ERC20TransferProcessor } from './processors/erc20-transfer.processor';
 
 @Module({
   imports: [
@@ -80,16 +80,11 @@ import { ERC1155TransferProcessor } from './processors';
         defaultJobOptions: MQ_JOB_DEFAULT_CONFIG,
       },
       {
-        name: ONCHAIN_QUEUES.QUEUE_TRANSFER_1155,
+        name: ONCHAIN_QUEUES.QUEUE_TRANSFER_20,
         defaultJobOptions: MQ_JOB_DEFAULT_CONFIG,
       },
     ),
   ],
-  providers: [
-    NftItemService,
-    UserService,
-    Web3Service,
-    ERC1155TransferProcessor,
-  ],
+  providers: [NftItemService, UserService, Web3Service, ERC20TransferProcessor],
 })
-export class Erc1155TransferQueueModule {}
+export class Erc20TransferQueueModule {}

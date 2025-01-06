@@ -3,11 +3,7 @@ import { BaseSchema } from './base.schema';
 import { UserDocument } from './user.schema';
 import { ChainDocument } from './chain.schema';
 import { PaymentTokenDocument } from './paymenttoken.schema';
-import {
-  AttributeMap,
-  NftCollectionStandard,
-  NftCollectionStatus,
-} from '../types';
+import { AttributeMap, ContractStandard, NftCollectionStatus } from '../types';
 import { Document, SchemaTypes } from 'mongoose';
 import { DropPhaseDocument } from './dropphase.schema';
 import { NftCollectionStatsDocument } from './nftCollectionStats.chema';
@@ -59,8 +55,8 @@ export class NftCollections extends BaseSchema {
   @Prop({ type: SchemaTypes.ObjectId, ref: 'Chains' })
   chain: ChainDocument;
 
-  @Prop({ type: SchemaTypes.String, enum: NftCollectionStandard })
-  standard: NftCollectionStandard;
+  @Prop({ type: SchemaTypes.String, enum: ContractStandard })
+  standard: ContractStandard;
 
   @Prop({ type: [SchemaTypes.ObjectId], ref: 'PaymentTokens' })
   paymentTokens: PaymentTokenDocument[];

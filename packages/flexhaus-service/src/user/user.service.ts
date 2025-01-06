@@ -1,5 +1,9 @@
 import { InjectModel } from '@nestjs/mongoose';
 import {
+  ChainDocument,
+  Chains,
+  FlexHausPayment,
+  FlexHausPaymentDocument,
   FlexHausSubscription,
   FlexHausSubscriptionDocument,
   UserDocument,
@@ -13,6 +17,8 @@ import { SubscribeDTO } from './dto/subscribe.dto';
 import { QuerySubscriberDto } from './dto/querySubscriber.dto';
 import { BaseResultPagination } from '@app/shared/types';
 import { PaginationDto } from '@app/shared/types/pagination.dto';
+import { stark, ec, CallData, hash } from 'starknet';
+import { decryptData, encryptData } from '@app/shared/utils/encode';
 
 @Injectable()
 export class UserService {
@@ -20,6 +26,10 @@ export class UserService {
     @InjectModel(Users.name) private userModel: Model<Users>,
     @InjectModel(FlexHausSubscription.name)
     private subscriptionModel: Model<FlexHausSubscriptionDocument>,
+    @InjectModel(FlexHausPayment.name)
+    private paymentModel: Model<FlexHausPaymentDocument>,
+    @InjectModel(Chains.name)
+    private chainModel: Model<ChainDocument>,
   ) {}
 
   async getOrCreateUser(userAddress: string): Promise<UserDocument> {
@@ -214,5 +224,54 @@ export class UserService {
 
     result.data = new PaginationDto(items, total, page, size);
     return result;
+  }
+
+  async getOrGeneratePaymentWallet(creatorAddress: string) {
+    const creatorUser = await this.getOrCreateUser(creatorAddress);
+    const now = Date.now();
+
+    const payment = await this.paymentModel.findOne(
+      {
+        user: creatorUser,
+        deadline: { $gt: now },
+      },
+      { _id: 1, address: 1, deadline: 1 },
+    );
+
+    if (payment) {
+      return payment;
+    }
+
+    const newPrivatekey = stark.randomAddress();
+    const encryptedPrivateKey = encryptData(newPrivatekey);
+    const starkKeyPubAX = ec.starkCurve.getStarkKey(newPrivatekey);
+    const chain = await this.chainModel.findOne();
+    const AXConstructorCallData = CallData.compile({
+      owner: starkKeyPubAX,
+      guardian: '0',
+    });
+
+    console.log();
+
+    const AXcontractAddress = hash.calculateContractAddressFromHash(
+      starkKeyPubAX,
+      chain.walletClassHash,
+      AXConstructorCallData,
+      0,
+    );
+
+    const newPayemnt = new this.paymentModel({
+      user: creatorUser,
+      address: formattedContractAddress(AXcontractAddress),
+      privateKey: encryptedPrivateKey,
+      deadline: Date.now() + 6 * 30 * 24 * 60 * 60 * 1000, // 6 months
+    });
+
+    await newPayemnt.save();
+    return await this.paymentModel.findById(newPayemnt._id, {
+      _id: 1,
+      address: 1,
+      deadline: 1,
+    });
   }
 }
