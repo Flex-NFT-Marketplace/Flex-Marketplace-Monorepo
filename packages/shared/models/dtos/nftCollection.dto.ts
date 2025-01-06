@@ -8,7 +8,7 @@ import {
   IsUrl,
   Length,
 } from 'class-validator';
-import { NftCollectionStandard, NftCollectionStatus } from '../types';
+import { ContractStandard, NftCollectionStatus } from '../types';
 import { Transform } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 import { UserDto } from './user.dto';
@@ -59,9 +59,9 @@ export class NftCollectionDto {
   @ApiProperty({ type: () => UserDto })
   owner: UserDto;
 
-  @IsEnum(NftCollectionStandard)
-  @ApiProperty({ enum: NftCollectionStandard })
-  standard: NftCollectionStandard;
+  @IsEnum(ContractStandard)
+  @ApiProperty({ enum: ContractStandard })
+  standard: ContractStandard;
 
   @IsArray()
   @ApiProperty({ type: () => [PaymentTokenDto] })

@@ -14,6 +14,7 @@ import src5Abi from '../abis/src5.abi.json';
 import unframedAbi from '../abis/unframed.abi.json';
 import stakingAbi from '../abis/staking.abi.json';
 import erc20Abi from '../abis/erc20.abi.json';
+import oldErc20Abi from '../abis/olderc20.abi.json';
 import openeditionAbi from '../abis/openedition.abi.json';
 import flexhausfactoryAbi from '../abis/flexhausfactory.json';
 
@@ -60,6 +61,12 @@ export enum EventType {
   MINT_1155 = 'MINT_1155',
   BURN_1155 = 'BURN_1155',
   UPDATE_METADATA_1155 = 'UPDATE_METADATA_1155',
+  UNKNOWN_TRANSFER = 'UNKNOWN_TRANSFER',
+  UNKNOWN_MINT = 'UNKNOWN_MINT',
+  UNKNOWN_BURN = 'UNKNOWN_BURN',
+  TRANSFER_20 = 'TRANSFER_20',
+  MINT_20 = 'MINT_20',
+  BURN_20 = 'BURN_20',
   TRANSFER_721 = 'TRANSFER_721',
   TRANSFER_1155 = 'TRANSFER_1155',
   TAKER_BID = 'TAKER_BID',
@@ -98,6 +105,7 @@ export const ABIS = {
   Src5ABI: src5Abi,
   StakingABI: stakingAbi,
   Erc20ABI: erc20Abi,
+  OldErc20ABI: oldErc20Abi,
   OpeneditionABI: openeditionAbi,
   FlexHausFactoryABI: flexhausfactoryAbi,
 };

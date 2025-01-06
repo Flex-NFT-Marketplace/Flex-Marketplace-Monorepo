@@ -15,9 +15,10 @@ import { retryUntil } from '@app/shared';
 import { EventType, LogsReturnValues } from '@app/web3-service/types';
 import { ONCHAIN_JOBS } from '@app/shared/types';
 import { Queue } from 'bull';
-import { ERC721TransferReturnValue } from '@app/web3-service/decodeEvent';
+import { ERC721OrERC20TransferReturnValue } from '@app/web3-service/decodeEvent';
 import { OnchainQueueService } from '@app/shared/utils/queue';
 import * as _ from 'lodash';
+import { ContractStandard } from '@app/shared/models';
 
 export class BlockDetectionService extends OnchainWorker {
   constructor(
@@ -25,6 +26,7 @@ export class BlockDetectionService extends OnchainWorker {
     cancelOfferQueue: Queue<LogsReturnValues>,
     creatorPayoutQueue: Queue<LogsReturnValues>,
     deployContractQueue: Queue<LogsReturnValues>,
+    erc20TransferQueue: Queue<LogsReturnValues>,
     erc721BurnQueue: Queue<LogsReturnValues>,
     erc721MintQueue: Queue<LogsReturnValues>,
     erc721TransferQueue: Queue<LogsReturnValues>,
@@ -51,6 +53,7 @@ export class BlockDetectionService extends OnchainWorker {
     this.cancelOfferQueue = cancelOfferQueue;
     this.creatorPayoutQueue = creatorPayoutQueue;
     this.deployContractQueue = deployContractQueue;
+    this.erc20TransferQueue = erc20TransferQueue;
     this.erc721BurnQueue = erc721BurnQueue;
     this.erc721MintQueue = erc721MintQueue;
     this.erc721TransferQueue = erc721TransferQueue;
@@ -79,6 +82,7 @@ export class BlockDetectionService extends OnchainWorker {
   cancelOfferQueue: Queue<LogsReturnValues>;
   creatorPayoutQueue: Queue<LogsReturnValues>;
   deployContractQueue: Queue<LogsReturnValues>;
+  erc20TransferQueue: Queue<LogsReturnValues>;
   erc721BurnQueue: Queue<LogsReturnValues>;
   erc721MintQueue: Queue<LogsReturnValues>;
   erc721TransferQueue: Queue<LogsReturnValues>;
@@ -250,6 +254,43 @@ export class BlockDetectionService extends OnchainWorker {
         timestamp,
       );
 
+      for (const event of eventWithType) {
+        switch (event.eventType) {
+          case EventType.UNKNOWN_BURN:
+          case EventType.UNKNOWN_MINT:
+          case EventType.UNKNOWN_TRANSFER:
+            const { contractAddress } =
+              event.returnValues as ERC721OrERC20TransferReturnValue;
+            const contractStandard = await this.web3Service.getContractStandard(
+              contractAddress,
+              this.chain.rpc,
+            );
+
+            if (!contractStandard) {
+              break;
+            }
+
+            if (contractStandard === ContractStandard.ERC20) {
+              event.eventType =
+                event.eventType === EventType.UNKNOWN_BURN
+                  ? EventType.BURN_20
+                  : event.eventType === EventType.UNKNOWN_MINT
+                    ? EventType.MINT_20
+                    : EventType.TRANSFER_20;
+            } else {
+              event.eventType =
+                event.eventType === EventType.UNKNOWN_BURN
+                  ? EventType.BURN_721
+                  : event.eventType === EventType.UNKNOWN_MINT
+                    ? EventType.MINT_721
+                    : EventType.TRANSFER_721;
+            }
+            break;
+          default:
+            break;
+        }
+      }
+
       const matchTakerAskEv = eventWithType.filter(
         ev => ev.eventType === EventType.TAKER_ASK,
       );
@@ -394,9 +435,13 @@ export class BlockDetectionService extends OnchainWorker {
             queue = this.deployContractQueue;
             jobName = ONCHAIN_JOBS.JOB_DEPLOY_CONTRACT;
             break;
+          case EventType.TRANSFER_20:
+            queue = this.erc20TransferQueue;
+            jobName = ONCHAIN_JOBS.JOB_TRANSFER_20;
+            break;
           case EventType.BURN_721:
-            const { nftAddress: nftAddressBurned } =
-              event.returnValues as ERC721TransferReturnValue;
+            const { contractAddress: nftAddressBurned } =
+              event.returnValues as ERC721OrERC20TransferReturnValue;
             const collectionBurnedInfo =
               await this.web3Service.getNFTCollectionDetail(
                 nftAddressBurned,
@@ -408,8 +453,8 @@ export class BlockDetectionService extends OnchainWorker {
             }
             break;
           case EventType.MINT_721:
-            const { nftAddress: nftAddressMinted } =
-              event.returnValues as ERC721TransferReturnValue;
+            const { contractAddress: nftAddressMinted } =
+              event.returnValues as ERC721OrERC20TransferReturnValue;
             const collectionMintedInfo =
               await this.web3Service.getNFTCollectionDetail(
                 nftAddressMinted,
@@ -421,8 +466,8 @@ export class BlockDetectionService extends OnchainWorker {
             }
             break;
           case EventType.TRANSFER_721:
-            const { nftAddress } =
-              event.returnValues as ERC721TransferReturnValue;
+            const { contractAddress: nftAddress } =
+              event.returnValues as ERC721OrERC20TransferReturnValue;
             const collectionInfo =
               await this.web3Service.getNFTCollectionDetail(
                 nftAddress,

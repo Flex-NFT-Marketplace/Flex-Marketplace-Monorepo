@@ -1,4 +1,4 @@
-import { NftCollectionStandard, NftCollectionStatus } from '@app/shared/models';
+import { ContractStandard, NftCollectionStatus } from '@app/shared/models';
 import { BaseQueryParams } from '@app/shared/types/base.queryparams';
 import { ApiProperty } from '@nestjs/swagger';
 import {
@@ -19,11 +19,11 @@ export class NftCollectionQueryParams extends BaseQueryParams {
 
   @IsOptional()
   @ApiProperty({
-    enum: NftCollectionStandard,
-    example: NftCollectionStandard.ERC721,
+    enum: ContractStandard,
+    example: ContractStandard.ERC721,
   })
-  @IsEnum(NftCollectionStandard)
-  standard?: NftCollectionStandard;
+  @IsEnum(ContractStandard)
+  standard?: ContractStandard;
 
   @IsOptional()
   @ApiProperty()

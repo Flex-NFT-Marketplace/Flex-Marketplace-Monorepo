@@ -7,6 +7,8 @@ import {
   DropPhases,
   FlexHausDrop,
   FlexHausDropSchema,
+  FlexHausPayment,
+  FlexHausPaymentSchema,
   FlexHausSet,
   FlexHausSetSchema,
   Histories,
@@ -70,6 +72,7 @@ import { PayerUpdatedProcessor } from './processors';
         name: NftCollectionStats.name,
         schema: NftCollectionStatsSchema,
       },
+      { name: FlexHausPayment.name, schema: FlexHausPaymentSchema },
     ]),
     BullModule.registerQueue(
       {

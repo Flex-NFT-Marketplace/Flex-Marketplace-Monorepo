@@ -4,8 +4,12 @@ import { CollectibleService } from './collectible.service';
 import { UserService } from '../user/user.service';
 import { MongooseModule } from '@nestjs/mongoose';
 import {
+  ChainSchema,
+  Chains,
   FlexHausDrop,
   FlexHausDropSchema,
+  FlexHausPayment,
+  FlexHausPaymentSchema,
   FlexHausSubscription,
   NftCollectionSchema,
   NftCollections,
@@ -21,6 +25,8 @@ import {
       { name: Users.name, schema: UserSchema },
       { name: FlexHausDrop.name, schema: FlexHausDropSchema },
       { name: FlexHausSubscription.name, schema: flexHausSubscriptionSchema },
+      { name: FlexHausPayment.name, schema: FlexHausPaymentSchema },
+      { name: Chains.name, schema: ChainSchema },
     ]),
   ],
   controllers: [CollectibleController],

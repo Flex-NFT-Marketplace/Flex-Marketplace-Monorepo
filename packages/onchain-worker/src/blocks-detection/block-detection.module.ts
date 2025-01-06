@@ -71,6 +71,10 @@ import { OnchainQueueService } from '@app/shared/utils/queue';
         defaultJobOptions: MQ_JOB_DEFAULT_CONFIG,
       },
       {
+        name: ONCHAIN_QUEUES.QUEUE_TRANSFER_20,
+        defaultJobOptions: MQ_JOB_DEFAULT_CONFIG,
+      },
+      {
         name: ONCHAIN_QUEUES.QUEUE_BURN_721,
         defaultJobOptions: MQ_JOB_DEFAULT_CONFIG,
       },
@@ -120,6 +124,10 @@ import { OnchainQueueService } from '@app/shared/utils/queue';
       },
       {
         name: ONCHAIN_QUEUES.QUEUE_ITEM_UNSTAKED,
+        defaultJobOptions: MQ_JOB_DEFAULT_CONFIG,
+      },
+      {
+        name: ONCHAIN_QUEUES.QUEUE_UPDATE_DROP,
         defaultJobOptions: MQ_JOB_DEFAULT_CONFIG,
       },
     ),

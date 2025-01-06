@@ -4,9 +4,13 @@ import { UserService } from '../user/user.service';
 import { FlexDropController } from './flexhausDrop.controller';
 import { MongooseModule } from '@nestjs/mongoose';
 import {
+  ChainSchema,
+  Chains,
   FlexHausDrop,
   FlexHausDropSchema,
   FlexHausEvents,
+  FlexHausPayment,
+  FlexHausPaymentSchema,
   FlexHausSet,
   FlexHausSetSchema,
   FlexHausSubscription,
@@ -27,6 +31,8 @@ import {
       { name: FlexHausDrop.name, schema: FlexHausDropSchema },
       { name: FlexHausEvents.name, schema: flexHausEventSchema },
       { name: FlexHausSubscription.name, schema: flexHausSubscriptionSchema },
+      { name: FlexHausPayment.name, schema: FlexHausPaymentSchema },
+      { name: Chains.name, schema: ChainSchema },
     ]),
   ],
   providers: [FlexDropService, UserService],

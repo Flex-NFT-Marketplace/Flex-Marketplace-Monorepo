@@ -8,9 +8,10 @@ export enum NftCollectionStatus {
   DeActive = 'deActive',
 }
 
-export enum NftCollectionStandard {
-  ERC721 = 'ERC-721',
-  ERC1155 = 'ERC-1155',
+export enum ContractStandard {
+  ERC20 = 'ERC20',
+  ERC721 = 'ERC721',
+  ERC1155 = 'ERC1155',
 }
 
 export enum NotificationStatus {
@@ -30,6 +31,7 @@ export enum HistoryType {
   Stake = 'stake',
   Unstake = 'unstake',
   ClaimCollectible = 'claimCollectible',
+  BuyPoint = 'buyPoint',
 }
 export enum ActivityType {
   CreateSale = 'createSale',
@@ -107,6 +109,9 @@ export enum AttributesMapType {
 
 export const BURN_ADDRESS =
   '0x0000000000000000000000000000000000000000000000000000000000000000';
+
+export const SEQUENCER_ADDRESS =
+  '0x01176a1bd84444c89232ec27754698e5d2e7e1a7f1539f12027f28b23ec9f3d8';
 
 export enum TokenType {
   ETH = 'ETH',

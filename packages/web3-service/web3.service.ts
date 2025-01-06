@@ -18,7 +18,7 @@ import {
 } from './types';
 import {
   ERC1155TransferReturnValue,
-  ERC721TransferReturnValue,
+  ERC721OrERC20TransferReturnValue,
   decodeCancelAllOrders,
   decodeCancelOrder,
   decodeClaimCollectible,
@@ -27,7 +27,7 @@ import {
   decodeCreatorPayoutUpdated,
   decodeERC115Transfer,
   decodeERC115TransferBatch,
-  decodeERC721Transfer,
+  decodeERC721OrERC20Transfer,
   decodeElementSale,
   decodeFlexDropMinted,
   decodeItemStaked,
@@ -41,7 +41,11 @@ import {
   decodeUpdateDrop,
   decodeUpgradedContract,
 } from './decodeEvent';
-import { BURN_ADDRESS, NftCollectionStandard } from '@app/shared/models';
+import {
+  BURN_ADDRESS,
+  ContractStandard,
+  SEQUENCER_ADDRESS,
+} from '@app/shared/models';
 import {
   attemptOperations,
   convertDataIntoString,
@@ -202,9 +206,9 @@ export class Web3Service {
             });
           }
         } else if (event.keys.includes(EventTopic.TRANSFER)) {
-          let returnValues: ERC721TransferReturnValue = null;
+          let returnValues: ERC721OrERC20TransferReturnValue = null;
           try {
-            returnValues = decodeERC721Transfer(
+            returnValues = decodeERC721OrERC20Transfer(
               txReceiptFilter,
               provider,
               timestamp,
@@ -214,17 +218,26 @@ export class Web3Service {
           if (returnValues) {
             const eventWithType: LogsReturnValues = {
               ...txReceiptFilter,
-              eventType: EventType.TRANSFER_721,
+              eventType: returnValues.isKnownAsErc721
+                ? EventType.TRANSFER_721
+                : EventType.UNKNOWN_TRANSFER,
               returnValues,
             };
 
             if (returnValues.from === BURN_ADDRESS) {
-              eventWithType.eventType = EventType.MINT_721;
+              eventWithType.eventType = returnValues.isKnownAsErc721
+                ? EventType.MINT_721
+                : EventType.UNKNOWN_MINT;
             }
             if (returnValues.to === BURN_ADDRESS) {
-              eventWithType.eventType = EventType.BURN_721;
+              eventWithType.eventType = returnValues.isKnownAsErc721
+                ? EventType.BURN_721
+                : EventType.UNKNOWN_BURN;
             }
-            eventWithTypes.push(eventWithType);
+
+            if (returnValues.to !== SEQUENCER_ADDRESS) {
+              eventWithTypes.push(eventWithType);
+            }
           }
         } else if (event.keys.includes(EventTopic.TRANSFER_SINGLE)) {
           let returnValues: ERC1155TransferReturnValue = null;
@@ -550,7 +563,7 @@ export class Web3Service {
   async getNFTUri(
     address: string,
     tokenId: string,
-    standard: NftCollectionStandard,
+    standard: ContractStandard,
     rpc: string,
   ): Promise<string> {
     const provider = this.getProvider(rpc);
@@ -558,7 +571,7 @@ export class Web3Service {
     let abi = ABIS.Erc721ABI;
     let otherVerAbi = ABIS.OtherErc721ABI;
     let oldVerAbi = ABIS.OldErc721ABI;
-    if (standard === NftCollectionStandard.ERC1155) {
+    if (standard === ContractStandard.ERC1155) {
       abi = ABIS.Erc1155ABI;
       otherVerAbi = ABIS.OtherErc1155ABI;
       oldVerAbi = ABIS.OldErc1155ABI;
@@ -616,10 +629,10 @@ export class Web3Service {
     return formattedContractAddress(num.toHex(tokenOwner as BigNumberish));
   }
 
-  async getNFTCollectionStandard(
+  async getContractStandard(
     address: string,
     rpc: string,
-  ): Promise<NftCollectionStandard | null> {
+  ): Promise<ContractStandard | null> {
     const isERC721 =
       (await this.checkInterfaceSupported(address, rpc, InterfaceId.ERC721)) ||
       (await this.checkInterfaceSupported(
@@ -628,7 +641,7 @@ export class Web3Service {
         InterfaceId.OLD_ERC721,
       ));
     if (isERC721 === true) {
-      return NftCollectionStandard.ERC721;
+      return ContractStandard.ERC721;
     }
 
     const isERC1155 =
@@ -639,31 +652,55 @@ export class Web3Service {
         InterfaceId.OLD_ERC1155,
       ));
     if (isERC1155 === true) {
-      return NftCollectionStandard.ERC1155;
+      return ContractStandard.ERC1155;
+    }
+
+    const isERC20 = await this.checkIfContractIsERC20(address, rpc);
+    if (isERC20 === true) {
+      return ContractStandard.ERC20;
     }
 
     return null;
+  }
+
+  async checkIfContractIsERC20(
+    address: string,
+    rpc: string,
+  ): Promise<boolean | null> {
+    const provider = this.getProvider(rpc);
+    const erc20Instance = new Contract(ABIS.Erc20ABI, address, provider);
+    try {
+      await erc20Instance.name();
+      await erc20Instance.symbol();
+      await erc20Instance.decimals();
+      await erc20Instance.totalSupply();
+      await erc20Instance.balanceOf(address);
+      await erc20Instance.allowance(address, address);
+      return true;
+    } catch (error) {
+      return null;
+    }
   }
 
   async getNFTCollectionDetail(
     address: string,
     rpc: string,
   ): Promise<{
-    standard: NftCollectionStandard;
+    standard: ContractStandard;
     isNonFungibleFlexDropToken: boolean;
     name?: string;
     symbol?: string;
     contractUri?: string;
   } | null> {
     const provider = this.getProvider(rpc);
-    const standard = await this.getNFTCollectionStandard(address, rpc);
+    const standard = await this.getContractStandard(address, rpc);
     const isNonFungibleFlexDropToken = await this.checkInterfaceSupported(
       address,
       rpc,
       InterfaceId.NON_FUNGIBLE_FLEX_DROP_TOKEN,
     );
 
-    if (!standard) {
+    if (!standard || standard === ContractStandard.ERC20) {
       return null;
     }
 

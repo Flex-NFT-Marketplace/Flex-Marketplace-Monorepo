@@ -7,7 +7,7 @@ import { SignatureDTO, UpdateSignatureDTO } from './dto/signature.dto';
 import {
   MarketType,
   NftCollections,
-  NftCollectionStandard,
+  ContractStandard,
   NftCollectionStats,
   Nfts,
   PaymentTokenDocument,
@@ -260,7 +260,7 @@ export class SignatureService {
 
       if (!collection) return;
 
-      if (collection.standard == NftCollectionStandard.ERC721) {
+      if (collection.standard == ContractStandard.ERC721) {
         const signature = await this.signatureModel
           .findOne(
             {
@@ -478,7 +478,7 @@ export class SignatureService {
       .findOne({ nftContract: signature.contract_address })
       .exec();
 
-    if (collectionModel.standard == NftCollectionStandard.ERC721) {
+    if (collectionModel.standard == ContractStandard.ERC721) {
       await this.signatureModel.findByIdAndUpdate(signature_id, {
         status: SignStatusEnum.BUYING,
         transaction_hash: transaction_hash,
@@ -533,7 +533,7 @@ export class SignatureService {
       .findOne({ nftContract: signature.contract_address })
       .exec();
 
-    if (collectionModel.standard == NftCollectionStandard.ERC721) {
+    if (collectionModel.standard == ContractStandard.ERC721) {
       console.log('updateSignatureBid -> signature_id', signature_id);
       await this.signatureModel
         .findByIdAndUpdate(signature_id, {

@@ -75,6 +75,9 @@ export class Users extends BaseSchema {
 
   @Prop({ type: [SchemaTypes.String], enum: ROLE })
   roles: ROLE[];
+
+  @Prop({ default: 0 })
+  points?: number;
 }
 
 export const UserSchema = SchemaFactory.createForClass(Users);

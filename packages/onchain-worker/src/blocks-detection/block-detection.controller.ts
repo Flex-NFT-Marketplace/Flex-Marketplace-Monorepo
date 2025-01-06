@@ -31,6 +31,8 @@ export class BlockDetectionController {
     private readonly creatorPayoutQueue: Queue<LogsReturnValues>,
     @InjectQueue(ONCHAIN_QUEUES.QUEUE_DEPLOY_CONTRACT)
     private readonly deployContractQueue: Queue<LogsReturnValues>,
+    @InjectQueue(ONCHAIN_QUEUES.QUEUE_TRANSFER_20)
+    private readonly transfer20Queue: Queue<LogsReturnValues>,
     @InjectQueue(ONCHAIN_QUEUES.QUEUE_BURN_721)
     private readonly erc721BurnQueue: Queue<LogsReturnValues>,
     @InjectQueue(ONCHAIN_QUEUES.QUEUE_MINT_721)
@@ -77,6 +79,7 @@ export class BlockDetectionController {
             this.cancelOfferQueue,
             this.creatorPayoutQueue,
             this.deployContractQueue,
+            this.transfer20Queue,
             this.erc721BurnQueue,
             this.erc721MintQueue,
             this.erc721TransferQueue,

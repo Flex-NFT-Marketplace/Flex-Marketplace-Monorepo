@@ -14,7 +14,7 @@ import {
   MarketStatus,
   MarketType,
   NftCollectionSchema,
-  NftCollectionStandard,
+  ContractStandard,
   NftCollections,
   NftSchema,
   Nfts,
@@ -146,7 +146,7 @@ describe('NFT item service', () => {
         ...nftCollections[i],
         chain: chainDocument,
         paymentTokens: [paymentTokenDocument],
-        standard: nftCollections[i].standard as NftCollectionStandard,
+        standard: nftCollections[i].standard as ContractStandard,
         dropPhases: [],
       };
       const nftCollectionDocument =

@@ -2,6 +2,10 @@ import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { UserService } from './user.service';
 import {
+  ChainSchema,
+  Chains,
+  FlexHausPayment,
+  FlexHausPaymentSchema,
   FlexHausSubscription,
   UserSchema,
   Users,
@@ -14,6 +18,8 @@ import { UserController } from './user.controller';
     MongooseModule.forFeature([
       { name: Users.name, schema: UserSchema },
       { name: FlexHausSubscription.name, schema: flexHausSubscriptionSchema },
+      { name: FlexHausPayment.name, schema: FlexHausPaymentSchema },
+      { name: Chains.name, schema: ChainSchema },
     ]),
   ],
   providers: [UserService],

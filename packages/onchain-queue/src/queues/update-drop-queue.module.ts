@@ -7,11 +7,15 @@ import {
   DropPhases,
   FlexHausDrop,
   FlexHausDropSchema,
+  FlexHausPayment,
+  FlexHausPaymentSchema,
   FlexHausSet,
   FlexHausSetSchema,
   Histories,
   HistorySchema,
   NftCollectionSchema,
+  NftCollectionStats,
+  NftCollectionStatsSchema,
   NftCollections,
   NftSchema,
   Nfts,
@@ -64,6 +68,11 @@ import { UpdateDropProcessor } from './processors';
         name: Signature.name,
         schema: SignatureSchema,
       },
+      {
+        name: NftCollectionStats.name,
+        schema: NftCollectionStatsSchema,
+      },
+      { name: FlexHausPayment.name, schema: FlexHausPaymentSchema },
     ]),
     BullModule.registerQueue(
       {
@@ -71,7 +80,7 @@ import { UpdateDropProcessor } from './processors';
         defaultJobOptions: MQ_JOB_DEFAULT_CONFIG,
       },
       {
-        name: ONCHAIN_QUEUES.QUEUE_ITEM_STAKED,
+        name: ONCHAIN_QUEUES.QUEUE_UPDATE_DROP,
         defaultJobOptions: MQ_JOB_DEFAULT_CONFIG,
       },
     ),

@@ -85,6 +85,15 @@ export class Chains extends BaseSchema {
 
   @Prop()
   delayBlock: number;
+
+  @Prop()
+  walletClassHash: string;
+
+  @Prop()
+  strkPerPoint: string;
+
+  @Prop()
+  ethPerPoint: string;
 }
 
 export const ChainSchema = SchemaFactory.createForClass(Chains);

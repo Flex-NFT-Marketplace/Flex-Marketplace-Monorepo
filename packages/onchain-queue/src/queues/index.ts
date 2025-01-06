@@ -18,3 +18,5 @@ export * from './erc721-update-metadata.module';
 export * from './erc1155-update-metadata.module';
 export * from './item-staked-queue.module';
 export * from './item-unstaked-queue.module';
+export * from './update-drop-queue.module';
+export * from './erc20-transfer-queue.module';
