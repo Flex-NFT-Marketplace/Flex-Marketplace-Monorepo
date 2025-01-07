@@ -23,3 +23,4 @@ export * from './flexhausSubscription.schema';
 export * from './flexhausEvent.schema';
 export * from './metadata.schema';
 export * from './flexhausPayment.schema';
+export * from './flexhausLike.schema';

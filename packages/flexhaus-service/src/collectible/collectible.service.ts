@@ -6,12 +6,15 @@ import { BaseResultPagination } from '@app/shared/types';
 import {
   FlexHausDrop,
   FlexHausDropDocument,
+  FlexHausLike,
+  FlexHausLikeDocument,
   NftCollectionDocument,
   NftCollections,
 } from '@app/shared/models';
 import { formattedContractAddress } from '@app/shared/utils';
 import { UserService } from '../user/user.service';
 import { PaginationDto } from '@app/shared/types/pagination.dto';
+import { CollectibleDto } from './dto/collectible.dto';
 
 @Injectable()
 export class CollectibleService {
@@ -20,6 +23,8 @@ export class CollectibleService {
     private collectible: Model<NftCollectionDocument>,
     @InjectModel(FlexHausDrop.name)
     private flexHausDrop: Model<FlexHausDropDocument>,
+    @InjectModel(FlexHausLike.name)
+    private flexHausLike: Model<FlexHausLikeDocument>,
     private userService: UserService,
   ) {}
 
@@ -101,5 +106,107 @@ export class CollectibleService {
 
     result.data = new PaginationDto(items, total, page, size);
     return result;
+  }
+
+  async likeCollectible(query: CollectibleDto, user: string) {
+    const userDocument = await this.userService.getOrCreateUser(user);
+    const collectible = await this.collectible.findOne({
+      nftContract: formattedContractAddress(query.collectible),
+      isFlexHausCollectible: true,
+    });
+
+    if (!collectible) {
+      throw new HttpException('Collectible not found', HttpStatus.NOT_FOUND);
+    }
+
+    const like = await this.flexHausLike.findOne({
+      user: userDocument,
+      collectible: collectible,
+    });
+
+    if (like && !like.isUnLike) {
+      throw new HttpException('Already liked', HttpStatus.BAD_REQUEST);
+    }
+
+    const newLike = await this.flexHausLike.findOneAndUpdate(
+      {
+        user: userDocument,
+        collectible: collectible,
+      },
+      {
+        isUnLike: false,
+      },
+      { upsert: true, new: true },
+    );
+
+    return newLike;
+  }
+
+  async unlikeCollectible(query: CollectibleDto, user: string) {
+    const userDocument = await this.userService.getOrCreateUser(user);
+    const collectible = await this.collectible.findOne({
+      nftContract: formattedContractAddress(query.collectible),
+      isFlexHausCollectible: true,
+    });
+
+    if (!collectible) {
+      throw new HttpException('Collectible not found', HttpStatus.NOT_FOUND);
+    }
+
+    const like = await this.flexHausLike.findOne({
+      user: userDocument,
+      collectible: collectible,
+    });
+
+    if (!like || like.isUnLike) {
+      throw new HttpException('Not liked', HttpStatus.BAD_REQUEST);
+    }
+
+    like.isUnLike = true;
+    return await like.save();
+  }
+
+  async isLiked(query: CollectibleDto, user: string) {
+    const { collectible } = query;
+    const userDocument = await this.userService.getOrCreateUser(user);
+
+    const collectibleDocument = await this.collectible.findOne({
+      nftContract: formattedContractAddress(collectible),
+      isFlexHausCollectible: true,
+    });
+
+    if (!collectibleDocument) {
+      throw new HttpException('Collectible not found', HttpStatus.NOT_FOUND);
+    }
+
+    const like = await this.flexHausLike.findOne({
+      user: userDocument,
+      collectible: collectibleDocument,
+    });
+
+    if (!like) {
+      return false;
+    }
+
+    return !like.isUnLike;
+  }
+
+  async getTotalLikes(query: CollectibleDto) {
+    const { collectible } = query;
+    const collectibleDocument = await this.collectible.findOne({
+      nftContract: formattedContractAddress(collectible),
+      isFlexHausCollectible: true,
+    });
+
+    if (!collectibleDocument) {
+      throw new HttpException('Collectible not found', HttpStatus.NOT_FOUND);
+    }
+
+    const likes = await this.flexHausLike.countDocuments({
+      collectible: collectibleDocument,
+      isUnLike: false,
+    });
+
+    return likes;
   }
 }

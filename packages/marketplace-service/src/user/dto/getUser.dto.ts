@@ -17,6 +17,7 @@ export class UserResponseDto {
   address: string;
   socials?: Socials;
   isVerified?: boolean;
+  points?: number;
 
   static from(user: Users): UserResponseDto {
     return {

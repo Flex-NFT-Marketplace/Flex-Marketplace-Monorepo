@@ -94,6 +94,7 @@ export class UserService {
       cover: user.cover,
       about: user.about,
       socials: user.socials ? user.socials : {},
+      points: user.points ? user.points : 0,
     };
     return userDto;
   }
