@@ -192,11 +192,15 @@ export class FlexHausEventService {
     const creatorDocument = await this.userService.getOrCreateUser(creator);
 
     const now = Date.now();
-    const event = await this.flexHausEventModel.findOne({
-      creator: creatorDocument,
-      snapshotTime: { $gt: now },
-      isCancelled: false,
-    });
+    const event = await this.flexHausEventModel.findOne(
+      {
+        creator: creatorDocument,
+        snapshotTime: { $gt: now },
+        isCancelled: false,
+      },
+      {},
+      { sort: { startTime: 1 } },
+    );
 
     return event;
   }

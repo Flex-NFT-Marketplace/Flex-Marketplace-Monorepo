@@ -271,6 +271,10 @@ export class NftItemService {
         isNonFungibleFlexDropToken,
         contractUri,
         isFlexHausCollectible,
+        dropAmount: log.returnValues.drop_amount
+          ? Number(log.returnValues.drop_amount)
+          : null,
+        rarity: log.returnValues.rarity ? log.returnValues.rarity : null,
         dropPhases: [],
         attributesMap: [],
       };

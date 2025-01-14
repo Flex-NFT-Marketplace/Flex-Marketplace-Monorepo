@@ -6,7 +6,10 @@ import {
   num,
   uint256,
 } from 'starknet';
-import { formattedContractAddress } from '@app/shared/utils';
+import {
+  convertDataIntoString,
+  formattedContractAddress,
+} from '@app/shared/utils';
 import { ABIS, EventTopic } from './types';
 import * as web3 from 'web3';
 
@@ -14,6 +17,8 @@ export type ContractDeployedReturnValue = {
   address: string;
   deployer: string;
   isFlexHausCollectible: boolean;
+  drop_amount?: number;
+  rarity?: string;
 };
 
 export const decodeContractDeployed = (
@@ -829,6 +834,8 @@ export const decodeUpdateCollectible = (
       num.toHex(parsedEvent.creator as BigNumberish),
     ),
     isFlexHausCollectible: true,
+    drop_amount: Number((parsedEvent.drop_amount as bigint).toString()),
+    rarity: convertDataIntoString(parsedEvent.rarity as bigint),
   };
 
   return returnValues;

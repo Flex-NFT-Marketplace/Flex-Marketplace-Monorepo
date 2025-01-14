@@ -84,6 +84,8 @@ export class CollectibleService {
             'status',
             'verified',
             'externalLink',
+            'dropAmount',
+            'rarity',
           ],
         },
         {
