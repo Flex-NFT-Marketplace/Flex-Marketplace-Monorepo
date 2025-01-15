@@ -37,25 +37,28 @@ export class FlexDropService {
     user: string,
     body: CreateSetDto,
   ): Promise<BaseResult<FlexHausSetDocument>> {
-    const { collectible, startTime, eventId } = body;
+    const { collectible, startTime } = body;
     const formatedCollectible = formattedContractAddress(collectible);
     const creatorDocument = await this.userService.getOrCreateUser(user);
 
-    const eventDocument = await this.flexHausEventModel.findOne({
-      _id: eventId,
-      creator: creatorDocument,
-      isCancelled: false,
-    });
+    let eventDocument: FlexHausEventDocument = null;
+    if (body.eventId) {
+      eventDocument = await this.flexHausEventModel.findOne({
+        _id: body.eventId,
+        creator: creatorDocument,
+        isCancelled: false,
+      });
 
-    if (!eventDocument) {
-      throw new HttpException('Event not found', HttpStatus.NOT_FOUND);
-    }
+      if (!eventDocument) {
+        throw new HttpException('Event not found', HttpStatus.NOT_FOUND);
+      }
 
-    if (startTime < eventDocument.snapshotTime) {
-      throw new HttpException(
-        'Start time must be greater than snapshot time',
-        HttpStatus.BAD_REQUEST,
-      );
+      if (startTime < eventDocument.snapshotTime) {
+        throw new HttpException(
+          'Start time must be greater than snapshot time',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
     }
 
     const collectibleDocument = await this.nftCollectionModel.findOne({
@@ -136,7 +139,7 @@ export class FlexDropService {
           },
         },
         {
-          $unwind: '$event',
+          $unwind: { path: '$event', preserveNullAndEmptyArrays: true },
         },
         {
           $group: {
@@ -181,7 +184,7 @@ export class FlexDropService {
         },
       },
       {
-        $unwind: '$event',
+        $unwind: { path: '$event', preserveNullAndEmptyArrays: true },
       },
       {
         $sort: sort,
@@ -213,6 +216,8 @@ export class FlexDropService {
                 status: 1,
                 verified: 1,
                 externalLink: 1,
+                dropAmount: 1,
+                rarity: 1,
               },
             },
           ],
@@ -363,6 +368,8 @@ export class FlexDropService {
           'status',
           'verified',
           'externalLink',
+          'dropAmount',
+          'rarity',
         ],
       },
       {
