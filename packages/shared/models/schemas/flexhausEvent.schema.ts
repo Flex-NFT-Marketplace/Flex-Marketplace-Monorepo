@@ -28,4 +28,9 @@ export class FlexHausEvents extends BaseSchema {
 export const flexHausEventSchema = SchemaFactory.createForClass(FlexHausEvents);
 flexHausEventSchema.index({ creator: 1 });
 flexHausEventSchema.index({ startTime: 1 });
-flexHausEventSchema.index({ creator: 1, snapshotTime: 1, isCancelled: 1 });
+flexHausEventSchema.index({
+  creator: 1,
+  snapshotTime: 1,
+  startTime: 1,
+  isCancelled: 1,
+});

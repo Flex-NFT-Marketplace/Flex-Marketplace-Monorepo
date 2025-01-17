@@ -17,17 +17,19 @@ import {
 } from '@nestjs/common';
 import { JWT, User, iInfoToken } from '@app/shared/modules';
 import { BaseResult } from '@app/shared/types/base.result';
-import { FlexHausEvents } from '@app/shared/models';
+import { FlexHausDonates, FlexHausEvents } from '@app/shared/models';
 import { FlexHausEventService } from './flexhausEvent.service';
 import { CreateEventDto } from './dto/createEvent.dto';
 import { isHexadecimal } from 'class-validator';
 import { UpdateEventDto } from './dto/updateEvent.dto';
 import { BaseResultPagination } from '@app/shared/types';
 import { QueryEventsDto } from './dto/queryEvents.dto';
+import { DonateDto } from './dto/donate.dto';
+import { QueryLeaderboardDto } from './dto/queryLeaderboard.dto';
 
 @ApiTags('FlexHausEvent')
 @Controller('flexhaus-event')
-@ApiExtraModels(FlexHausEvents)
+@ApiExtraModels(FlexHausEvents, FlexHausDonates)
 export class FlexHausEventController {
   constructor(private readonly flexHausEventService: FlexHausEventService) {}
 
@@ -134,7 +136,6 @@ export class FlexHausEventController {
     return new BaseResult(event);
   }
 
-  @JWT()
   @Post('get-events')
   @ApiOperation({
     summary: 'Get events by query',
@@ -196,7 +197,6 @@ export class FlexHausEventController {
         },
       ],
     },
-    description: 'Delete an event',
   })
   async deleteEvent(
     @Query('eventId') eventId: string,
@@ -215,5 +215,75 @@ export class FlexHausEventController {
     );
 
     return new BaseResult(event);
+  }
+
+  @JWT()
+  @Post('donate')
+  @ApiOperation({
+    summary: 'Donate to creator',
+  })
+  @ApiOkResponse({
+    schema: {
+      allOf: [
+        {
+          $ref: getSchemaPath(BaseResult),
+        },
+        {
+          properties: {
+            data: {
+              allOf: [
+                {
+                  $ref: getSchemaPath(Boolean),
+                },
+              ],
+            },
+          },
+        },
+      ],
+    },
+  })
+  async donate(
+    @Body() donateDto: DonateDto,
+    @User() user: iInfoToken,
+  ): Promise<BaseResult<boolean>> {
+    const result = await this.flexHausEventService.donate(donateDto, user.sub);
+    return new BaseResult(result);
+  }
+
+  @Post('leaderboard')
+  @ApiOperation({
+    summary: 'Get leaderboard',
+  })
+  @ApiOkResponse({
+    schema: {
+      allOf: [
+        {
+          $ref: getSchemaPath(BaseResultPagination),
+        },
+        {
+          properties: {
+            data: {
+              allOf: [
+                {
+                  properties: {
+                    items: {
+                      type: 'array',
+                      items: {
+                        $ref: getSchemaPath(FlexHausDonates),
+                      },
+                    },
+                  },
+                },
+              ],
+            },
+          },
+        },
+      ],
+    },
+  })
+  async getLeaderboard(
+    @Body() query: QueryLeaderboardDto,
+  ): Promise<BaseResultPagination<FlexHausDonates>> {
+    return await this.flexHausEventService.getLeaderboard(query);
   }
 }
