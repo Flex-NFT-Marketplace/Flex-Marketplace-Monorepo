@@ -6,8 +6,10 @@ import { BaseResultPagination } from '@app/shared/types';
 import {
   FlexHausDrop,
   FlexHausDropDocument,
+  FlexHausDropType,
   FlexHausLike,
   FlexHausLikeDocument,
+  FlexHausSecureCollectible,
   NftCollectionDocument,
   NftCollections,
 } from '@app/shared/models';
@@ -25,6 +27,8 @@ export class CollectibleService {
     private flexHausDrop: Model<FlexHausDropDocument>,
     @InjectModel(FlexHausLike.name)
     private flexHausLike: Model<FlexHausLikeDocument>,
+    @InjectModel(FlexHausSecureCollectible.name)
+    private flexHausSecureCollectibleModel: Model<FlexHausSecureCollectible>,
     private userService: UserService,
   ) {}
 
@@ -210,5 +214,85 @@ export class CollectibleService {
     });
 
     return likes;
+  }
+
+  async secureCollectible(param: CollectibleDto, user: string) {
+    const { collectible } = param;
+
+    const collectibleDocument = await this.collectible
+      .findOne({
+        nftContract: formattedContractAddress(collectible),
+        isFlexHausCollectible: true,
+      })
+      .populate([{ path: 'owner', select: ['address'] }]);
+
+    if (!collectibleDocument) {
+      throw new HttpException('Collectible not found', HttpStatus.NOT_FOUND);
+    }
+
+    const collectibleDrop = await this.flexHausDrop
+      .findOne({
+        collectible: collectibleDocument,
+        set: { $ne: null },
+      })
+      .populate([{ path: 'set' }]);
+
+    if (!collectibleDrop) {
+      throw new HttpException(
+        'Collectible Drop not found',
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    const userDocument = await this.userService.getOrCreateUser(user);
+
+    if (
+      !userDocument.points ||
+      collectibleDrop.dropType === FlexHausDropType.Free ||
+      userDocument.points < Number(collectibleDrop.secureAmount)
+    ) {
+      throw new HttpException(
+        'You do not have enough permission to secure this collectible',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    const flexHausSecureCollectible =
+      await this.flexHausSecureCollectibleModel.findOne({
+        user: userDocument,
+        collectible: collectibleDocument,
+      });
+
+    if (flexHausSecureCollectible) {
+      throw new HttpException(
+        'You have already secured this collectible',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    const creatorDocument = await this.userService.getOrCreateUser(
+      collectibleDocument.owner.address,
+    );
+
+    await this.userService.updatePoints(
+      creatorDocument.address,
+      Number(creatorDocument.points || 0) +
+        Number(collectibleDrop.secureAmount),
+    );
+
+    await this.userService.updatePoints(
+      user,
+      Number(userDocument.points) - Number(collectibleDrop.secureAmount),
+    );
+
+    const newFlexHausSecureCollectible =
+      new this.flexHausSecureCollectibleModel({
+        user: userDocument,
+        collectible: collectibleDocument,
+      });
+
+    await newFlexHausSecureCollectible.save();
+
+    return true;
   }
 }

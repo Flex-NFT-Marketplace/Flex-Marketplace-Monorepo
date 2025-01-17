@@ -844,7 +844,7 @@ export const decodeUpdateCollectible = (
 export type UpdateDropReturnValue = {
   collectible: string;
   dropType: number;
-  secureAmount: string;
+  secureAmount: number;
   topSupporters: number;
   startTime: number;
   updateAt: number;
@@ -867,7 +867,7 @@ export const decodeUpdateDrop = (
       num.toHex(parsedEvent.collectible as BigNumberish),
     ),
     dropType: Number((parsedEvent.drop_type as bigint).toString()),
-    secureAmount: (parsedEvent.secure_amount as bigint).toString(),
+    secureAmount: Number((parsedEvent.secure_amount as bigint).toString()),
     topSupporters: Number((parsedEvent.top_supporters as bigint).toString()),
     startTime: Number((parsedEvent.start_time as bigint).toString()) * 1e3,
     updateAt: timestamp,

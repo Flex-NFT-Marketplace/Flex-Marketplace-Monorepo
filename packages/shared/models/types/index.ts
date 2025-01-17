@@ -14,6 +14,18 @@ export enum ContractStandard {
   ERC1155 = 'ERC1155',
 }
 
+export enum FlexHausRarity {
+  Common = 'common',
+  Rare = 'rare',
+  Legendary = 'legendary',
+  Ultimate = 'ultimate',
+}
+
+export enum FlexHausDropType {
+  Free = 'free',
+  Protected = 'protected',
+}
+
 export enum NotificationStatus {
   Seen = 'Seen',
   UnSeen = 'UnSeen',
@@ -32,6 +44,8 @@ export enum HistoryType {
   Unstake = 'unstake',
   ClaimCollectible = 'claimCollectible',
   BuyPoint = 'buyPoint',
+  SecureCollectible = 'secureCollectible',
+  ThankToCreator = 'thankToCreator',
 }
 export enum ActivityType {
   CreateSale = 'createSale',

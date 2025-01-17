@@ -14,6 +14,9 @@ export class CreateSetDto {
   @IsNumber()
   startTime: number;
 
+  @IsNumber()
+  expiryTime: number;
+
   @ApiProperty()
   @IsMongoId()
   @IsOptional()

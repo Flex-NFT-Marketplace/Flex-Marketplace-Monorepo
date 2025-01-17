@@ -199,4 +199,40 @@ export class CollectibleController {
 
     return new BaseResult(response);
   }
+
+  @JWT()
+  @Post('secure-collectible')
+  @ApiOperation({
+    summary: 'Create a secure collectible',
+  })
+  @ApiOkResponse({
+    schema: {
+      allOf: [
+        {
+          $ref: getSchemaPath(BaseResult),
+        },
+        {
+          properties: {
+            data: {
+              allOf: [
+                {
+                  $ref: getSchemaPath(Boolean),
+                },
+              ],
+            },
+          },
+        },
+      ],
+    },
+  })
+  async secureCollectible(
+    @Body() param: CollectibleDto,
+    @User() user: iInfoToken,
+  ) {
+    const result = await this.collectibleService.secureCollectible(
+      param,
+      user.sub,
+    );
+    return new BaseResult(result);
+  }
 }

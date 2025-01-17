@@ -37,7 +37,7 @@ export class FlexDropService {
     user: string,
     body: CreateSetDto,
   ): Promise<BaseResult<FlexHausSetDocument>> {
-    const { collectible, startTime } = body;
+    const { collectible, startTime, expiryTime } = body;
     const formatedCollectible = formattedContractAddress(collectible);
     const creatorDocument = await this.userService.getOrCreateUser(user);
 
@@ -53,9 +53,9 @@ export class FlexDropService {
         throw new HttpException('Event not found', HttpStatus.NOT_FOUND);
       }
 
-      if (startTime < eventDocument.snapshotTime) {
+      if (expiryTime < eventDocument.snapshotTime) {
         throw new HttpException(
-          'Start time must be greater than snapshot time',
+          'Expiry time must be greater than snapshot time',
           HttpStatus.BAD_REQUEST,
         );
       }
@@ -76,6 +76,7 @@ export class FlexDropService {
     const newSet: FlexHausSet = {
       collectibles: [collectibleDocument],
       startTime,
+      expiryTime,
       creator: creatorDocument,
       event: eventDocument,
     };

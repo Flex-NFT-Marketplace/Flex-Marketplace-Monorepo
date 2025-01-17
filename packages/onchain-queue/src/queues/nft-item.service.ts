@@ -36,6 +36,7 @@ import {
   FlexHausPaymentDocument,
   Users,
   UserDocument,
+  FlexHausDropType,
 } from '@app/shared/models';
 import {
   CancelAllOrdersReturnValue,
@@ -2292,7 +2293,8 @@ export class NftItemService {
     const newDrop: FlexHausDrop = {
       collectible: nftCollection,
       creator: nftCollection.owner,
-      dropType,
+      dropType:
+        dropType === 1 ? FlexHausDropType.Free : FlexHausDropType.Protected,
       secureAmount,
       topSupporters,
       set,
