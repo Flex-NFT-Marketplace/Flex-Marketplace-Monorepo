@@ -2278,8 +2278,14 @@ export class NftItemService {
   }
 
   async processUpdateDrop(log: LogsReturnValues, chain: ChainDocument) {
-    const { collectible, dropType, secureAmount, topSupporters, startTime } =
-      log.returnValues as UpdateDropReturnValue;
+    const {
+      collectible,
+      dropType,
+      secureAmount,
+      fromTopSupporter,
+      toTopSupporter,
+      isRandomToSubscribers,
+    } = log.returnValues as UpdateDropReturnValue;
 
     const nftCollection = await this.getOrCreateNftCollection(
       collectible,
@@ -2296,7 +2302,9 @@ export class NftItemService {
       dropType:
         dropType === 1 ? FlexHausDropType.Free : FlexHausDropType.Protected,
       secureAmount,
-      topSupporters,
+      isRandomToSubscribers,
+      fromTopSupporter,
+      toTopSupporter,
       set,
     };
 

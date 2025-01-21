@@ -1,4 +1,10 @@
-import { FlexHausDrop, FlexHausLike, NftCollections } from '@app/shared/models';
+import {
+  FlexHausDrop,
+  FlexHausLike,
+  FlexHausSecureCollectible,
+  FlexHausSecureCollectibleDocument,
+  NftCollections,
+} from '@app/shared/models';
 import { BaseResult, BaseResultPagination } from '@app/shared/types';
 import { Controller, Delete, Post, Body, Get, Query } from '@nestjs/common';
 import {
@@ -12,6 +18,8 @@ import { GetCollectiblesDto } from './dto/queryCollectibles.dto';
 import { CollectibleService } from './collectible.service';
 import { JWT, User, iInfoToken } from '@app/shared/modules';
 import { CollectibleDto } from './dto/collectible.dto';
+import { GetSecuredCollectiblesDto } from './dto/querySecuredCollectibles.dto';
+import { GetDistributedCollectiblesDto } from './dto/queryDistributedCollectibles.dto';
 
 @ApiTags('FlexHausCollectible')
 @Controller('collectible')
@@ -21,6 +29,7 @@ import { CollectibleDto } from './dto/collectible.dto';
   NftCollections,
   BaseResultPagination,
   FlexHausLike,
+  FlexHausSecureCollectible,
 )
 export class CollectibleController {
   constructor(private readonly collectibleService: CollectibleService) {}
@@ -234,5 +243,89 @@ export class CollectibleController {
       user.sub,
     );
     return new BaseResult(result);
+  }
+
+  @JWT()
+  @Post('get-secured-collectibles')
+  @ApiOperation({
+    summary: 'Get secured collectibles',
+  })
+  @ApiOkResponse({
+    schema: {
+      allOf: [
+        {
+          $ref: getSchemaPath(BaseResultPagination),
+        },
+        {
+          properties: {
+            data: {
+              allOf: [
+                {
+                  properties: {
+                    items: {
+                      type: 'array',
+                      items: {
+                        $ref: getSchemaPath(FlexHausSecureCollectible),
+                      },
+                    },
+                  },
+                },
+              ],
+            },
+          },
+        },
+      ],
+    },
+  })
+  async getSecuredCollectibles(
+    @Body() query: GetSecuredCollectiblesDto,
+    @User() user: iInfoToken,
+  ): Promise<BaseResultPagination<FlexHausSecureCollectibleDocument>> {
+    return await this.collectibleService.getSecuredCollectibles(
+      query,
+      user.sub,
+    );
+  }
+
+  @JWT()
+  @Get('get-distribution-collectibles')
+  @ApiOperation({
+    summary: 'Get distribution collectibles',
+  })
+  @ApiOkResponse({
+    schema: {
+      allOf: [
+        {
+          $ref: getSchemaPath(BaseResultPagination),
+        },
+        {
+          properties: {
+            data: {
+              allOf: [
+                {
+                  properties: {
+                    items: {
+                      type: 'array',
+                      items: {
+                        $ref: getSchemaPath(FlexHausSecureCollectible),
+                      },
+                    },
+                  },
+                },
+              ],
+            },
+          },
+        },
+      ],
+    },
+  })
+  async getDistributionCollectibles(
+    @Body() query: GetDistributedCollectiblesDto,
+    @User() user: iInfoToken,
+  ): Promise<BaseResultPagination<FlexHausSecureCollectibleDocument>> {
+    return await this.collectibleService.getDistributionCollectibles(
+      query,
+      user.sub,
+    );
   }
 }

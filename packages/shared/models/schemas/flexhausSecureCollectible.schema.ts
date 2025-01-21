@@ -14,6 +14,15 @@ export class FlexHausSecureCollectible extends BaseSchema {
 
   @Prop({ type: SchemaTypes.ObjectId, ref: 'NftCollections' })
   collectible: NftCollectionDocument;
+
+  @Prop()
+  isSecured: boolean;
+
+  @Prop({ default: false })
+  isDistributed?: boolean;
+
+  @Prop({ default: false })
+  isClaimed?: boolean;
 }
 
 export const FlexHausSecureCollectibleSchema = SchemaFactory.createForClass(
@@ -22,3 +31,9 @@ export const FlexHausSecureCollectibleSchema = SchemaFactory.createForClass(
 FlexHausSecureCollectibleSchema.index({ user: 1 });
 FlexHausSecureCollectibleSchema.index({ collectible: 1 });
 FlexHausSecureCollectibleSchema.index({ collectible: 1, user: 1 });
+FlexHausSecureCollectibleSchema.index({
+  collectible: 1,
+  user: 1,
+  isSecured: 1,
+});
+FlexHausSecureCollectibleSchema.index({ user: 1, isClaimed: 1 });

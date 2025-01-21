@@ -10,6 +10,7 @@ import {
   FlexHausLike,
   FlexHausLikeDocument,
   FlexHausSecureCollectible,
+  FlexHausSecureCollectibleDocument,
   NftCollectionDocument,
   NftCollections,
 } from '@app/shared/models';
@@ -17,6 +18,8 @@ import { formattedContractAddress } from '@app/shared/utils';
 import { UserService } from '../user/user.service';
 import { PaginationDto } from '@app/shared/types/pagination.dto';
 import { CollectibleDto } from './dto/collectible.dto';
+import { GetSecuredCollectiblesDto } from './dto/querySecuredCollectibles.dto';
+import { GetDistributedCollectiblesDto } from './dto/queryDistributedCollectibles.dto';
 
 @Injectable()
 export class CollectibleService {
@@ -243,6 +246,12 @@ export class CollectibleService {
         HttpStatus.NOT_FOUND,
       );
     }
+    if (collectibleDrop.set.expiryTime < Date.now()) {
+      throw new HttpException(
+        'Collectible Drop has expired',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
 
     const userDocument = await this.userService.getOrCreateUser(user);
 
@@ -270,6 +279,18 @@ export class CollectibleService {
       );
     }
 
+    const totalSecuredCollectibles =
+      await this.flexHausSecureCollectibleModel.countDocuments({
+        collectible: collectibleDocument,
+      });
+
+    if (totalSecuredCollectibles == collectibleDocument.dropAmount) {
+      throw new HttpException(
+        'Collectible Drop is full',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
     const creatorDocument = await this.userService.getOrCreateUser(
       collectibleDocument.owner.address,
     );
@@ -289,10 +310,133 @@ export class CollectibleService {
       new this.flexHausSecureCollectibleModel({
         user: userDocument,
         collectible: collectibleDocument,
+        isSecured: true,
       });
 
     await newFlexHausSecureCollectible.save();
 
     return true;
+  }
+
+  async getSecuredCollectibles(
+    query: GetSecuredCollectiblesDto,
+    user: string,
+  ): Promise<BaseResultPagination<FlexHausSecureCollectibleDocument>> {
+    const { page, size, orderBy, skipIndex } = query;
+    const result =
+      new BaseResultPagination<FlexHausSecureCollectibleDocument>();
+    const filter: any = {};
+
+    const userDocument = await this.userService.getOrCreateUser(user);
+
+    filter.user = userDocument;
+
+    if (query.collectible) {
+      const collectible = await this.collectible.findOne({
+        nftContract: formattedContractAddress(query.collectible),
+        isFlexHausCollectible: true,
+      });
+      if (!collectible) {
+        throw new HttpException('Collectible not found', HttpStatus.NOT_FOUND);
+      }
+      filter.collectible = collectible;
+    }
+
+    if (query.isDistributed !== undefined) {
+      filter.isDistributed = query.isDistributed;
+    }
+
+    filter.isSecured = true;
+
+    const total =
+      await this.flexHausSecureCollectibleModel.countDocuments(filter);
+    if (total === 0) {
+      result.data = new PaginationDto([], 0, page, size);
+      return result;
+    }
+
+    const items = await this.flexHausSecureCollectibleModel
+      .find(filter, {}, { sort: orderBy, skip: skipIndex, limit: size })
+      .populate([
+        {
+          path: 'collectible',
+          select: [
+            'name',
+            'symbol',
+            'nftContract',
+            'cover',
+            'avatar',
+            'featuredImage',
+            'description',
+            'standard',
+            'dropAmount',
+            'rarity',
+          ],
+        },
+      ]);
+
+    result.data = new PaginationDto(items, total, page, size);
+    return result;
+  }
+
+  async getDistributionCollectibles(
+    query: GetDistributedCollectiblesDto,
+    user: string,
+  ): Promise<BaseResultPagination<FlexHausSecureCollectibleDocument>> {
+    const { page, size, orderBy, skipIndex } = query;
+    const result =
+      new BaseResultPagination<FlexHausSecureCollectibleDocument>();
+    const filter: any = {};
+
+    const userDocument = await this.userService.getOrCreateUser(user);
+
+    filter.user = userDocument;
+
+    if (query.collectible) {
+      const collectible = await this.collectible.findOne({
+        nftContract: formattedContractAddress(query.collectible),
+        isFlexHausCollectible: true,
+      });
+      if (!collectible) {
+        throw new HttpException('Collectible not found', HttpStatus.NOT_FOUND);
+      }
+      filter.collectible = collectible;
+    }
+
+    if (query.isClaimed !== undefined) {
+      filter.isClaimed = query.isClaimed;
+    }
+
+    filter.isDistributed = true;
+
+    const total =
+      await this.flexHausSecureCollectibleModel.countDocuments(filter);
+    if (total === 0) {
+      result.data = new PaginationDto([], 0, page, size);
+      return result;
+    }
+
+    const items = await this.flexHausSecureCollectibleModel
+      .find(filter, {}, { sort: orderBy, skip: skipIndex, limit: size })
+      .populate([
+        {
+          path: 'collectible',
+          select: [
+            'name',
+            'symbol',
+            'nftContract',
+            'cover',
+            'avatar',
+            'featuredImage',
+            'description',
+            'standard',
+            'dropAmount',
+            'rarity',
+          ],
+        },
+      ]);
+
+    result.data = new PaginationDto(items, total, page, size);
+    return result;
   }
 }

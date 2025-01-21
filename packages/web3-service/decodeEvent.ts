@@ -845,7 +845,9 @@ export type UpdateDropReturnValue = {
   collectible: string;
   dropType: number;
   secureAmount: number;
-  topSupporters: number;
+  isRandomToSubscribers: boolean;
+  fromTopSupporter: number;
+  toTopSupporter: number;
   startTime: number;
   updateAt: number;
 };
@@ -868,7 +870,12 @@ export const decodeUpdateDrop = (
     ),
     dropType: Number((parsedEvent.drop_type as bigint).toString()),
     secureAmount: Number((parsedEvent.secure_amount as bigint).toString()),
-    topSupporters: Number((parsedEvent.top_supporters as bigint).toString()),
+    isRandomToSubscribers:
+      Number((parsedEvent.is_random_to_subscribers as bigint).toString()) === 1,
+    fromTopSupporter: Number(
+      (parsedEvent.from_top_supporter as bigint).toString(),
+    ),
+    toTopSupporter: Number((parsedEvent.to_top_supporter as bigint).toString()),
     startTime: Number((parsedEvent.start_time as bigint).toString()) * 1e3,
     updateAt: timestamp,
   };

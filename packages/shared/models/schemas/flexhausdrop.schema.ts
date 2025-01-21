@@ -29,7 +29,15 @@ export class FlexHausDrop extends BaseSchema {
 
   @Prop()
   @ApiProperty()
-  topSupporters: number;
+  fromTopSupporter: number;
+
+  @Prop()
+  @ApiProperty()
+  toTopSupporter: number;
+
+  @Prop()
+  @ApiProperty()
+  isRandomToSubscribers: boolean;
 
   @Prop({ type: [SchemaTypes.ObjectId], ref: 'FlexHausSet' })
   @ApiProperty()
