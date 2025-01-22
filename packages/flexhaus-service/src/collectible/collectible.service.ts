@@ -296,14 +296,14 @@ export class CollectibleService {
     );
 
     await this.userService.updatePoints(
-      creatorDocument.address,
-      Number(creatorDocument.points || 0) +
-        Number(collectibleDrop.secureAmount),
+      user,
+      Number(userDocument.points) - Number(collectibleDrop.secureAmount),
     );
 
     await this.userService.updatePoints(
-      user,
-      Number(userDocument.points) - Number(collectibleDrop.secureAmount),
+      creatorDocument.address,
+      Number(creatorDocument.points || 0) +
+        Number(collectibleDrop.secureAmount),
     );
 
     const newFlexHausSecureCollectible =

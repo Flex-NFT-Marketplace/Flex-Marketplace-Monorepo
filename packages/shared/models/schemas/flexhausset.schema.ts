@@ -35,3 +35,6 @@ export class FlexHausSet extends BaseSchema {
 }
 
 export const FlexHausSetSchema = SchemaFactory.createForClass(FlexHausSet);
+FlexHausSetSchema.index({ collectibles: 1 });
+FlexHausSetSchema.index({ collectibles: 1, creator: 1 });
+FlexHausSetSchema.index({ expiryTime: 1, isDistributed: 1 });

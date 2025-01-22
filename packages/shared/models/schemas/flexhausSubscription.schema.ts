@@ -24,3 +24,4 @@ export const flexHausSubscriptionSchema =
 
 flexHausSubscriptionSchema.index({ user: 1 });
 flexHausSubscriptionSchema.index({ creator: 1 });
+flexHausSubscriptionSchema.index({ creator: 1, isUnSubscribe: 1 });
