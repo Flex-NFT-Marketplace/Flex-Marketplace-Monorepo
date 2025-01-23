@@ -9,6 +9,8 @@ import {
   FlexHausDropSchema,
   FlexHausPayment,
   FlexHausPaymentSchema,
+  FlexHausSecureCollectible,
+  FlexHausSecureCollectibleSchema,
   FlexHausSet,
   FlexHausSetSchema,
   Histories,
@@ -73,6 +75,10 @@ import { ERC20TransferProcessor } from './processors/erc20-transfer.processor';
         schema: NftCollectionStatsSchema,
       },
       { name: FlexHausPayment.name, schema: FlexHausPaymentSchema },
+      {
+        name: FlexHausSecureCollectible.name,
+        schema: FlexHausSecureCollectibleSchema,
+      },
     ]),
     BullModule.registerQueue(
       {

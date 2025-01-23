@@ -30,7 +30,7 @@ export const FlexHausSecureCollectibleSchema = SchemaFactory.createForClass(
 );
 FlexHausSecureCollectibleSchema.index({ user: 1 });
 FlexHausSecureCollectibleSchema.index({ collectible: 1 });
-FlexHausSecureCollectibleSchema.index({ collectible: 1, user: 1 });
+FlexHausSecureCollectibleSchema.index({ user: 1, collectible: 1 });
 FlexHausSecureCollectibleSchema.index({
   collectible: 1,
   user: 1,

@@ -37,6 +37,8 @@ import {
   Users,
   UserDocument,
   FlexHausDropType,
+  FlexHausSecureCollectible,
+  FlexHausSecureCollectibleDocument,
 } from '@app/shared/models';
 import {
   CancelAllOrdersReturnValue,
@@ -90,7 +92,6 @@ export class NftItemService {
     private readonly signatureModel: Model<SignatureDocument>,
     @InjectModel(NftCollectionStats.name)
     private readonly nftCollectionStats: Model<NftCollectionStatsDocument>,
-
     @InjectModel(FlexHausSet.name)
     private readonly flexHausSetModel: Model<FlexHausSetDocument>,
     @InjectModel(FlexHausDrop.name)
@@ -101,6 +102,8 @@ export class NftItemService {
     private readonly flexHausPaymentModel: Model<FlexHausPaymentDocument>,
     @InjectModel(Users.name)
     private readonly userModel: Model<UserDocument>,
+    @InjectModel(FlexHausSecureCollectible.name)
+    private readonly flexHausSecureCollectibleModel: Model<FlexHausSecureCollectibleDocument>,
     private readonly web3Service: Web3Service,
     private readonly userService: UserService,
   ) {}
@@ -485,6 +488,17 @@ export class NftItemService {
         },
         { $set: newNftEntity },
         { new: true, upsert: true },
+      );
+    }
+
+    if (isClaimCollectible) {
+      await this.flexHausSecureCollectibleModel.findOneAndUpdate(
+        {
+          user: toUser,
+          collectible: nftDocument,
+        },
+        { $set: { isClaimed: true } },
+        { upsert: true, new: true },
       );
     }
 
