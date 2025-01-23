@@ -49,3 +49,49 @@ export function getProofWhiteListMessage(
     },
   };
 }
+
+export function getProofClaimCollectibleMessage(
+  collectible: string,
+  recipient: string,
+) {
+  const typedMessage = {
+    domain: {
+      name: 'FlexHaus',
+      version: '1',
+      chainId: shortString.encodeShortString('SN_MAIN'),
+    },
+    message: {
+      collectible,
+      recipient,
+    },
+    primaryType: 'ClaimableStruct',
+    types: {
+      ClaimableStruct: [
+        {
+          name: 'collectible',
+          type: 'ContractAddress',
+        },
+        {
+          name: 'recipient',
+          type: 'ContractAddress',
+        },
+      ],
+      StarkNetDomain: [
+        {
+          name: 'name',
+          type: 'felt',
+        },
+        {
+          name: 'version',
+          type: 'felt',
+        },
+        {
+          name: 'chainId',
+          type: 'felt',
+        },
+      ],
+    },
+  };
+
+  return typedMessage;
+}

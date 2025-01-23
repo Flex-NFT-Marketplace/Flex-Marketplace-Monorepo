@@ -6,11 +6,14 @@ import { MongooseModule } from '@nestjs/mongoose';
 import {
   ChainSchema,
   Chains,
+  FlexHausDonates,
   FlexHausDrop,
   FlexHausDropSchema,
   FlexHausEvents,
   FlexHausPayment,
   FlexHausPaymentSchema,
+  FlexHausSecureCollectible,
+  FlexHausSecureCollectibleSchema,
   FlexHausSet,
   FlexHausSetSchema,
   FlexHausSubscription,
@@ -18,9 +21,11 @@ import {
   NftCollections,
   UserSchema,
   Users,
+  flexHausDonateSchema,
   flexHausEventSchema,
   flexHausSubscriptionSchema,
 } from '@app/shared/models';
+import { FlexHausDropTaskService } from './task/flexhausDropTask.service';
 
 @Module({
   imports: [
@@ -33,9 +38,14 @@ import {
       { name: FlexHausSubscription.name, schema: flexHausSubscriptionSchema },
       { name: FlexHausPayment.name, schema: FlexHausPaymentSchema },
       { name: Chains.name, schema: ChainSchema },
+      { name: FlexHausDonates.name, schema: flexHausDonateSchema },
+      {
+        name: FlexHausSecureCollectible.name,
+        schema: FlexHausSecureCollectibleSchema,
+      },
     ]),
   ],
-  providers: [FlexDropService, UserService],
+  providers: [FlexDropService, UserService, FlexHausDropTaskService],
   controllers: [FlexDropController],
 })
 export class FlexHausDropModule {}

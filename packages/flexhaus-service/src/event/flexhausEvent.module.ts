@@ -11,6 +11,8 @@ import {
   Chains,
   FlexHausPayment,
   FlexHausPaymentSchema,
+  FlexHausDonates,
+  flexHausDonateSchema,
 } from '@app/shared/models';
 import { FlexHausEventService } from './flexhausEvent.service';
 import { UserService } from '../user/user.service';
@@ -24,6 +26,7 @@ import { FlexHausEventController } from './flexhausEvent.controller';
       { name: FlexHausSubscription.name, schema: flexHausSubscriptionSchema },
       { name: FlexHausPayment.name, schema: FlexHausPaymentSchema },
       { name: Chains.name, schema: ChainSchema },
+      { name: FlexHausDonates.name, schema: flexHausDonateSchema },
     ]),
   ],
   providers: [FlexHausEventService, UserService],

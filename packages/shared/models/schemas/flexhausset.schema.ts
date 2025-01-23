@@ -18,13 +18,23 @@ export class FlexHausSet extends BaseSchema {
   @ApiProperty()
   startTime: number;
 
+  @Prop()
+  expiryTime: number;
+
   @Prop({ type: SchemaTypes.ObjectId, ref: 'Users' })
   @ApiProperty()
   creator: UserDocument;
 
   @Prop({ type: SchemaTypes.ObjectId, ref: 'FlexHausEvents' })
   @ApiProperty()
-  event: FlexHausEventDocument;
+  event?: FlexHausEventDocument;
+
+  @Prop({ default: false })
+  @ApiProperty()
+  isDistributed?: boolean;
 }
 
 export const FlexHausSetSchema = SchemaFactory.createForClass(FlexHausSet);
+FlexHausSetSchema.index({ collectibles: 1 });
+FlexHausSetSchema.index({ collectibles: 1, creator: 1 });
+FlexHausSetSchema.index({ expiryTime: 1, isDistributed: 1 });

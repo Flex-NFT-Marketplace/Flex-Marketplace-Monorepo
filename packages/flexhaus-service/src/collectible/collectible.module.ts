@@ -8,8 +8,12 @@ import {
   Chains,
   FlexHausDrop,
   FlexHausDropSchema,
+  FlexHausLike,
+  FlexHausLikeSchema,
   FlexHausPayment,
   FlexHausPaymentSchema,
+  FlexHausSecureCollectible,
+  FlexHausSecureCollectibleSchema,
   FlexHausSubscription,
   NftCollectionSchema,
   NftCollections,
@@ -17,6 +21,7 @@ import {
   Users,
   flexHausSubscriptionSchema,
 } from '@app/shared/models';
+import { Web3Service } from '@app/web3-service/web3.service';
 
 @Module({
   imports: [
@@ -27,9 +32,14 @@ import {
       { name: FlexHausSubscription.name, schema: flexHausSubscriptionSchema },
       { name: FlexHausPayment.name, schema: FlexHausPaymentSchema },
       { name: Chains.name, schema: ChainSchema },
+      { name: FlexHausLike.name, schema: FlexHausLikeSchema },
+      {
+        name: FlexHausSecureCollectible.name,
+        schema: FlexHausSecureCollectibleSchema,
+      },
     ]),
   ],
   controllers: [CollectibleController],
-  providers: [CollectibleService, UserService],
+  providers: [CollectibleService, UserService, Web3Service],
 })
 export class CollectibleModule {}

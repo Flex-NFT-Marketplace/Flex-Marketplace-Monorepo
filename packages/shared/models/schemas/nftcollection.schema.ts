@@ -3,7 +3,12 @@ import { BaseSchema } from './base.schema';
 import { UserDocument } from './user.schema';
 import { ChainDocument } from './chain.schema';
 import { PaymentTokenDocument } from './paymenttoken.schema';
-import { AttributeMap, ContractStandard, NftCollectionStatus } from '../types';
+import {
+  AttributeMap,
+  ContractStandard,
+  FlexHausRarity,
+  NftCollectionStatus,
+} from '../types';
 import { Document, SchemaTypes } from 'mongoose';
 import { DropPhaseDocument } from './dropphase.schema';
 import { NftCollectionStatsDocument } from './nftCollectionStats.chema';
@@ -73,6 +78,12 @@ export class NftCollections extends BaseSchema {
 
   @Prop({ default: false })
   isFlexHausCollectible?: boolean;
+
+  @Prop({ type: SchemaTypes.String, enum: FlexHausRarity })
+  rarity?: FlexHausRarity;
+
+  @Prop()
+  dropAmount?: number;
 
   @Prop({ type: SchemaTypes.ObjectId, ref: 'Users' })
   creatorPayout?: UserDocument;

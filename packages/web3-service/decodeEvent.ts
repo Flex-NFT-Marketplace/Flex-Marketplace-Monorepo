@@ -6,7 +6,10 @@ import {
   num,
   uint256,
 } from 'starknet';
-import { formattedContractAddress } from '@app/shared/utils';
+import {
+  convertDataIntoString,
+  formattedContractAddress,
+} from '@app/shared/utils';
 import { ABIS, EventTopic } from './types';
 import * as web3 from 'web3';
 
@@ -14,6 +17,8 @@ export type ContractDeployedReturnValue = {
   address: string;
   deployer: string;
   isFlexHausCollectible: boolean;
+  drop_amount?: number;
+  rarity?: string;
 };
 
 export const decodeContractDeployed = (
@@ -829,6 +834,8 @@ export const decodeUpdateCollectible = (
       num.toHex(parsedEvent.creator as BigNumberish),
     ),
     isFlexHausCollectible: true,
+    drop_amount: Number((parsedEvent.drop_amount as bigint).toString()),
+    rarity: convertDataIntoString(parsedEvent.rarity as bigint),
   };
 
   return returnValues;
@@ -837,8 +844,10 @@ export const decodeUpdateCollectible = (
 export type UpdateDropReturnValue = {
   collectible: string;
   dropType: number;
-  secureAmount: string;
-  topSupporters: number;
+  secureAmount: number;
+  isRandomToSubscribers: boolean;
+  fromTopSupporter: number;
+  toTopSupporter: number;
   startTime: number;
   updateAt: number;
 };
@@ -860,8 +869,13 @@ export const decodeUpdateDrop = (
       num.toHex(parsedEvent.collectible as BigNumberish),
     ),
     dropType: Number((parsedEvent.drop_type as bigint).toString()),
-    secureAmount: (parsedEvent.secure_amount as bigint).toString(),
-    topSupporters: Number((parsedEvent.top_supporters as bigint).toString()),
+    secureAmount: Number((parsedEvent.secure_amount as bigint).toString()),
+    isRandomToSubscribers:
+      Number((parsedEvent.is_random_to_subscribers as bigint).toString()) === 1,
+    fromTopSupporter: Number(
+      (parsedEvent.from_top_supporter as bigint).toString(),
+    ),
+    toTopSupporter: Number((parsedEvent.to_top_supporter as bigint).toString()),
     startTime: Number((parsedEvent.start_time as bigint).toString()) * 1e3,
     updateAt: timestamp,
   };

@@ -1,7 +1,11 @@
 import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { FlexHausEvents } from '@app/shared/models';
+import {
+  FlexHausDonateDocument,
+  FlexHausDonates,
+  FlexHausEvents,
+} from '@app/shared/models';
 import { BaseResult } from '@app/shared/types/base.result';
 import { formattedContractAddress } from '@app/shared/utils';
 import { UserService } from '../user/user.service';
@@ -10,12 +14,16 @@ import { UpdateEventDto } from './dto/updateEvent.dto';
 import { QueryEventsDto } from './dto/queryEvents.dto';
 import { BaseResultPagination } from '@app/shared/types';
 import { PaginationDto } from '@app/shared/types/pagination.dto';
+import { DonateDto } from './dto/donate.dto';
+import { QueryLeaderboardDto } from './dto/queryLeaderboard.dto';
 
 @Injectable()
 export class FlexHausEventService {
   constructor(
     @InjectModel(FlexHausEvents.name)
     private readonly flexHausEventModel: Model<FlexHausEvents>,
+    @InjectModel(FlexHausDonates.name)
+    private readonly flexHausDonateModel: Model<FlexHausDonateDocument>,
     private readonly userService: UserService,
   ) {}
 
@@ -192,11 +200,16 @@ export class FlexHausEventService {
     const creatorDocument = await this.userService.getOrCreateUser(creator);
 
     const now = Date.now();
-    const event = await this.flexHausEventModel.findOne({
-      creator: creatorDocument,
-      snapshotTime: { $gt: now },
-      isCancelled: false,
-    });
+    const event = await this.flexHausEventModel.findOne(
+      {
+        creator: creatorDocument,
+        snapshotTime: { $gt: now },
+        startTime: { $lte: now },
+        isCancelled: false,
+      },
+      {},
+      { sort: { startTime: 1 } },
+    );
 
     return event;
   }
@@ -231,5 +244,147 @@ export class FlexHausEventService {
       { $set: { isCancelled: true } },
       { new: true },
     );
+  }
+
+  async donate(query: DonateDto, user: string): Promise<boolean> {
+    const { creator, amount } = query;
+    const creatorDocument = await this.userService.getOrCreateUser(creator);
+    const now = Date.now();
+
+    const event = await this.flexHausEventModel.findOne(
+      {
+        creator: creatorDocument,
+        snapshotTime: { $gt: now },
+        startTime: { $lte: now },
+        isCancelled: false,
+      },
+      {},
+      { sort: { startTime: 1 } },
+    );
+
+    if (!event) {
+      throw new HttpException(
+        'The event does not exist',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    const userDocument = await this.userService.getOrCreateUser(user);
+    if (!userDocument.points || userDocument.points < amount) {
+      throw new HttpException('Insufficient points', HttpStatus.BAD_REQUEST);
+    }
+
+    await this.userService.updatePoints(
+      creator,
+      Number(creatorDocument.points || 0) + amount,
+    );
+    await this.userService.updatePoints(
+      user,
+      Number(userDocument.points) - amount,
+    );
+
+    const newFlexHausDonate = new this.flexHausDonateModel({
+      user: userDocument,
+      creator: creatorDocument,
+      event,
+      amount,
+      donatedAt: now,
+    });
+    await newFlexHausDonate.save();
+
+    return true;
+  }
+
+  async getLeaderboard(
+    query: QueryLeaderboardDto,
+  ): Promise<BaseResultPagination<FlexHausDonates>> {
+    const { eventId, page, size, skipIndex } = query;
+    const result = new BaseResultPagination<FlexHausDonates>();
+
+    const filter: any = {};
+    filter.event = eventId;
+
+    const total = await this.flexHausDonateModel.aggregate([
+      {
+        $match: filter,
+      },
+      {
+        $group: {
+          _id: '$user',
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          total: { $sum: 1 },
+        },
+      },
+    ]);
+
+    if (total.length === 0 || total[0].total === 0) {
+      result.data = new PaginationDto([], 0, page, size);
+      return result;
+    }
+
+    const items = await this.flexHausDonateModel.aggregate([
+      {
+        $match: filter,
+      },
+      {
+        $project: {
+          _id: '$user',
+          amount: { $sum: '$amount' },
+          event: { $first: '$event' },
+          creator: { $first: '$creator' },
+        },
+      },
+      {
+        $sort: { amount: -1 },
+      },
+      {
+        $skip: skipIndex,
+      },
+      {
+        $limit: size,
+      },
+      {
+        $lookup: {
+          from: 'users',
+          localField: '_id',
+          foreignField: '_id',
+          pipeline: [
+            {
+              $project: {
+                _id: 1,
+                address: 1,
+                username: 1,
+                email: 1,
+                avatar: 1,
+                cover: 1,
+                about: 1,
+                socials: 1,
+                isVerified: 1,
+              },
+            },
+          ],
+          as: '_id',
+        },
+      },
+      {
+        $unwind: { path: '$_id', preserveNullAndEmptyArrays: true },
+      },
+      {
+        $project: {
+          _id: 0,
+          user: '$_id',
+          amount: 1,
+          event: 1,
+          creator: 1,
+        },
+      },
+    ]);
+
+    result.data = new PaginationDto(items, total[0].total, page, size);
+    return result;
   }
 }

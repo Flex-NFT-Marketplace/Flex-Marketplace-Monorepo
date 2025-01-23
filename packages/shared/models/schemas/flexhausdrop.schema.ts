@@ -5,6 +5,7 @@ import { BaseSchema } from './base.schema';
 import { FlexHausSetDocument } from './flexhausset.schema';
 import { ApiProperty } from '@nestjs/swagger';
 import { UserDocument } from './user.schema';
+import { FlexHausDropType } from '../types';
 
 export type FlexHausDropDocument = FlexHausDrop & Document;
 
@@ -18,17 +19,25 @@ export class FlexHausDrop extends BaseSchema {
   @ApiProperty()
   creator: UserDocument;
 
-  @Prop()
+  @Prop({ type: SchemaTypes.String, enum: FlexHausDropType })
   @ApiProperty()
-  dropType: number;
+  dropType: FlexHausDropType;
 
   @Prop()
   @ApiProperty()
-  secureAmount: string;
+  secureAmount: number;
 
   @Prop()
   @ApiProperty()
-  topSupporters: number;
+  fromTopSupporter: number;
+
+  @Prop()
+  @ApiProperty()
+  toTopSupporter: number;
+
+  @Prop()
+  @ApiProperty()
+  isRandomToSubscribers: boolean;
 
   @Prop({ type: [SchemaTypes.ObjectId], ref: 'FlexHausSet' })
   @ApiProperty()
@@ -36,3 +45,5 @@ export class FlexHausDrop extends BaseSchema {
 }
 
 export const FlexHausDropSchema = SchemaFactory.createForClass(FlexHausDrop);
+FlexHausDropSchema.index({ collectible: 1 });
+FlexHausDropSchema.index({ collectible: 1, set: 1 });

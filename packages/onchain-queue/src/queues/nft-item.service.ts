@@ -36,6 +36,9 @@ import {
   FlexHausPaymentDocument,
   Users,
   UserDocument,
+  FlexHausDropType,
+  FlexHausSecureCollectible,
+  FlexHausSecureCollectibleDocument,
 } from '@app/shared/models';
 import {
   CancelAllOrdersReturnValue,
@@ -89,7 +92,6 @@ export class NftItemService {
     private readonly signatureModel: Model<SignatureDocument>,
     @InjectModel(NftCollectionStats.name)
     private readonly nftCollectionStats: Model<NftCollectionStatsDocument>,
-
     @InjectModel(FlexHausSet.name)
     private readonly flexHausSetModel: Model<FlexHausSetDocument>,
     @InjectModel(FlexHausDrop.name)
@@ -100,6 +102,8 @@ export class NftItemService {
     private readonly flexHausPaymentModel: Model<FlexHausPaymentDocument>,
     @InjectModel(Users.name)
     private readonly userModel: Model<UserDocument>,
+    @InjectModel(FlexHausSecureCollectible.name)
+    private readonly flexHausSecureCollectibleModel: Model<FlexHausSecureCollectibleDocument>,
     private readonly web3Service: Web3Service,
     private readonly userService: UserService,
   ) {}
@@ -271,6 +275,10 @@ export class NftItemService {
         isNonFungibleFlexDropToken,
         contractUri,
         isFlexHausCollectible,
+        dropAmount: log.returnValues.drop_amount
+          ? Number(log.returnValues.drop_amount)
+          : null,
+        rarity: log.returnValues.rarity ? log.returnValues.rarity : null,
         dropPhases: [],
         attributesMap: [],
       };
@@ -480,6 +488,17 @@ export class NftItemService {
         },
         { $set: newNftEntity },
         { new: true, upsert: true },
+      );
+    }
+
+    if (isClaimCollectible) {
+      await this.flexHausSecureCollectibleModel.findOneAndUpdate(
+        {
+          user: toUser,
+          collectible: nftDocument,
+        },
+        { $set: { isClaimed: true } },
+        { upsert: true, new: true },
       );
     }
 
@@ -2273,8 +2292,14 @@ export class NftItemService {
   }
 
   async processUpdateDrop(log: LogsReturnValues, chain: ChainDocument) {
-    const { collectible, dropType, secureAmount, topSupporters, startTime } =
-      log.returnValues as UpdateDropReturnValue;
+    const {
+      collectible,
+      dropType,
+      secureAmount,
+      fromTopSupporter,
+      toTopSupporter,
+      isRandomToSubscribers,
+    } = log.returnValues as UpdateDropReturnValue;
 
     const nftCollection = await this.getOrCreateNftCollection(
       collectible,
@@ -2288,9 +2313,12 @@ export class NftItemService {
     const newDrop: FlexHausDrop = {
       collectible: nftCollection,
       creator: nftCollection.owner,
-      dropType,
+      dropType:
+        dropType === 1 ? FlexHausDropType.Free : FlexHausDropType.Protected,
       secureAmount,
-      topSupporters,
+      isRandomToSubscribers,
+      fromTopSupporter,
+      toTopSupporter,
       set,
     };
 

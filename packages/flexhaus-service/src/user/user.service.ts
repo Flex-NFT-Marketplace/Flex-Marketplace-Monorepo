@@ -74,6 +74,22 @@ export class UserService {
     });
   }
 
+  async updatePoints(userAddress: string, newPoints: number) {
+    const newUser = await this.userModel.findOneAndUpdate(
+      {
+        address: formattedContractAddress(userAddress),
+      },
+      {
+        $set: {
+          points: newPoints,
+        },
+      },
+      { new: true, upsert: true },
+    );
+
+    return newUser;
+  }
+
   async subscribe(userAddress: string, body: SubscribeDTO) {
     const { creator } = body;
     const formatAddress = formattedContractAddress(creator);

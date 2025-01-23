@@ -9,12 +9,14 @@ import { Users, UserSchema } from '@app/shared/models';
 import { CollectibleModule } from './collectible/collectible.module';
 import { FlexHausEventModule } from './event/flexhausEvent.module';
 import { UserModule } from './user/user.module';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
     MongooseModule.forRoot(configuration().db_path),
     MongooseModule.forFeature([{ name: Users.name, schema: UserSchema }]),
     CacheModule.register({ isGlobal: true }),
+    ScheduleModule.forRoot(),
     FlexHausDropModule,
     CollectibleModule,
     FlexHausEventModule,

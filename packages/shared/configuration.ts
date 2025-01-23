@@ -40,6 +40,11 @@ export default () => ({
     privateKey: String(process.env.VALIDATOR_PK),
   },
 
+  flexhaus_validator: {
+    address: String(process.env.FLEXHAUS_VALIDATOR_AD),
+    privateKey: String(process.env.FLEXHAUS_VALIDATOR_PK),
+  },
+
   file_storage_path: String(process.env.FILE_STORAGE_PATH),
 
   image_dimension: {
