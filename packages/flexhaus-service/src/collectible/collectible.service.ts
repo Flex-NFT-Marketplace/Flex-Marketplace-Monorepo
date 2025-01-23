@@ -4,6 +4,8 @@ import { InjectModel } from '@nestjs/mongoose';
 import { GetCollectiblesDto } from './dto/queryCollectibles.dto';
 import { BaseResultPagination } from '@app/shared/types';
 import {
+  ChainDocument,
+  Chains,
   FlexHausDrop,
   FlexHausDropDocument,
   FlexHausDropType,
@@ -14,12 +16,19 @@ import {
   NftCollectionDocument,
   NftCollections,
 } from '@app/shared/models';
-import { formattedContractAddress } from '@app/shared/utils';
+import {
+  formattedContractAddress,
+  getProofClaimCollectibleMessage,
+} from '@app/shared/utils';
 import { UserService } from '../user/user.service';
 import { PaginationDto } from '@app/shared/types/pagination.dto';
 import { CollectibleDto } from './dto/collectible.dto';
 import { GetSecuredCollectiblesDto } from './dto/querySecuredCollectibles.dto';
 import { GetDistributedCollectiblesDto } from './dto/queryDistributedCollectibles.dto';
+import { ClaimCollectibleDto } from './dto/claimCollectible.dto';
+import { Web3Service } from '@app/web3-service/web3.service';
+import { stark } from 'starknet';
+import configuration from '@app/shared/configuration';
 
 @Injectable()
 export class CollectibleService {
@@ -32,6 +41,9 @@ export class CollectibleService {
     private flexHausLike: Model<FlexHausLikeDocument>,
     @InjectModel(FlexHausSecureCollectible.name)
     private flexHausSecureCollectibleModel: Model<FlexHausSecureCollectible>,
+    @InjectModel(Chains.name)
+    private chainModel: Model<ChainDocument>,
+    private web3Service: Web3Service,
     private userService: UserService,
   ) {}
 
@@ -438,5 +450,61 @@ export class CollectibleService {
 
     result.data = new PaginationDto(items, total, page, size);
     return result;
+  }
+
+  async claimCollectible(
+    query: CollectibleDto,
+    user: string,
+  ): Promise<ClaimCollectibleDto> {
+    const { collectible } = query;
+
+    const collectibleDocument = await this.collectible.findOne({
+      nftContract: formattedContractAddress(collectible),
+      isFlexHausCollectible: true,
+    });
+
+    if (!collectibleDocument) {
+      throw new HttpException('Collectible not found', HttpStatus.NOT_FOUND);
+    }
+
+    const userDocument = await this.userService.getOrCreateUser(user);
+
+    const distributedColl = await this.flexHausSecureCollectibleModel.findOne({
+      user: userDocument,
+      collectible: collectibleDocument,
+      isDistributed: true,
+    });
+
+    if (!distributedColl) {
+      throw new HttpException(
+        'You have not distributed this collectible',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    if (distributedColl.isClaimed) {
+      throw new HttpException(
+        'You have already claimed this collectible',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    const message = getProofClaimCollectibleMessage(collectible, user);
+    const chainDocument = await this.chainModel.findOne();
+
+    const signer = this.web3Service.getAccountInstance(
+      configuration().flexhaus_validator.privateKey,
+      configuration().flexhaus_validator.address,
+      chainDocument.rpc,
+    );
+
+    const signature = await signer.signMessage(message);
+    const formattedSignature = stark.formatSignature(signature);
+
+    return {
+      collectible: formattedContractAddress(collectible),
+      user,
+      signature: formattedSignature,
+    };
   }
 }

@@ -20,6 +20,7 @@ import { JWT, User, iInfoToken } from '@app/shared/modules';
 import { CollectibleDto } from './dto/collectible.dto';
 import { GetSecuredCollectiblesDto } from './dto/querySecuredCollectibles.dto';
 import { GetDistributedCollectiblesDto } from './dto/queryDistributedCollectibles.dto';
+import { ClaimCollectibleDto } from './dto/claimCollectible.dto';
 
 @ApiTags('FlexHausCollectible')
 @Controller('collectible')
@@ -327,5 +328,41 @@ export class CollectibleController {
       query,
       user.sub,
     );
+  }
+
+  @JWT()
+  @Post('claim-collectible')
+  @ApiOperation({
+    summary: 'Claim a collectible',
+  })
+  @ApiOkResponse({
+    schema: {
+      allOf: [
+        {
+          $ref: getSchemaPath(BaseResult),
+        },
+        {
+          properties: {
+            data: {
+              allOf: [
+                {
+                  $ref: getSchemaPath(ClaimCollectibleDto),
+                },
+              ],
+            },
+          },
+        },
+      ],
+    },
+  })
+  async claimCollectible(
+    @Body() query: CollectibleDto,
+    @User() user: iInfoToken,
+  ): Promise<BaseResult<ClaimCollectibleDto>> {
+    const result = await this.collectibleService.claimCollectible(
+      query,
+      user.sub,
+    );
+    return new BaseResult(result);
   }
 }

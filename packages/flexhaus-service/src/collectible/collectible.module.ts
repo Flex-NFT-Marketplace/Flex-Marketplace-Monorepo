@@ -21,6 +21,7 @@ import {
   Users,
   flexHausSubscriptionSchema,
 } from '@app/shared/models';
+import { Web3Service } from '@app/web3-service/web3.service';
 
 @Module({
   imports: [
@@ -39,6 +40,6 @@ import {
     ]),
   ],
   controllers: [CollectibleController],
-  providers: [CollectibleService, UserService],
+  providers: [CollectibleService, UserService, Web3Service],
 })
 export class CollectibleModule {}

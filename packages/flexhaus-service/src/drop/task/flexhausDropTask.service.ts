@@ -240,18 +240,34 @@ export class FlexHausDropTaskService {
     collectible: NftCollectionDocument,
     amount: number,
   ): Promise<number> {
-    const subscribers: FlexHausSubscriptionDocument[] =
-      await this.flexHausSubscriptionModel.aggregate([
-        {
-          $match: {
-            creator: collectible.owner,
-            isUnSubscribe: false,
+    const subscribers: FlexHausSubscriptionDocument[] = [];
+    while (subscribers.length != amount) {
+      const selectSubscribers: FlexHausSubscriptionDocument[] =
+        await this.flexHausSubscriptionModel.aggregate([
+          {
+            $match: {
+              creator: collectible.owner,
+              isUnSubscribe: false,
+            },
           },
-        },
-        {
-          $sample: { size: amount },
-        },
-      ]);
+          {
+            $sample: { size: amount - subscribers.length },
+          },
+        ]);
+      for (const subscriber of selectSubscribers) {
+        if (!subscribers.find(i => i.user === subscriber.user)) {
+          const secureCollectible =
+            await this.flexHausSecureCollectibleModel.findOne({
+              user: subscriber.user,
+              collectible,
+            });
+
+          if (!secureCollectible) {
+            subscribers.push(subscriber);
+          }
+        }
+      }
+    }
 
     const bulkInsert = [];
     for (const subscriber of subscribers) {

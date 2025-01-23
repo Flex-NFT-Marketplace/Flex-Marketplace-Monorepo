@@ -36,4 +36,9 @@ FlexHausSecureCollectibleSchema.index({
   user: 1,
   isSecured: 1,
 });
+FlexHausSecureCollectibleSchema.index({
+  collectible: 1,
+  user: 1,
+  isDistributed: 1,
+});
 FlexHausSecureCollectibleSchema.index({ user: 1, isClaimed: 1 });
