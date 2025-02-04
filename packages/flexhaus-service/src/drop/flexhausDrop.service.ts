@@ -162,6 +162,11 @@ export class FlexDropService {
       return result;
     }
 
+    const sortOperators = {};
+    for (const items of sort) {
+      sortOperators[items[0]] = items[1];
+    }
+
     const items = await this.flexHausSetModel.aggregate([
       { $match: filter },
       {
@@ -188,7 +193,7 @@ export class FlexDropService {
         $unwind: { path: '$event', preserveNullAndEmptyArrays: true },
       },
       {
-        $sort: sort,
+        $sort: sortOperators,
       },
       {
         $skip: skipIndex,
