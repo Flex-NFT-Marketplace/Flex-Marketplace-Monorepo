@@ -167,6 +167,8 @@ export class FlexDropService {
       sortOperators[items[0]] = items[1];
     }
 
+    console.log(filter, sortOperators);
+
     const items = await this.flexHausSetModel.aggregate([
       { $match: filter },
       {
@@ -204,8 +206,8 @@ export class FlexDropService {
       {
         $lookup: {
           from: 'nftcollections',
-          localField: '_id',
-          foreignField: 'nftCollection',
+          localField: 'collectibles',
+          foreignField: '_id',
           pipeline: [
             {
               $project: {
@@ -234,7 +236,7 @@ export class FlexDropService {
         $lookup: {
           from: 'users',
           localField: 'creator',
-          foreignField: 'address',
+          foreignField: '_id',
           pipeline: [
             {
               $project: {
