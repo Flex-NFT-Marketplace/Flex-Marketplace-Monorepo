@@ -53,7 +53,7 @@ export class FlexDropService {
         throw new HttpException('Event not found', HttpStatus.NOT_FOUND);
       }
 
-      if (expiryTime < eventDocument.snapshotTime) {
+      if (Number(expiryTime) < eventDocument.snapshotTime) {
         throw new HttpException(
           'Expiry time must be greater than snapshot time',
           HttpStatus.BAD_REQUEST,
@@ -73,21 +73,25 @@ export class FlexDropService {
       );
     }
 
-    const newSet: FlexHausSet = {
+    const set = await this.flexHausSetModel.findOne({
+      collectibles: { $in: [collectibleDocument] },
+    });
+
+    if (set) {
+      throw new HttpException(
+        'Collectible already has a set',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    const newSet = new this.flexHausSetModel({
       collectibles: [collectibleDocument],
-      startTime,
-      expiryTime,
+      startTime: Number(startTime),
+      expiryTime: Number(expiryTime),
       creator: creatorDocument,
       event: eventDocument,
-    };
-    const setDocument = await this.flexHausSetModel.findOneAndUpdate(
-      {
-        collectibles: { $in: [collectibleDocument] },
-        creator: creatorDocument._id,
-      },
-      { $set: newSet },
-      { upsert: true, new: true },
-    );
+    });
+    const setDocument = await newSet.save();
 
     return new BaseResult(setDocument);
   }
@@ -117,7 +121,7 @@ export class FlexDropService {
     if (query.creator) {
       const formatedAddress = formattedContractAddress(query.creator);
       const user = await this.userService.getOrCreateUser(formatedAddress);
-      filter.creator = user;
+      filter.creator = user._id;
     }
 
     let total = 0;
