@@ -88,7 +88,7 @@ export class FlexHausEventService {
     }
 
     const items = await this.flexHausEventModel
-      .find(filter, {}, { sort, skip: skipIndex, limit: size })
+      .find(filter, {}, { sort: sort, skip: skipIndex, limit: size })
       .populate([
         {
           path: 'creator',
@@ -204,7 +204,6 @@ export class FlexHausEventService {
       {
         creator: creatorDocument,
         snapshotTime: { $gt: now },
-        startTime: { $lte: now },
         isCancelled: false,
       },
       {},
@@ -263,10 +262,7 @@ export class FlexHausEventService {
     );
 
     if (!event) {
-      throw new HttpException(
-        'The event does not exist',
-        HttpStatus.BAD_REQUEST,
-      );
+      throw new HttpException('There is no event yet!', HttpStatus.BAD_REQUEST);
     }
 
     const userDocument = await this.userService.getOrCreateUser(user);

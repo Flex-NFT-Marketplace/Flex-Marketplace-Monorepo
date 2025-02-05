@@ -168,10 +168,8 @@ export class FlexDropService {
 
     const sortOperators = {};
     for (const items of sort) {
-      sortOperators[items[0]] = items[1];
+      sortOperators[Object.keys(items)[0]] = Object.values(items)[0];
     }
-
-    console.log(filter, sortOperators);
 
     const items = await this.flexHausSetModel.aggregate([
       { $match: filter },
@@ -282,7 +280,7 @@ export class FlexDropService {
       throw new HttpException('Set not found', HttpStatus.NOT_FOUND);
     }
 
-    if (set.event.isCancelled) {
+    if (set.event && set.event.isCancelled) {
       throw new HttpException('Event is cancelled', HttpStatus.BAD_REQUEST);
     }
 
@@ -322,7 +320,7 @@ export class FlexDropService {
       throw new HttpException('Set not found', HttpStatus.NOT_FOUND);
     }
 
-    if (set.event.isCancelled) {
+    if (set.event && set.event.isCancelled) {
       throw new HttpException('Event is cancelled', HttpStatus.BAD_REQUEST);
     }
 
