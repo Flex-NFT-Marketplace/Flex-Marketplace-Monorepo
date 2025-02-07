@@ -11,10 +11,8 @@ export class CreateSetDto {
   @IsHexadecimal()
   collectible: string;
 
-  @IsNumber()
   startTime: number;
 
-  @IsNumber()
   expiryTime: number;
 
   @ApiProperty()
