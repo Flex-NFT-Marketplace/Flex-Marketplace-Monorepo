@@ -212,6 +212,32 @@ export class CollectibleService {
     return !like.isUnLike;
   }
 
+  async isSecured(query: CollectibleDto, user: string) {
+    const { collectible } = query;
+    const userDocument = await this.userService.getOrCreateUser(user);
+
+    const collectibleDocument = await this.collectible.findOne({
+      nftContract: formattedContractAddress(collectible),
+      isFlexHausCollectible: true,
+    });
+
+    if (!collectibleDocument) {
+      throw new HttpException('Collectible not found', HttpStatus.NOT_FOUND);
+    }
+
+    const securedCollectible =
+      await this.flexHausSecureCollectibleModel.findOne({
+        user: userDocument,
+        collectible: collectibleDocument,
+      });
+
+    if (!securedCollectible || !securedCollectible.isSecured) {
+      return false;
+    }
+
+    return true;
+  }
+
   async getTotalLikes(query: CollectibleDto) {
     const { collectible } = query;
     const collectibleDocument = await this.collectible.findOne({

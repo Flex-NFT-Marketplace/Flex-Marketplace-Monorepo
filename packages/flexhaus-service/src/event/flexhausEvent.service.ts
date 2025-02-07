@@ -291,6 +291,50 @@ export class FlexHausEventService {
     return true;
   }
 
+  async getUserRanking(eventId: string, user: string) {
+    const userDocument = await this.userService.getOrCreateUser(user);
+
+    const event = await this.flexHausEventModel.findOne({
+      _id: eventId,
+    });
+
+    if (!event) {
+      throw new HttpException('Event not found', HttpStatus.NOT_FOUND);
+    }
+
+    const ranking = await this.flexHausDonateModel.aggregate([
+      {
+        $match: {
+          event: eventId,
+        },
+      },
+      {
+        $project: {
+          _id: '$user',
+          amount: { $sum: '$amount' },
+          event: { $first: '$event' },
+          creator: { $first: '$creator' },
+        },
+      },
+      {
+        $sort: { amount: -1 },
+      },
+      {
+        $limit: 10,
+      },
+      {
+        $setWindowFields: {
+          sortBy: { score: -1 },
+          output: {
+            rank: { $denseRank: {} },
+          },
+        },
+      },
+    ]);
+
+    return 0;
+  }
+
   async getLeaderboard(
     query: QueryLeaderboardDto,
   ): Promise<BaseResultPagination<FlexHausDonates>> {
@@ -382,5 +426,31 @@ export class FlexHausEventService {
 
     result.data = new PaginationDto(items, total[0].total, page, size);
     return result;
+  }
+
+  async getTotalPoints(eventId: string) {
+    const event = await this.flexHausEventModel.findOne({
+      _id: eventId,
+    });
+
+    if (!event) {
+      throw new HttpException('Event not found', HttpStatus.NOT_FOUND);
+    }
+
+    const total = await this.flexHausDonateModel.aggregate([
+      {
+        $match: {
+          event: eventId,
+        },
+      },
+      {
+        $group: {
+          _id: 0,
+          total: { $sum: '$amount' },
+        },
+      },
+    ]);
+
+    return total.length > 0 ? total[0].total : 0;
   }
 }
