@@ -39,7 +39,7 @@ export class FlexHausDrop extends BaseSchema {
   @ApiProperty()
   isRandomToSubscribers: boolean;
 
-  @Prop({ type: [SchemaTypes.ObjectId], ref: 'FlexHausSet' })
+  @Prop({ type: SchemaTypes.ObjectId, ref: 'FlexHausSet' })
   @ApiProperty()
   set?: FlexHausSetDocument;
 }
