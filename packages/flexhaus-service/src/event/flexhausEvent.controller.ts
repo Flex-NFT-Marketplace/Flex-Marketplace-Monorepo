@@ -250,7 +250,7 @@ export class FlexHausEventController {
     return new BaseResult(result);
   }
 
-  @JWT()
+  // @JWT()
   @Get('get-user-ranking')
   @ApiOperation({
     summary: 'Get user ranking',
@@ -277,7 +277,7 @@ export class FlexHausEventController {
   })
   async getUserRanking(
     @Query('eventId') eventId: string,
-    @User() user: iInfoToken,
+    // @User() user: iInfoToken,
   ): Promise<BaseResult<Number>> {
     if (!isMongoId(eventId)) {
       throw new HttpException('Invalid eventId', HttpStatus.BAD_REQUEST);
@@ -285,7 +285,7 @@ export class FlexHausEventController {
 
     const result = await this.flexHausEventService.getUserRanking(
       eventId,
-      user.sub,
+      '0x00ed159a749f4de53f63da3ee86e8fc307e4b0d177e4ffafa837a6c9b5eaf3b0',
     );
     return new BaseResult(result);
   }

@@ -305,11 +305,11 @@ export class FlexHausEventService {
     const ranking = await this.flexHausDonateModel.aggregate([
       {
         $match: {
-          event: eventId,
+          event: event._id,
         },
       },
       {
-        $project: {
+        $group: {
           _id: '$user',
           amount: { $sum: '$amount' },
           event: { $first: '$event' },
@@ -320,19 +320,21 @@ export class FlexHausEventService {
         $sort: { amount: -1 },
       },
       {
-        $limit: 10,
+        $setWindowFields: {
+          sortBy: { amount: -1 },
+          output: {
+            rank: { $rank: {} },
+          },
+        },
       },
       {
-        $setWindowFields: {
-          sortBy: { score: -1 },
-          output: {
-            rank: { $denseRank: {} },
-          },
+        $match: {
+          _id: userDocument._id,
         },
       },
     ]);
 
-    return 0;
+    return ranking.length > 0 ? ranking[0].rank : 0;
   }
 
   async getLeaderboard(
@@ -341,8 +343,13 @@ export class FlexHausEventService {
     const { eventId, page, size, skipIndex } = query;
     const result = new BaseResultPagination<FlexHausDonates>();
 
+    const event = await this.flexHausEventModel.findOne({ _id: eventId });
+    if (!event) {
+      throw new HttpException('Event not found', HttpStatus.NOT_FOUND);
+    }
+
     const filter: any = {};
-    filter.event = eventId;
+    filter.event = event._id;
 
     const total = await this.flexHausDonateModel.aggregate([
       {
@@ -371,7 +378,7 @@ export class FlexHausEventService {
         $match: filter,
       },
       {
-        $project: {
+        $group: {
           _id: '$user',
           amount: { $sum: '$amount' },
           event: { $first: '$event' },
@@ -380,6 +387,14 @@ export class FlexHausEventService {
       },
       {
         $sort: { amount: -1 },
+      },
+      {
+        $setWindowFields: {
+          sortBy: { amount: -1 },
+          output: {
+            rank: { $rank: {} },
+          },
+        },
       },
       {
         $skip: skipIndex,
@@ -420,6 +435,7 @@ export class FlexHausEventService {
           amount: 1,
           event: 1,
           creator: 1,
+          rank: 1,
         },
       },
     ]);
@@ -440,7 +456,7 @@ export class FlexHausEventService {
     const total = await this.flexHausDonateModel.aggregate([
       {
         $match: {
-          event: eventId,
+          event: event._id,
         },
       },
       {
