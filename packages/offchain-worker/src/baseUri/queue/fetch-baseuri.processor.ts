@@ -32,6 +32,7 @@ export class FetchBaseUriProcessor {
         `Error while processing type ${job.name} with  id ${job.data} `,
         err,
       );
+      await this.queue.add(JOB_QUEUE_COLLECTIBLE_BASE_URI, job.data);
     }
   }
 }
