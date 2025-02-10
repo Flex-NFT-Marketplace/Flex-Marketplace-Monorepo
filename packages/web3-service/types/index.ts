@@ -17,6 +17,7 @@ import erc20Abi from '../abis/erc20.abi.json';
 import oldErc20Abi from '../abis/olderc20.abi.json';
 import openeditionAbi from '../abis/openedition.abi.json';
 import flexhausfactoryAbi from '../abis/flexhausfactory.json';
+import flexhausCollectibleAbi from '../abis/flexhausCollectible.abi.json';
 
 export enum EventTopic {
   CONTRACT_DEPLOYED = '0x26b160f10156dea0639bec90696772c640b9706a47f5b8c52ea1abe5858b34d',
@@ -108,4 +109,5 @@ export const ABIS = {
   OldErc20ABI: oldErc20Abi,
   OpeneditionABI: openeditionAbi,
   FlexHausFactoryABI: flexhausfactoryAbi,
+  FlexHausCollectibleABI: flexhausCollectibleAbi,
 };

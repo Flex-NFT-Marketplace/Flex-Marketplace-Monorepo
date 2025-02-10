@@ -64,7 +64,12 @@ import { UserService } from '../users/user.service';
 import template from '../notifications/template';
 import { formattedContractAddress } from '@app/shared/utils';
 import { InjectQueue } from '@nestjs/bull';
-import { JOB_QUEUE_NFT_METADATA, QUEUE_METADATA } from '@app/shared/types';
+import {
+  JOB_QUEUE_COLLECTIBLE_BASE_URI,
+  JOB_QUEUE_NFT_METADATA,
+  QUEUE_BASE_URI,
+  QUEUE_METADATA,
+} from '@app/shared/types';
 import { Queue } from 'bull';
 
 @Injectable()
@@ -98,6 +103,8 @@ export class NftItemService {
     private readonly flexHausDropModel: Model<FlexHausDropDocument>,
     @InjectQueue(QUEUE_METADATA)
     private readonly fetchMetadataQueue: Queue<string>,
+    @InjectQueue(QUEUE_BASE_URI)
+    private readonly fetchCollectibleBaseUriQueue: Queue<string>,
     @InjectModel(FlexHausPayment.name)
     private readonly flexHausPaymentModel: Model<FlexHausPaymentDocument>,
     @InjectModel(Users.name)
@@ -298,6 +305,12 @@ export class NftItemService {
       );
 
       this.logger.debug(`create collection ${nftCollection._id}`);
+      if (isFlexHausCollectible) {
+        this.fetchCollectibleBaseUriQueue.add(
+          JOB_QUEUE_COLLECTIBLE_BASE_URI,
+          nftCollection._id,
+        );
+      }
     }
   }
 

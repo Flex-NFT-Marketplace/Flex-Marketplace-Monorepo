@@ -39,6 +39,7 @@ import {
 import {
   MQ_JOB_DEFAULT_CONFIG,
   ONCHAIN_QUEUES,
+  QUEUE_BASE_URI,
   QUEUE_METADATA,
 } from '@app/shared/types';
 import { BullModule } from '@nestjs/bull';
@@ -83,6 +84,10 @@ import { ERC721MintProcessor } from './processors';
     BullModule.registerQueue(
       {
         name: QUEUE_METADATA,
+        defaultJobOptions: MQ_JOB_DEFAULT_CONFIG,
+      },
+      {
+        name: QUEUE_BASE_URI,
         defaultJobOptions: MQ_JOB_DEFAULT_CONFIG,
       },
       {

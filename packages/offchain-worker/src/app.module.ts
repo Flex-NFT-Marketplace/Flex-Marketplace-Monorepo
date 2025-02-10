@@ -6,6 +6,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import configuration from '@app/shared/configuration';
 import { MetadataModule } from './metadata/metadata.module';
 import { MongooseModule } from '@nestjs/mongoose';
+import { BaseUriModule } from './baseUri/baseuri.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { MongooseModule } from '@nestjs/mongoose';
       inject: [ConfigService],
     }),
     MetadataModule,
+    BaseUriModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -599,6 +599,17 @@ export class Web3Service {
     return convertDataIntoString(tokenUri);
   }
 
+  async getCollectibleBaseUri(address: string, rpc: string) {
+    const provider = this.getProvider(rpc);
+    const contractInstance = new Contract(
+      ABIS.FlexHausCollectibleABI,
+      address,
+      provider,
+    );
+    const baseUri = await contractInstance.get_base_uri();
+    return convertDataIntoString(baseUri);
+  }
+
   async getERC721Owner(
     address: string,
     tokenId: string,
