@@ -34,6 +34,8 @@ import { PaymentAddressDTO } from './dto/paymentAddress.dto';
   SubscribeDTO,
   BaseResultPagination,
   PaymentAddressDTO,
+  Number,
+  Boolean,
 )
 export class UserController {
   constructor(private readonly userService: UserService) {}

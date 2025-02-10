@@ -291,14 +291,65 @@ export class FlexHausEventService {
     return true;
   }
 
+  async getUserRanking(eventId: string, user: string) {
+    const userDocument = await this.userService.getOrCreateUser(user);
+
+    const event = await this.flexHausEventModel.findOne({
+      _id: eventId,
+    });
+
+    if (!event) {
+      throw new HttpException('Event not found', HttpStatus.NOT_FOUND);
+    }
+
+    const ranking = await this.flexHausDonateModel.aggregate([
+      {
+        $match: {
+          event: event._id,
+        },
+      },
+      {
+        $group: {
+          _id: '$user',
+          amount: { $sum: '$amount' },
+          event: { $first: '$event' },
+          creator: { $first: '$creator' },
+        },
+      },
+      {
+        $sort: { amount: -1 },
+      },
+      {
+        $setWindowFields: {
+          sortBy: { amount: -1 },
+          output: {
+            rank: { $rank: {} },
+          },
+        },
+      },
+      {
+        $match: {
+          _id: userDocument._id,
+        },
+      },
+    ]);
+
+    return ranking.length > 0 ? ranking[0].rank : 0;
+  }
+
   async getLeaderboard(
     query: QueryLeaderboardDto,
   ): Promise<BaseResultPagination<FlexHausDonates>> {
     const { eventId, page, size, skipIndex } = query;
     const result = new BaseResultPagination<FlexHausDonates>();
 
+    const event = await this.flexHausEventModel.findOne({ _id: eventId });
+    if (!event) {
+      throw new HttpException('Event not found', HttpStatus.NOT_FOUND);
+    }
+
     const filter: any = {};
-    filter.event = eventId;
+    filter.event = event._id;
 
     const total = await this.flexHausDonateModel.aggregate([
       {
@@ -327,7 +378,7 @@ export class FlexHausEventService {
         $match: filter,
       },
       {
-        $project: {
+        $group: {
           _id: '$user',
           amount: { $sum: '$amount' },
           event: { $first: '$event' },
@@ -336,6 +387,14 @@ export class FlexHausEventService {
       },
       {
         $sort: { amount: -1 },
+      },
+      {
+        $setWindowFields: {
+          sortBy: { amount: -1 },
+          output: {
+            rank: { $rank: {} },
+          },
+        },
       },
       {
         $skip: skipIndex,
@@ -376,11 +435,38 @@ export class FlexHausEventService {
           amount: 1,
           event: 1,
           creator: 1,
+          rank: 1,
         },
       },
     ]);
 
     result.data = new PaginationDto(items, total[0].total, page, size);
     return result;
+  }
+
+  async getTotalPoints(eventId: string) {
+    const event = await this.flexHausEventModel.findOne({
+      _id: eventId,
+    });
+
+    if (!event) {
+      throw new HttpException('Event not found', HttpStatus.NOT_FOUND);
+    }
+
+    const total = await this.flexHausDonateModel.aggregate([
+      {
+        $match: {
+          event: event._id,
+        },
+      },
+      {
+        $group: {
+          _id: 0,
+          total: { $sum: '$amount' },
+        },
+      },
+    ]);
+
+    return total.length > 0 ? total[0].total : 0;
   }
 }

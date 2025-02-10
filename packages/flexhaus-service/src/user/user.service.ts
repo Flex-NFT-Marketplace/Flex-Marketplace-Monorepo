@@ -93,7 +93,7 @@ export class UserService {
   async subscribe(userAddress: string, body: SubscribeDTO) {
     const { creator } = body;
     const formatAddress = formattedContractAddress(creator);
-    if (formatAddress !== userAddress) {
+    if (formatAddress === userAddress) {
       throw new HttpException(
         'You are not allowed to subscribe yourself',
         HttpStatus.BAD_REQUEST,
@@ -134,7 +134,7 @@ export class UserService {
   async unSubscribe(userAddress: string, body: SubscribeDTO) {
     const { creator } = body;
     const formatAddress = formattedContractAddress(creator);
-    if (formatAddress !== userAddress) {
+    if (formatAddress === userAddress) {
       throw new HttpException(
         'You are not allowed to unsubscribe yourself',
         HttpStatus.BAD_REQUEST,
@@ -171,7 +171,7 @@ export class UserService {
 
   async checkSubscribed(userAddress: string, creatorAddress: string) {
     const formatAddress = formattedContractAddress(creatorAddress);
-    if (formatAddress !== userAddress) {
+    if (formatAddress === userAddress) {
       throw new HttpException(
         'You are not allowed to check subscribed',
         HttpStatus.BAD_REQUEST,

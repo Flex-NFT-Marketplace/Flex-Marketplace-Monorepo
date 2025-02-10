@@ -31,11 +31,13 @@ import { ClaimCollectibleDto } from './dto/claimCollectible.dto';
   BaseResultPagination,
   FlexHausLike,
   FlexHausSecureCollectible,
+  Number,
+  Boolean,
 )
 export class CollectibleController {
   constructor(private readonly collectibleService: CollectibleService) {}
 
-  @Post('get-collectibles')
+  @Post('get-collectible-dropes')
   @ApiOperation({
     summary: 'Get Collectibles',
   })
@@ -174,6 +176,40 @@ export class CollectibleController {
     @User() user: iInfoToken,
   ): Promise<BaseResult<boolean>> {
     const response = await this.collectibleService.isLiked(query, user.sub);
+
+    return new BaseResult(response);
+  }
+
+  @JWT()
+  @Get('is-secured')
+  @ApiOperation({
+    summary: 'Check if collectible is secured',
+  })
+  @ApiOkResponse({
+    schema: {
+      allOf: [
+        {
+          $ref: getSchemaPath(BaseResult),
+        },
+        {
+          properties: {
+            data: {
+              allOf: [
+                {
+                  $ref: getSchemaPath(Boolean),
+                },
+              ],
+            },
+          },
+        },
+      ],
+    },
+  })
+  async isSecured(
+    @Query() query: CollectibleDto,
+    @User() user: iInfoToken,
+  ): Promise<BaseResult<boolean>> {
+    const response = await this.collectibleService.isSecured(query, user.sub);
 
     return new BaseResult(response);
   }

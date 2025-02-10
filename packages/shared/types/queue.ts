@@ -1,6 +1,8 @@
 // Job channels
 export const QUEUE_METADATA = 'metadata';
 
+export const QUEUE_BASE_URI = 'base_uri';
+
 // onchain Job Channels
 export const ONCHAIN_QUEUES = {
   QUEUE_DEPLOY_CONTRACT: 'QUEUE_DEPLOY_CONTRACT',
@@ -29,6 +31,8 @@ export const ONCHAIN_QUEUES = {
 
 // job type
 export const JOB_QUEUE_NFT_METADATA = 'fetch_metadata';
+
+export const JOB_QUEUE_COLLECTIBLE_BASE_URI = 'fetch_collectible_base_uri';
 
 // onchain jobs
 export const ONCHAIN_JOBS = {

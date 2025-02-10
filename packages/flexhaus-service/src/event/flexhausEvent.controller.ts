@@ -20,7 +20,7 @@ import { BaseResult } from '@app/shared/types/base.result';
 import { FlexHausDonates, FlexHausEvents } from '@app/shared/models';
 import { FlexHausEventService } from './flexhausEvent.service';
 import { CreateEventDto } from './dto/createEvent.dto';
-import { isHexadecimal } from 'class-validator';
+import { isHexadecimal, isMongoId } from 'class-validator';
 import { UpdateEventDto } from './dto/updateEvent.dto';
 import { BaseResultPagination } from '@app/shared/types';
 import { QueryEventsDto } from './dto/queryEvents.dto';
@@ -29,7 +29,7 @@ import { QueryLeaderboardDto } from './dto/queryLeaderboard.dto';
 
 @ApiTags('FlexHausEvent')
 @Controller('flexhaus-event')
-@ApiExtraModels(FlexHausEvents, FlexHausDonates)
+@ApiExtraModels(FlexHausEvents, FlexHausDonates, Number, Boolean)
 export class FlexHausEventController {
   constructor(private readonly flexHausEventService: FlexHausEventService) {}
 
@@ -250,6 +250,46 @@ export class FlexHausEventController {
     return new BaseResult(result);
   }
 
+  // @JWT()
+  @Get('get-user-ranking')
+  @ApiOperation({
+    summary: 'Get user ranking',
+  })
+  @ApiOkResponse({
+    schema: {
+      allOf: [
+        {
+          $ref: getSchemaPath(BaseResult),
+        },
+        {
+          properties: {
+            data: {
+              allOf: [
+                {
+                  $ref: getSchemaPath(Number),
+                },
+              ],
+            },
+          },
+        },
+      ],
+    },
+  })
+  async getUserRanking(
+    @Query('eventId') eventId: string,
+    // @User() user: iInfoToken,
+  ): Promise<BaseResult<Number>> {
+    if (!isMongoId(eventId)) {
+      throw new HttpException('Invalid eventId', HttpStatus.BAD_REQUEST);
+    }
+
+    const result = await this.flexHausEventService.getUserRanking(
+      eventId,
+      '0x00ed159a749f4de53f63da3ee86e8fc307e4b0d177e4ffafa837a6c9b5eaf3b0',
+    );
+    return new BaseResult(result);
+  }
+
   @Post('leaderboard')
   @ApiOperation({
     summary: 'Get leaderboard',
@@ -285,5 +325,40 @@ export class FlexHausEventController {
     @Body() query: QueryLeaderboardDto,
   ): Promise<BaseResultPagination<FlexHausDonates>> {
     return await this.flexHausEventService.getLeaderboard(query);
+  }
+
+  @Get('get-total-points')
+  @ApiOperation({
+    summary: 'Get total points by event',
+  })
+  @ApiOkResponse({
+    schema: {
+      allOf: [
+        {
+          $ref: getSchemaPath(BaseResult),
+        },
+        {
+          properties: {
+            data: {
+              allOf: [
+                {
+                  $ref: getSchemaPath(Number),
+                },
+              ],
+            },
+          },
+        },
+      ],
+    },
+  })
+  async getTotalPoints(
+    @Query('eventId') eventId: string,
+  ): Promise<BaseResult<Number>> {
+    if (!isMongoId(eventId)) {
+      throw new HttpException('Invalid eventId', HttpStatus.BAD_REQUEST);
+    }
+
+    const result = await this.flexHausEventService.getTotalPoints(eventId);
+    return new BaseResult(result);
   }
 }
