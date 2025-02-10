@@ -33,7 +33,7 @@ export class BaseUriService {
     private readonly web3Service: Web3Service,
   ) {
     this.client = axios.create({
-      timeout: 1000 * 3, // Wait for 5 seconds
+      timeout: 1000 * 10, // Wait for 5 seconds
     });
   }
   client: AxiosInstance;
