@@ -229,7 +229,7 @@ export class FlexHausEventService {
       );
     }
 
-    if (event.startTime > Date.now()) {
+    if (event.startTime < Date.now()) {
       throw new HttpException(
         'The event has already started',
         HttpStatus.BAD_REQUEST,

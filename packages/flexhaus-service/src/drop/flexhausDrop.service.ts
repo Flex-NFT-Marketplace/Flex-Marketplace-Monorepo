@@ -115,7 +115,7 @@ export class FlexDropService {
         throw new HttpException('Collectible not found', HttpStatus.NOT_FOUND);
       }
 
-      filter.collectibles = { $in: [nftCollection] };
+      filter.collectibles = { $in: [nftCollection._id] };
     }
 
     if (query.creator) {
