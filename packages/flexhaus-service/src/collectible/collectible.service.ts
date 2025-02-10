@@ -72,9 +72,7 @@ export class CollectibleService {
       filter.creator = creatorAccount;
     }
 
-    if (query.isHaveSet === undefined) {
-      filter.set = { $ne: null };
-    } else {
+    if (query.isHaveSet !== undefined) {
       filter.set = query.isHaveSet == true ? { $ne: null } : { $eq: null };
     }
 

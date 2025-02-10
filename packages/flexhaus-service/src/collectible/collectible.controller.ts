@@ -31,6 +31,8 @@ import { ClaimCollectibleDto } from './dto/claimCollectible.dto';
   BaseResultPagination,
   FlexHausLike,
   FlexHausSecureCollectible,
+  Number,
+  Boolean,
 )
 export class CollectibleController {
   constructor(private readonly collectibleService: CollectibleService) {}

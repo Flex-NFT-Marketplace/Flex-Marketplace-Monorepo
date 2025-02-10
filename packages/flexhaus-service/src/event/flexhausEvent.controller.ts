@@ -29,7 +29,7 @@ import { QueryLeaderboardDto } from './dto/queryLeaderboard.dto';
 
 @ApiTags('FlexHausEvent')
 @Controller('flexhaus-event')
-@ApiExtraModels(FlexHausEvents, FlexHausDonates)
+@ApiExtraModels(FlexHausEvents, FlexHausDonates, Number, Boolean)
 export class FlexHausEventController {
   constructor(private readonly flexHausEventService: FlexHausEventService) {}
 
