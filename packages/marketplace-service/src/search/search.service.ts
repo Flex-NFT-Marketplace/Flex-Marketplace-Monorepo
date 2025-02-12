@@ -18,29 +18,35 @@ export class SearchService {
   ) {}
 
   async search(query: SearchQueryDto) {
-    if (!query.search) {
+    const { search, size, skipIndex, sort } = query;
+    const sortOperators = {};
+    for (const items of sort) {
+      sortOperators[Object.keys(items)[0]] = Object.values(items)[0];
+    }
+
+    if (!search) {
       const users = await this.userModel
         .find()
-        .sort(query.sort)
-        .skip(query.skipIndex)
-        .limit(query.size)
+        .sort(sortOperators)
+        .skip(skipIndex)
+        .limit(size)
         .exec();
       const nfts = await this.nftsModel
         .find({
           image: { $exists: true, $ne: null },
         })
-        .sort(query.sort)
-        .skip(query.skipIndex)
-        .limit(query.size)
+        .sort(sortOperators)
+        .skip(skipIndex)
+        .limit(size)
         .exec();
       const collections = await this.nftCollectionsModel
         .find({
           avatar: { $exists: true, $ne: null },
           cover: { $exists: true, $ne: null },
         })
-        .sort(query.sort)
-        .skip(query.skipIndex)
-        .limit(query.size)
+        .sort(sortOperators)
+        .skip(skipIndex)
+        .limit(size)
         .exec();
 
       return {
@@ -52,22 +58,22 @@ export class SearchService {
       };
     }
     const users = await this.userModel
-      .find({ address: { $regex: query.search, $options: 'i' } })
-      .sort(query.sort)
-      .skip(query.skipIndex)
-      .limit(query.size)
+      .find({ address: { $regex: search, $options: 'i' } })
+      .sort(sortOperators)
+      .skip(skipIndex)
+      .limit(size)
       .exec();
     const nfts = await this.nftsModel
-      .find({ name: { $regex: query.search, $options: 'i' } })
-      .sort(query.sort)
-      .skip(query.skipIndex)
-      .limit(query.size)
+      .find({ name: { $regex: search, $options: 'i' } })
+      .sort(sortOperators)
+      .skip(skipIndex)
+      .limit(size)
       .exec();
     const collections = await this.nftCollectionsModel
-      .find({ name: { $regex: query.search, $options: 'i' } })
-      .sort(query.sort)
-      .skip(query.skipIndex)
-      .limit(query.size)
+      .find({ name: { $regex: search, $options: 'i' } })
+      .sort(sortOperators)
+      .skip(skipIndex)
+      .limit(size)
       .exec();
 
     return {
