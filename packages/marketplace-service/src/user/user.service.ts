@@ -162,11 +162,16 @@ export class UserService {
     //   return result;
     // }
 
+    const sortOperators = {};
+    for (const items of sort) {
+      sortOperators[Object.keys(items)[0]] = Object.values(items)[0];
+    }
+
     const items = await this.signatureModel
       .find(filter)
       .skip(skipIndex)
       .limit(size)
-      .sort(sort)
+      .sort(sortOperators)
       .populate([
         {
           path: 'nft',

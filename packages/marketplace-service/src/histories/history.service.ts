@@ -56,10 +56,13 @@ export class HistoryService {
     }
 
     const now = Date.now();
-
+    const sortOperators = {};
+    for (const items of sort) {
+      sortOperators[Object.keys(items)[0]] = Object.values(items)[0];
+    }
     const items = await this.historyModel
       .find(query)
-      .sort(sort)
+      .sort(sortOperators)
       .skip(skipIndex)
       .limit(size)
       .populate([

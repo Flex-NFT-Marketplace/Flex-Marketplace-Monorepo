@@ -87,8 +87,13 @@ export class FlexHausEventService {
       return result;
     }
 
+    const sortOperators = {};
+    for (const items of sort) {
+      sortOperators[Object.keys(items)[0]] = Object.values(items)[0];
+    }
+
     const items = await this.flexHausEventModel
-      .find(filter, {}, { sort: sort, skip: skipIndex, limit: size })
+      .find(filter, {}, { sort: sortOperators, skip: skipIndex, limit: size })
       .populate([
         {
           path: 'creator',
