@@ -10,8 +10,8 @@ export enum NftCollectionStatus {
 
 export enum ContractStandard {
   ERC20 = 'ERC20',
-  ERC721 = 'ERC721',
-  ERC1155 = 'ERC1155',
+  ERC721 = 'ERC-721',
+  ERC1155 = 'ERC-1155',
 }
 
 export enum FlexHausRarity {
