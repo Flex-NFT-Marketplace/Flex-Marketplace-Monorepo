@@ -325,7 +325,7 @@ export class CollectibleController {
   }
 
   @JWT()
-  @Get('get-distribution-collectibles')
+  @Post('get-distribution-collectibles')
   @ApiOperation({
     summary: 'Get distribution collectibles',
   })

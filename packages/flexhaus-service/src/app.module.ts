@@ -10,6 +10,7 @@ import { CollectibleModule } from './collectible/collectible.module';
 import { FlexHausEventModule } from './event/flexhausEvent.module';
 import { UserModule } from './user/user.module';
 import { ScheduleModule } from '@nestjs/schedule';
+import { SystemModule } from './system/system.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { ScheduleModule } from '@nestjs/schedule';
     CollectibleModule,
     FlexHausEventModule,
     UserModule,
+    SystemModule,
   ],
   controllers: [],
   providers: [JwtStrategy],
