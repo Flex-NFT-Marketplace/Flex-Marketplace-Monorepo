@@ -11,6 +11,7 @@ import {
 } from '@app/shared/models';
 import { Web3Service } from '@app/web3-service/web3.service';
 import { BaseMetadataDto } from './dto/baseMetadata.dto';
+import { HttpService } from '@nestjs/axios';
 
 const getUrl = (url: string) => {
   if (url.startsWith('ipfs://')) {
@@ -31,6 +32,7 @@ export class BaseUriService {
     @InjectModel(Chains.name)
     private readonly chainModel: Model<ChainDocument>,
     private readonly web3Service: Web3Service,
+    private readonly httpService: HttpService,
   ) {
     this.client = axios.create({
       timeout: 1000 * 10, // Wait for 5 seconds
@@ -57,7 +59,7 @@ export class BaseUriService {
 
     let metadata: BaseMetadataDto;
     try {
-      metadata = (await this.client.get(httpUrl)).data;
+      metadata = (await this.httpService.axiosRef.get(httpUrl)).data;
     } catch (error) {
       nftCollection.contractUri = baseUri;
       await nftCollection.save();
