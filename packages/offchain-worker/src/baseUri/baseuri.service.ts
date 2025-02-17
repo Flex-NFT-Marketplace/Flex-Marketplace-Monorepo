@@ -45,10 +45,16 @@ export class BaseUriService {
     const nftCollection = await this.nftCollectionModel.findById(id);
     const { nftContract } = nftCollection;
     const chain = await this.chainModel.findOne();
-    const baseUri = await this.web3Service.getCollectibleBaseUri(
-      nftContract,
-      chain.rpc,
-    );
+    let baseUri: string;
+    if (nftCollection.contractUri) {
+      baseUri = nftCollection.contractUri;
+    } else {
+      baseUri = await this.web3Service.getCollectibleBaseUri(
+        nftContract,
+        chain.rpc,
+      );
+    }
+
     if (!baseUri) return null;
 
     const httpUrl = getUrl(baseUri);
