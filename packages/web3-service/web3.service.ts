@@ -44,6 +44,7 @@ import {
 import {
   BURN_ADDRESS,
   ContractStandard,
+  OTHER_BURN_ADDRESS,
   SEQUENCER_ADDRESS,
 } from '@app/shared/models';
 import {
@@ -229,7 +230,10 @@ export class Web3Service {
                 ? EventType.MINT_721
                 : EventType.UNKNOWN_MINT;
             }
-            if (returnValues.to === BURN_ADDRESS) {
+            if (
+              returnValues.to === BURN_ADDRESS ||
+              returnValues.to === OTHER_BURN_ADDRESS
+            ) {
               eventWithType.eventType = returnValues.isKnownAsErc721
                 ? EventType.BURN_721
                 : EventType.UNKNOWN_BURN;
@@ -259,7 +263,10 @@ export class Web3Service {
             if (returnValues.from === BURN_ADDRESS) {
               eventWithType.eventType = EventType.MINT_1155;
             }
-            if (returnValues.to === BURN_ADDRESS) {
+            if (
+              returnValues.to === BURN_ADDRESS ||
+              returnValues.to === OTHER_BURN_ADDRESS
+            ) {
               eventWithType.eventType = EventType.BURN_1155;
             }
             eventWithTypes.push(eventWithType);
