@@ -76,11 +76,11 @@ export class SearchController {
     try {
       if (!query.search) {
         console.log('Uodate', query.search);
-        const key = `get-search - ${JSON.stringify({ ...query })}`;
-        let data = await this.cacheManager.get(key);
+        // const key = `get-search - ${JSON.stringify({ ...query })}`;
+        let data = null; //await this.cacheManager.get(key);
         if (!data) {
           data = await this.searchService.search(query);
-          await this.cacheManager.set(key, data, 300000);
+          // await this.cacheManager.set(key, data, 300000);
           return new BaseResult(data);
         }
         return new BaseResult(data);

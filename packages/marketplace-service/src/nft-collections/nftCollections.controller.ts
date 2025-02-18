@@ -244,11 +244,11 @@ export class NftCollectionsController {
   async getTopCollection(
     @Body() query: TopNftCollectionQueryDto,
   ): Promise<BaseResultPagination<TopNftCollectionDto>> {
-    const key = `top-collection - ${JSON.stringify({ ...query })}`;
-    let data = await this.cacheManager.get(key);
+    // const key = `top-collection - ${JSON.stringify({ ...query })}`;
+    let data = null; //await this.cacheManager.get(key);
     if (!data) {
       data = await this.nftCollectionService.getTopNFTCollection(query);
-      await this.cacheManager.set(key, data, 12 * 60 * 60 * 1e3);
+      // await this.cacheManager.set(key, data, 12 * 60 * 60 * 1e3);
     }
     return data;
   }
@@ -287,12 +287,12 @@ export class NftCollectionsController {
   async getTrendingNftCollection(
     @Body() query: TrendingNftCollectionsQueryDto,
   ): Promise<BaseResultPagination<TrendingNftCollectionsDto>> {
-    const key = `trending-nft-collection-${JSON.stringify({ ...query })}`;
-    console.log('Key', key);
-    let data = await this.cacheManager.get(key);
+    // const key = `trending-nft-collection-${JSON.stringify({ ...query })}`;
+    // console.log('Key', key);
+    let data = null; //await this.cacheManager.get(key);
     if (!data) {
       data = await this.nftCollectionService.getTrendingNFTCollections(query);
-      await this.cacheManager.set(key, data, 12 * 60 * 60 * 1e3);
+      // await this.cacheManager.set(key, data, 12 * 60 * 60 * 1e3);
     }
     return data;
   }
@@ -304,11 +304,11 @@ export class NftCollectionsController {
       if (!isHexadecimal(param.replace('0x', ''))) {
         throw new Error('Invalid Nft Address');
       }
-      const key = `total-owner - ${param}`;
-      let result: NFTCollectionSuply = await this.cacheManager.get(key);
+      // const key = `total-owner - ${param}`;
+      let result: NFTCollectionSuply = null; //await this.cacheManager.get(key);
       if (!result) {
         result = await this.nftCollectionService.getTotalOwners(param);
-        await this.cacheManager.set(key, result, 60 * 60 * 1e3);
+        // await this.cacheManager.set(key, result, 60 * 60 * 1e3);
       }
 
       return new BaseResult(result);
