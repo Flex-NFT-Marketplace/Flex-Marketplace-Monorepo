@@ -2,16 +2,15 @@ import configuration from '@app/shared/configuration';
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import axios, { AxiosInstance } from 'axios';
 import {
   ChainDocument,
   Chains,
+  Metadata,
+  MetadataDocument,
   NftCollectionDocument,
   NftCollections,
 } from '@app/shared/models';
 import { Web3Service } from '@app/web3-service/web3.service';
-import { BaseMetadataDto } from './dto/baseMetadata.dto';
-import { HttpService } from '@nestjs/axios';
 
 const getUrl = (url: string) => {
   if (url.startsWith('ipfs://')) {
@@ -31,14 +30,10 @@ export class BaseUriService {
     private readonly nftCollectionModel: Model<NftCollectionDocument>,
     @InjectModel(Chains.name)
     private readonly chainModel: Model<ChainDocument>,
+    @InjectModel(Metadata.name)
+    private readonly metadataModel: Model<MetadataDocument>,
     private readonly web3Service: Web3Service,
-    private readonly httpService: HttpService,
-  ) {
-    this.client = axios.create({
-      timeout: 1000 * 10, // Wait for 5 seconds
-    });
-  }
-  client: AxiosInstance;
+  ) {}
   logger = new Logger(BaseUriService.name);
 
   async loadBaseUri(id: string) {
@@ -63,9 +58,13 @@ export class BaseUriService {
       `baseUri of ${nftCollection.nftContract} is '${httpUrl}'`,
     );
 
-    let metadata: BaseMetadataDto;
+    let metadata: MetadataDocument;
     try {
-      metadata = (await this.httpService.axiosRef.get(httpUrl)).data;
+      let metadataId = httpUrl.replace(
+        'https://api.hyperflex.market/metadata/',
+        '',
+      );
+      metadata = await this.metadataModel.findById(metadataId);
     } catch (error) {
       nftCollection.contractUri = baseUri;
       await nftCollection.save();
