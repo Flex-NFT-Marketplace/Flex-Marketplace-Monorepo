@@ -1,6 +1,8 @@
 import {
   ChainSchema,
   Chains,
+  Metadata,
+  MetadataSchema,
   NftCollectionSchema,
   NftCollections,
 } from '@app/shared/models';
@@ -11,7 +13,6 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { Web3Service } from '@app/web3-service/web3.service';
 import { FetchBaseUriProcessor } from './queue/fetch-baseuri.processor';
 import { BaseUriService } from './baseuri.service';
-import { HttpModule } from '@nestjs/axios';
 
 @Module({
   imports: [
@@ -21,13 +22,8 @@ import { HttpModule } from '@nestjs/axios';
     MongooseModule.forFeature([
       { name: NftCollections.name, schema: NftCollectionSchema },
       { name: Chains.name, schema: ChainSchema },
+      { name: Metadata.name, schema: MetadataSchema },
     ]),
-    HttpModule.registerAsync({
-      useFactory: () => ({
-        timeout: 10000,
-        maxRedirects: 5,
-      }),
-    }),
   ],
   providers: [FetchBaseUriProcessor, BaseUriService, Web3Service],
 })
