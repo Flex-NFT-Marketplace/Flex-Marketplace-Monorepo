@@ -23,7 +23,7 @@ export class NftCollectionTaskService {
     @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
   ) {}
   private readonly logger = new Logger(NftCollectionTaskService.name);
-  // @Cron(CronExpression.EVERY_12_HOURS)
+  @Cron(CronExpression.EVERY_12_HOURS)
   async handleLoadingData() {
     try {
       const query: TrendingNftCollectionsQueryDto = {

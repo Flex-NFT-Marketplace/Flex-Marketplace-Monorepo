@@ -287,12 +287,12 @@ export class NftCollectionsController {
   async getTrendingNftCollection(
     @Body() query: TrendingNftCollectionsQueryDto,
   ): Promise<BaseResultPagination<TrendingNftCollectionsDto>> {
-    // const key = `trending-nft-collection-${JSON.stringify({ ...query })}`;
+    const key = `trending-nft-collection-${JSON.stringify({ ...query })}`;
     // console.log('Key', key);
-    let data = null; //await this.cacheManager.get(key);
+    let data = await this.cacheManager.get(key);
     if (!data) {
       data = await this.nftCollectionService.getTrendingNFTCollections(query);
-      // await this.cacheManager.set(key, data, 12 * 60 * 60 * 1e3);
+      await this.cacheManager.set(key, data, 12 * 60 * 60 * 1e3);
     }
     return data;
   }
