@@ -12,4 +12,9 @@ export class GetDistributedCollectiblesDto extends BaseQueryParams {
   @IsBoolean()
   @IsOptional()
   isClaimed?: boolean;
+
+  @ApiProperty()
+  @IsHexadecimal()
+  @IsOptional()
+  user?: string;
 }

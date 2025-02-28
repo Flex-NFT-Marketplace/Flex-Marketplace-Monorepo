@@ -12,4 +12,9 @@ export class GetSecuredCollectiblesDto extends BaseQueryParams {
   @IsBoolean()
   @IsOptional()
   isDistributed?: boolean;
+
+  @ApiProperty()
+  @IsHexadecimal()
+  @IsOptional()
+  user?: string;
 }

@@ -29,6 +29,7 @@ import { ClaimCollectibleDto } from './dto/claimCollectible.dto';
 import { Web3Service } from '@app/web3-service/web3.service';
 import { stark } from 'starknet';
 import configuration from '@app/shared/configuration';
+import { FilterDrops } from '@app/shared/types/enum.type';
 
 @Injectable()
 export class CollectibleService {
@@ -50,7 +51,7 @@ export class CollectibleService {
   async getCollectibles(
     query: GetCollectiblesDto,
   ): Promise<BaseResultPagination<FlexHausDropDocument>> {
-    const { page, size, orderBy, skipIndex } = query;
+    const { page, size, sort, skipIndex, filterBy } = query;
     const result = new BaseResultPagination<FlexHausDropDocument>();
     const filter: any = {};
 
@@ -69,59 +70,159 @@ export class CollectibleService {
       const creatorAccount = await this.userService.getOrCreateUser(
         query.creator,
       );
-      filter.creator = creatorAccount;
+      filter.creator = creatorAccount._id;
     }
 
     if (query.isHaveSet !== undefined) {
       filter.set = query.isHaveSet == true ? { $ne: null } : { $eq: null };
     }
 
-    const total = await this.flexHausDrop.countDocuments(filter);
+    const filterDrop: any = {};
+    if (filterBy) {
+      const now = Date.now();
+      switch (filterBy) {
+        case FilterDrops.UPCOMING:
+          filterDrop.startTime = { $gt: now };
+          break;
+        case FilterDrops.ONGOING:
+          filterDrop.startTime = { $lte: now };
+          filterDrop.endTime = { $gt: now };
+          break;
+        case FilterDrops.DISTRIBUTED:
+          filterDrop.isDistributed = true;
+          break;
+      }
+    }
+
+    let total = 0;
+
+    if (Object.keys(filterDrop).length === 0) {
+      total = await this.flexHausDrop.countDocuments(filter);
+    } else {
+      let items = await this.flexHausDrop.aggregate([
+        {
+          $match: filter,
+        },
+        {
+          $lookup: {
+            from: 'flexhaussets',
+            localField: 'set',
+            foreignField: '_id',
+            pipeline: [
+              {
+                $match: filterDrop,
+              },
+            ],
+            as: 'set',
+          },
+        },
+        {
+          $unwind: '$set',
+        },
+        {
+          $group: {
+            _id: 0,
+            total: {
+              $sum: 1,
+            },
+          },
+        },
+      ]);
+
+      if (items.length > 0) {
+        total = items[0].total;
+      }
+    }
     if (total === 0) {
       result.data = new PaginationDto([], 0, page, size);
       return result;
     }
 
-    const items = await this.flexHausDrop
-      .find(filter, {}, { sort: orderBy, skip: skipIndex, limit: size })
-      .populate([
-        {
-          path: 'collectible',
-          select: [
-            'name',
-            'symbol',
-            'key',
-            'nftContract',
-            'cover',
-            'avatar',
-            'featuredImage',
-            'description',
-            'attributesMap',
-            'standard',
-            'status',
-            'verified',
-            'externalLink',
-            'dropAmount',
-            'rarity',
+    const sortOperators = {};
+    for (const items of sort) {
+      sortOperators[Object.keys(items)[0]] = Object.values(items)[0];
+    }
+
+    const items = await this.flexHausDrop.aggregate([
+      {
+        $match: filter,
+      },
+      {
+        $lookup: {
+          from: 'flexhaussets',
+          localField: 'set',
+          foreignField: '_id',
+          pipeline: [
+            {
+              $match: filterDrop,
+            },
           ],
+          as: 'set',
         },
-        {
-          path: 'creator',
-          select: [
-            'address',
-            'username',
-            'email',
-            'avatar',
-            'cover',
-            'about',
-            'socials',
-            'isVerified',
+      },
+      {
+        $unwind: '$set',
+      },
+      {
+        $sort: sortOperators,
+      },
+      { $skip: skipIndex },
+      { $limit: size },
+      {
+        $lookup: {
+          from: 'nftcollections',
+          localField: 'collectible',
+          foreignField: '_id',
+          pipeline: [
+            {
+              $project: {
+                name: 1,
+                symbol: 1,
+                key: 1,
+                nftContract: 1,
+                cover: 1,
+                avatar: 1,
+                featuredImage: 1,
+                description: 1,
+                attributesMap: 1,
+                standard: 1,
+                status: 1,
+                verified: 1,
+                externalLink: 1,
+                dropAmount: 1,
+                rarity: 1,
+              },
+            },
           ],
+          as: 'collectible',
         },
-        {
-          path: 'set',
+      },
+      {
+        $unwind: '$collectible',
+      },
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'creator',
+          foreignField: '_id',
+          pipeline: [
+            {
+              $project: {
+                address: 1,
+                username: 1,
+                email: 1,
+                avatar: 1,
+                cover: 1,
+                about: 1,
+                socials: 1,
+                isVerified: 1,
+              },
+            },
+          ],
+          as: 'creator',
         },
-      ]);
+      },
+    ]);
 
     result.data = new PaginationDto(items, total, page, size);
     return result;
@@ -356,9 +457,8 @@ export class CollectibleService {
 
   async getSecuredCollectibles(
     query: GetSecuredCollectiblesDto,
-    user: string,
   ): Promise<BaseResultPagination<FlexHausSecureCollectibleDocument>> {
-    const { page, size, orderBy, skipIndex } = query;
+    const { page, size, orderBy, skipIndex, user } = query;
     const result =
       new BaseResultPagination<FlexHausSecureCollectibleDocument>();
     const filter: any = {};
@@ -380,6 +480,8 @@ export class CollectibleService {
 
     if (query.isDistributed !== undefined) {
       filter.isDistributed = query.isDistributed;
+    } else {
+      filter.isDistributed = false;
     }
 
     filter.isSecured = true;
@@ -417,9 +519,8 @@ export class CollectibleService {
 
   async getDistributionCollectibles(
     query: GetDistributedCollectiblesDto,
-    user: string,
   ): Promise<BaseResultPagination<FlexHausSecureCollectibleDocument>> {
-    const { page, size, orderBy, skipIndex } = query;
+    const { page, size, orderBy, skipIndex, user } = query;
     const result =
       new BaseResultPagination<FlexHausSecureCollectibleDocument>();
     const filter: any = {};

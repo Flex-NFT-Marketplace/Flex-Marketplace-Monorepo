@@ -282,7 +282,6 @@ export class CollectibleController {
     return new BaseResult(result);
   }
 
-  @JWT()
   @Post('get-secured-collectibles')
   @ApiOperation({
     summary: 'Get secured collectibles',
@@ -316,15 +315,10 @@ export class CollectibleController {
   })
   async getSecuredCollectibles(
     @Body() query: GetSecuredCollectiblesDto,
-    @User() user: iInfoToken,
   ): Promise<BaseResultPagination<FlexHausSecureCollectibleDocument>> {
-    return await this.collectibleService.getSecuredCollectibles(
-      query,
-      user.sub,
-    );
+    return await this.collectibleService.getSecuredCollectibles(query);
   }
 
-  @JWT()
   @Post('get-distribution-collectibles')
   @ApiOperation({
     summary: 'Get distribution collectibles',
@@ -358,12 +352,8 @@ export class CollectibleController {
   })
   async getDistributionCollectibles(
     @Body() query: GetDistributedCollectiblesDto,
-    @User() user: iInfoToken,
   ): Promise<BaseResultPagination<FlexHausSecureCollectibleDocument>> {
-    return await this.collectibleService.getDistributionCollectibles(
-      query,
-      user.sub,
-    );
+    return await this.collectibleService.getDistributionCollectibles(query);
   }
 
   @JWT()

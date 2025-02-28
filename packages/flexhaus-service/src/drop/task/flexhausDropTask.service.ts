@@ -86,6 +86,8 @@ export class FlexHausDropTaskService {
               collectible: col._id,
             });
 
+            if (!dropDetail) return;
+
             let distributedAmount = 0;
             if (
               event &&
@@ -113,6 +115,7 @@ export class FlexHausDropTaskService {
             if (
               (!event || !event.isCancelled) &&
               dropDetail.isRandomToSubscribers &&
+              dropDetail.dropType === FlexHausDropType.Free &&
               col.dropAmount > distributedAmount
             ) {
               await this.distributeToRandom(

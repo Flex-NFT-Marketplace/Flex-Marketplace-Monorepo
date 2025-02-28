@@ -327,6 +327,43 @@ export class FlexHausEventController {
     return await this.flexHausEventService.getLeaderboard(query);
   }
 
+  @Post('get-latest-donate')
+  @ApiOperation({
+    summary: 'Get latest donate by user',
+  })
+  @ApiOkResponse({
+    schema: {
+      allOf: [
+        {
+          $ref: getSchemaPath(BaseResultPagination),
+        },
+        {
+          properties: {
+            data: {
+              allOf: [
+                {
+                  properties: {
+                    items: {
+                      type: 'array',
+                      items: {
+                        $ref: getSchemaPath(FlexHausDonates),
+                      },
+                    },
+                  },
+                },
+              ],
+            },
+          },
+        },
+      ],
+    },
+  })
+  async getLatestDonate(
+    @Body() query: QueryLeaderboardDto,
+  ): Promise<BaseResultPagination<FlexHausDonates>> {
+    return await this.flexHausEventService.getLatestDonate(query);
+  }
+
   @Get('get-total-points')
   @ApiOperation({
     summary: 'Get total points by event',

@@ -449,6 +449,63 @@ export class FlexHausEventService {
     return result;
   }
 
+  async getLatestDonate(query: QueryLeaderboardDto) {
+    const { eventId, page, size, skipIndex } = query;
+    const result = new BaseResultPagination<FlexHausDonates>();
+
+    const event = await this.flexHausEventModel.findOne({ _id: eventId });
+    if (!event) {
+      throw new HttpException('Event not found', HttpStatus.NOT_FOUND);
+    }
+
+    const filter: any = {};
+    filter.event = event._id;
+
+    const total = await this.flexHausDonateModel.countDocuments(filter);
+    if (total === 0) {
+      result.data = new PaginationDto([], 0, page, size);
+      return result;
+    }
+
+    const items = await this.flexHausDonateModel
+      .find(
+        filter,
+        {},
+        { sort: { donatedAt: -1 }, skip: skipIndex, limit: size },
+      )
+      .populate([
+        {
+          path: 'user',
+          select: [
+            'address',
+            'username',
+            'email',
+            'avatar',
+            'cover',
+            'about',
+            'socials',
+            'isVerified',
+          ],
+        },
+        {
+          path: 'creator',
+          select: [
+            'address',
+            'username',
+            'email',
+            'avatar',
+            'cover',
+            'about',
+            'socials',
+            'isVerified',
+          ],
+        },
+      ]);
+
+    result.data = new PaginationDto(items, total, page, size);
+    return result;
+  }
+
   async getTotalPoints(eventId: string) {
     const event = await this.flexHausEventModel.findOne({
       _id: eventId,

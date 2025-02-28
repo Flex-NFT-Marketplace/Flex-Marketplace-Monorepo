@@ -200,6 +200,15 @@ export class UserService {
     });
   }
 
+  async getTotalSubscribing(userAddress: string) {
+    const formatAddress = formattedContractAddress(userAddress);
+    const user = await this.getOrCreateUser(formatAddress);
+    return await this.subscriptionModel.countDocuments({
+      user: user,
+      isUnSubscribe: false,
+    });
+  }
+
   async getSubscribers(query: QuerySubscriberDto) {
     const { creator, page, size, orderBy, skipIndex } = query;
     const result = new BaseResultPagination<FlexHausSubscription>();

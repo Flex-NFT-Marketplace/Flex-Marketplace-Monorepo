@@ -1,6 +1,7 @@
 import { BaseQueryParams } from '@app/shared/types';
-import { IsOptional, IsHexadecimal, IsBoolean } from 'class-validator';
+import { IsOptional, IsHexadecimal, IsBoolean, IsEnum } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { FilterDrops } from '@app/shared/types/enum.type';
 
 export class GetCollectiblesDto extends BaseQueryParams {
   @ApiProperty()
@@ -17,4 +18,9 @@ export class GetCollectiblesDto extends BaseQueryParams {
   @IsBoolean()
   @IsOptional()
   isHaveSet?: boolean;
+
+  @ApiProperty()
+  @IsEnum(FilterDrops)
+  @IsOptional()
+  filterBy?: FilterDrops;
 }

@@ -185,6 +185,42 @@ export class UserController {
     return new BaseResult(totalSubscription);
   }
 
+  @Get('/:user/total-subscribing')
+  @ApiOperation({
+    summary: 'Get the total subscribing by the user',
+  })
+  @ApiOkResponse({
+    schema: {
+      allOf: [
+        {
+          $ref: getSchemaPath(BaseResult),
+        },
+        {
+          properties: {
+            data: {
+              allOf: [
+                {
+                  $ref: getSchemaPath(Number),
+                },
+              ],
+            },
+          },
+        },
+      ],
+    },
+  })
+  async getTotalSubscribing(
+    @Param('user') user: string,
+  ): Promise<BaseResult<number>> {
+    if (!isHexadecimal(user)) {
+      throw new HttpException('Invalid user address', HttpStatus.BAD_REQUEST);
+    }
+
+    const totalSubscribing = await this.userService.getTotalSubscribing(user);
+
+    return new BaseResult(totalSubscribing);
+  }
+
   @Post('/subscribers')
   @ApiOperation({
     summary: 'Get subscribers by creator',
