@@ -63,7 +63,7 @@ export class CollectibleService {
       if (!collectible) {
         throw new HttpException('Collectible not found', HttpStatus.NOT_FOUND);
       }
-      filter.collectible = collectible;
+      filter.collectible = collectible._id;
     }
 
     if (query.creator) {
