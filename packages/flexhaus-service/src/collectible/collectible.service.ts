@@ -75,6 +75,8 @@ export class CollectibleService {
 
     if (query.isHaveSet !== undefined) {
       filter.set = query.isHaveSet == true ? { $ne: null } : { $eq: null };
+    } else {
+      filter.set = { $ne: null };
     }
 
     const filterDrop: any = {};
