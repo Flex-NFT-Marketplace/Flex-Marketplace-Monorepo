@@ -224,6 +224,9 @@ export class CollectibleService {
           as: 'creator',
         },
       },
+      {
+        $unwind: '$creator',
+      },
     ]);
 
     result.data = new PaginationDto(items, total, page, size);
