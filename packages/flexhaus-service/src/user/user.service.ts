@@ -2,10 +2,14 @@ import { InjectModel } from '@nestjs/mongoose';
 import {
   ChainDocument,
   Chains,
+  FlexHausDonateDocument,
+  FlexHausDonates,
   FlexHausPayment,
   FlexHausPaymentDocument,
   FlexHausSubscription,
   FlexHausSubscriptionDocument,
+  NftCollectionDocument,
+  NftCollections,
   UserDocument,
   Users,
 } from '@app/shared/models';
@@ -15,10 +19,10 @@ import { v1 as uuidv1 } from 'uuid';
 import { formattedContractAddress } from '@app/shared/utils';
 import { SubscribeDTO } from './dto/subscribe.dto';
 import { QuerySubscriberDto } from './dto/querySubscriber.dto';
-import { BaseResultPagination } from '@app/shared/types';
+import { BaseQueryParams, BaseResultPagination } from '@app/shared/types';
 import { PaginationDto } from '@app/shared/types/pagination.dto';
 import { stark, ec, CallData, hash } from 'starknet';
-import { decryptData, encryptData } from '@app/shared/utils/encode';
+import { encryptData } from '@app/shared/utils/encode';
 
 @Injectable()
 export class UserService {
@@ -30,6 +34,10 @@ export class UserService {
     private paymentModel: Model<FlexHausPaymentDocument>,
     @InjectModel(Chains.name)
     private chainModel: Model<ChainDocument>,
+    @InjectModel(FlexHausDonates.name)
+    private readonly flexHausDonateModel: Model<FlexHausDonateDocument>,
+    @InjectModel(NftCollections.name)
+    private readonly nftCollectionModel: Model<NftCollectionDocument>,
   ) {}
 
   async getOrCreateUser(userAddress: string): Promise<UserDocument> {
@@ -209,6 +217,26 @@ export class UserService {
     });
   }
 
+  async getTotalAllTimeSupport(userAddress: string) {
+    const formatAddress = formattedContractAddress(userAddress);
+    const user = await this.getOrCreateUser(formatAddress);
+    const total = await this.flexHausDonateModel.aggregate([
+      {
+        $match: {
+          creator: user._id,
+        },
+      },
+      {
+        $group: {
+          _id: 0,
+          total: { $sum: '$amount' },
+        },
+      },
+    ]);
+
+    return total[0]?.total ?? 0;
+  }
+
   async getSubscribers(query: QuerySubscriberDto) {
     const { creator, page, size, orderBy, skipIndex } = query;
     const result = new BaseResultPagination<FlexHausSubscription>();
@@ -251,6 +279,114 @@ export class UserService {
     return result;
   }
 
+  async getRandomCreators() {
+    const items = await this.nftCollectionModel.aggregate([
+      {
+        $match: {
+          isFlexHausCollectible: true,
+        },
+      },
+      {
+        $group: {
+          _id: '$owner',
+        },
+      },
+      {
+        $sample: {
+          size: 10,
+        },
+      },
+      {
+        $lookup: {
+          from: 'users',
+          localField: '_id',
+          foreignField: '_id',
+          pipeline: [
+            {
+              $project: {
+                _id: 1,
+                username: 1,
+                avatar: 1,
+                address: 1,
+                cover: 1,
+                isVerified: 1,
+                social: 1,
+                about: 1,
+              },
+            },
+          ],
+          as: 'creator',
+        },
+      },
+      {
+        $unwind: '$creator',
+      },
+      {
+        $replaceRoot: {
+          newRoot: '$creator',
+        },
+      },
+    ]);
+
+    return items;
+  }
+
+  async getHighlightsCreators() {
+    const items = await this.subscriptionModel.aggregate([
+      {
+        $group: {
+          _id: '$creator',
+          count: { $sum: 1 },
+        },
+      },
+      {
+        $sort: { count: -1 },
+      },
+      {
+        $limit: 10,
+      },
+      {
+        $lookup: {
+          from: 'users',
+          localField: '_id',
+          foreignField: '_id',
+          pipeline: [
+            {
+              $project: {
+                _id: 1,
+                username: 1,
+                avatar: 1,
+                address: 1,
+                cover: 1,
+                isVerified: 1,
+                social: 1,
+                about: 1,
+              },
+            },
+          ],
+          as: 'creator',
+        },
+      },
+      {
+        $unwind: '$creator',
+      },
+      {
+        $project: {
+          _id: 0,
+          username: '$creator.username',
+          avatar: '$creator.avatar',
+          address: '$creator.address',
+          cover: '$creator.cover',
+          isVerified: '$creator.isVerified',
+          social: '$creator.social',
+          about: '$creator.about',
+        },
+      },
+    ]);
+
+    return items;
+  }
+
   async getOrGeneratePaymentWallet(creatorAddress: string) {
     const creatorUser = await this.getOrCreateUser(creatorAddress);
     const now = Date.now();
@@ -275,8 +411,6 @@ export class UserService {
       owner: starkKeyPubAX,
       guardian: '0',
     });
-
-    console.log();
 
     const AXcontractAddress = hash.calculateContractAddressFromHash(
       starkKeyPubAX,

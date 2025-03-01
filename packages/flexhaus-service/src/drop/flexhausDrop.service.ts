@@ -4,6 +4,7 @@ import { Model } from 'mongoose';
 import {
   FlexHausDrop,
   FlexHausDropDocument,
+  FlexHausDropType,
   FlexHausEventDocument,
   FlexHausEvents,
   FlexHausSet,
@@ -403,5 +404,112 @@ export class FlexDropService {
       throw new HttpException('Set not found', HttpStatus.NOT_FOUND);
     }
     return new BaseResult(set);
+  }
+
+  async getHighlightsDrops(): Promise<FlexHausDropDocument[]> {
+    const now = Date.now();
+    const items = await this.flexHausDropModel.aggregate([
+      {
+        $match: {
+          dropType: FlexHausDropType.Protected,
+        },
+      },
+      {
+        $lookup: {
+          from: 'flexhaussets',
+          localField: 'set',
+          foreignField: '_id',
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    {
+                      $lte: ['$startTime', now],
+                    },
+                    {
+                      $gt: ['$expiryTime', now],
+                    },
+                  ],
+                },
+              },
+            },
+          ],
+          as: 'set',
+        },
+      },
+      { $unwind: '$set' },
+      {
+        $lookup: {
+          from: 'flexhaussecurecollectibles',
+          localField: 'collectible',
+          foreignField: 'collectible',
+          pipeline: [
+            {
+              $group: {
+                _id: '$collectible',
+                totalSecure: {
+                  $sum: 1,
+                },
+              },
+            },
+          ],
+          as: 'totalSecure',
+        },
+      },
+      {
+        $unwind: {
+          path: '$totalSecure',
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $sort: {
+          'totalSecure.totalSecure': -1,
+        },
+      },
+      {
+        $project: {
+          totalSecure: 0,
+        },
+      },
+      {
+        $limit: 10,
+      },
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'creator',
+          foreignField: '_id',
+          pipeline: [
+            {
+              $project: {
+                _id: 1,
+                username: 1,
+                avatar: 1,
+                address: 1,
+                cover: 1,
+                isVerified: 1,
+                social: 1,
+                about: 1,
+              },
+            },
+          ],
+          as: 'creator',
+        },
+      },
+      { $unwind: '$creator' },
+      {
+        $lookup: {
+          from: 'nftcollections',
+          localField: 'collectible',
+          foreignField: '_id',
+          as: 'collectible',
+        },
+      },
+      { $unwind: '$collectible' },
+    ]);
+
+    return items;
   }
 }

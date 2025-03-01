@@ -13,6 +13,8 @@ import {
   FlexHausPaymentSchema,
   FlexHausDonates,
   flexHausDonateSchema,
+  NftCollectionSchema,
+  NftCollections,
 } from '@app/shared/models';
 import { FlexHausEventService } from './flexhausEvent.service';
 import { UserService } from '../user/user.service';
@@ -27,6 +29,7 @@ import { FlexHausEventController } from './flexhausEvent.controller';
       { name: FlexHausPayment.name, schema: FlexHausPaymentSchema },
       { name: Chains.name, schema: ChainSchema },
       { name: FlexHausDonates.name, schema: flexHausDonateSchema },
+      { name: NftCollections.name, schema: NftCollectionSchema },
     ]),
   ],
   providers: [FlexHausEventService, UserService],

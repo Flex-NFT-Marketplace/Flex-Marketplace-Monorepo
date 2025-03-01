@@ -10,7 +10,7 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { UserService } from './user.service';
-import { FlexHausSubscription } from '@app/shared/models';
+import { FlexHausSubscription, UserDocument, Users } from '@app/shared/models';
 import { JWT, User, iInfoToken } from '@app/shared/modules';
 import { BaseResult } from '@app/shared/types/base.result';
 import { SubscribeDTO } from './dto/subscribe.dto';
@@ -22,7 +22,7 @@ import {
   ApiExtraModels,
 } from '@nestjs/swagger';
 import { isHexadecimal } from 'class-validator';
-import { BaseResultPagination } from '@app/shared/types';
+import { BaseQueryParams, BaseResultPagination } from '@app/shared/types';
 import { QuerySubscriberDto } from './dto/querySubscriber.dto';
 import { PaymentAddressDTO } from './dto/paymentAddress.dto';
 
@@ -36,6 +36,8 @@ import { PaymentAddressDTO } from './dto/paymentAddress.dto';
   PaymentAddressDTO,
   Number,
   Boolean,
+  BaseQueryParams,
+  Users,
 )
 export class UserController {
   constructor(private readonly userService: UserService) {}
@@ -185,6 +187,40 @@ export class UserController {
     return new BaseResult(totalSubscription);
   }
 
+  @Get('/:user/total-all-time-support')
+  @ApiOperation({
+    summary: 'Get the total all time support by the user',
+  })
+  @ApiOkResponse({
+    schema: {
+      allOf: [
+        {
+          $ref: getSchemaPath(BaseResult),
+        },
+        {
+          type: 'object',
+          properties: {
+            data: {
+              type: 'number',
+            },
+          },
+        },
+      ],
+    },
+  })
+  async getTotalAllTimeSupport(
+    @Param('user') user: string,
+  ): Promise<BaseResult<Number>> {
+    if (!isHexadecimal(user)) {
+      throw new HttpException('Invalid user address', HttpStatus.BAD_REQUEST);
+    }
+
+    const totalAllTimeSupport =
+      await this.userService.getTotalAllTimeSupport(user);
+
+    return new BaseResult(totalAllTimeSupport);
+  }
+
   @Get('/:user/total-subscribing')
   @ApiOperation({
     summary: 'Get the total subscribing by the user',
@@ -219,6 +255,78 @@ export class UserController {
     const totalSubscribing = await this.userService.getTotalSubscribing(user);
 
     return new BaseResult(totalSubscribing);
+  }
+
+  @Post('get-highlights-creators')
+  @ApiOperation({
+    summary: 'Get creators with highlights',
+  })
+  @ApiOkResponse({
+    schema: {
+      allOf: [
+        {
+          $ref: getSchemaPath(BaseResult),
+        },
+        {
+          properties: {
+            data: {
+              allOf: [
+                {
+                  properties: {
+                    items: {
+                      type: 'array',
+                      items: {
+                        $ref: getSchemaPath(Users),
+                      },
+                    },
+                  },
+                },
+              ],
+            },
+          },
+        },
+      ],
+    },
+  })
+  async getHighlightsCreators(): Promise<BaseResult<UserDocument[]>> {
+    const creators = await this.userService.getHighlightsCreators();
+    return new BaseResult(creators);
+  }
+
+  @Post('get-random-creators')
+  @ApiOperation({
+    summary: 'Get random creators',
+  })
+  @ApiOkResponse({
+    schema: {
+      allOf: [
+        {
+          $ref: getSchemaPath(BaseResult),
+        },
+        {
+          properties: {
+            data: {
+              allOf: [
+                {
+                  properties: {
+                    items: {
+                      type: 'array',
+                      items: {
+                        $ref: getSchemaPath(Users),
+                      },
+                    },
+                  },
+                },
+              ],
+            },
+          },
+        },
+      ],
+    },
+  })
+  async getRandomCreators(): Promise<BaseResult<UserDocument[]>> {
+    const creators = await this.userService.getRandomCreators();
+    return new BaseResult(creators);
   }
 
   @Post('/subscribers')

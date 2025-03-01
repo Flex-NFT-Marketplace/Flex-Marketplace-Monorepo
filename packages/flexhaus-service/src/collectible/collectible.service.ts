@@ -468,9 +468,11 @@ export class CollectibleService {
       new BaseResultPagination<FlexHausSecureCollectibleDocument>();
     const filter: any = {};
 
-    const userDocument = await this.userService.getOrCreateUser(user);
+    if (user) {
+      const userDocument = await this.userService.getOrCreateUser(user);
 
-    filter.user = userDocument;
+      filter.user = userDocument;
+    }
 
     if (query.collectible) {
       const collectible = await this.collectible.findOne({
@@ -530,9 +532,11 @@ export class CollectibleService {
       new BaseResultPagination<FlexHausSecureCollectibleDocument>();
     const filter: any = {};
 
-    const userDocument = await this.userService.getOrCreateUser(user);
+    if (user) {
+      const userDocument = await this.userService.getOrCreateUser(user);
 
-    filter.user = userDocument;
+      filter.user = userDocument;
+    }
 
     if (query.collectible) {
       const collectible = await this.collectible.findOne({
@@ -574,6 +578,22 @@ export class CollectibleService {
             'standard',
             'dropAmount',
             'rarity',
+          ],
+        },
+        {
+          path: 'user',
+          select: [
+            'id',
+            'name',
+            'avatar',
+            'email',
+            'username',
+            'bio',
+            'address',
+            'role',
+            'isActive',
+            'isVerified',
+            'isAdmin',
           ],
         },
       ]);

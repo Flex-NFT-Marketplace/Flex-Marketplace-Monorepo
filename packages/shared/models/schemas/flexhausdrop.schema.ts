@@ -46,4 +46,5 @@ export class FlexHausDrop extends BaseSchema {
 
 export const FlexHausDropSchema = SchemaFactory.createForClass(FlexHausDrop);
 FlexHausDropSchema.index({ collectible: 1 });
+FlexHausDropSchema.index({ dropType: 1 });
 FlexHausDropSchema.index({ collectible: 1, set: 1 });
