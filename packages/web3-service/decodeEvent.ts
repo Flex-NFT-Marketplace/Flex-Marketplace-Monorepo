@@ -168,7 +168,7 @@ export type ERC1155TransferReturnValue = {
   from: string;
   to: string;
   tokenId: string;
-  nftAddress: string;
+  contractAddress: string;
   value: number;
   timestamp: number;
   isFlexDropMinted?: boolean;
@@ -199,7 +199,7 @@ export const decodeERC115Transfer = (
         num.toHex(parsedEvent.TransferSingle.to as BigNumberish),
       ),
       tokenId: (parsedEvent.TransferSingle.id as bigint).toString(),
-      nftAddress,
+      contractAddress: nftAddress,
       timestamp,
       value: Number((parsedEvent.TransferSingle.value as bigint).toString()),
     };
@@ -223,7 +223,7 @@ export const decodeERC115Transfer = (
           num.toHex(parsedEvent.TransferSingle.to as BigNumberish),
         ),
         tokenId: (parsedEvent.TransferSingle.id as bigint).toString(),
-        nftAddress,
+        contractAddress: nftAddress,
         timestamp,
         value: Number((parsedEvent.TransferSingle.value as bigint).toString()),
       };
@@ -259,7 +259,7 @@ export const decodeERC115TransferBatch = (
         from: fromAddress,
         to: toAddress,
         tokenId: (ids[i] as bigint).toString(),
-        nftAddress,
+        contractAddress: nftAddress,
         timestamp,
         value: Number((values[i] as bigint).toString()),
       });
@@ -286,7 +286,7 @@ export const decodeERC115TransferBatch = (
           from: fromAddress,
           to: toAddress,
           tokenId: (ids[i] as bigint).toString(),
-          nftAddress,
+          contractAddress: nftAddress,
           timestamp,
           value: Number((values[i] as bigint).toString()),
         });

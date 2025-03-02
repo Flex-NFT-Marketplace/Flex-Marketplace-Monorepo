@@ -888,8 +888,14 @@ export class NftItemService {
     chain: ChainDocument,
     index: number,
   ) {
-    const { from, to, tokenId, nftAddress, timestamp, value } =
-      log.returnValues as ERC1155TransferReturnValue;
+    const {
+      from,
+      to,
+      tokenId,
+      contractAddress: nftAddress,
+      timestamp,
+      value,
+    } = log.returnValues as ERC1155TransferReturnValue;
 
     const nftDocuments = await this.nftModel.find(
       {
@@ -924,8 +930,14 @@ export class NftItemService {
     chain: ChainDocument,
     index: number,
   ) {
-    const { from, to, tokenId, nftAddress, timestamp, value } =
-      log.returnValues as ERC1155TransferReturnValue;
+    const {
+      from,
+      to,
+      tokenId,
+      contractAddress: nftAddress,
+      timestamp,
+      value,
+    } = log.returnValues as ERC1155TransferReturnValue;
 
     const nftCollection = await this.getOrCreateNftCollection(
       nftAddress,
@@ -1012,8 +1024,14 @@ export class NftItemService {
     chain: ChainDocument,
     index: number,
   ) {
-    const { from, to, tokenId, nftAddress, timestamp, value } =
-      log.returnValues as ERC1155TransferReturnValue;
+    const {
+      from,
+      to,
+      tokenId,
+      contractAddress: nftAddress,
+      timestamp,
+      value,
+    } = log.returnValues as ERC1155TransferReturnValue;
 
     const nftCollection = await this.getOrCreateNftCollection(
       nftAddress,
@@ -1119,8 +1137,14 @@ export class NftItemService {
     chain: ChainDocument,
     index: number,
   ) {
-    const { from, to, tokenId, nftAddress, timestamp, value } =
-      log.returnValues as ERC1155TransferReturnValue;
+    const {
+      from,
+      to,
+      tokenId,
+      contractAddress: nftAddress,
+      timestamp,
+      value,
+    } = log.returnValues as ERC1155TransferReturnValue;
 
     const nftCollection = await this.getOrCreateNftCollection(
       nftAddress,
