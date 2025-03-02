@@ -16,5 +16,10 @@ export class GetFlexHausSetDto extends BaseQueryParams {
   @ApiProperty()
   @IsBoolean()
   @IsOptional()
+  isAbleToAddNew?: boolean;
+
+  @ApiProperty()
+  @IsBoolean()
+  @IsOptional()
   isCancelled?: boolean;
 }
