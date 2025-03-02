@@ -410,8 +410,8 @@ export class CollectibleService {
 
     const flexHausSecureCollectible =
       await this.flexHausSecureCollectibleModel.findOne({
-        user: userDocument,
-        collectible: collectibleDocument,
+        user: userDocument._id,
+        collectible: collectibleDocument._id,
       });
 
     if (flexHausSecureCollectible) {
@@ -423,7 +423,7 @@ export class CollectibleService {
 
     const totalSecuredCollectibles =
       await this.flexHausSecureCollectibleModel.countDocuments({
-        collectible: collectibleDocument,
+        collectible: collectibleDocument._id,
       });
 
     if (totalSecuredCollectibles == collectibleDocument.dropAmount) {
