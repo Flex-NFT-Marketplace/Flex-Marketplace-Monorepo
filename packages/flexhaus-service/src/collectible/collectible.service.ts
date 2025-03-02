@@ -553,6 +553,10 @@ export class CollectibleService {
       filter.isClaimed = query.isClaimed;
     }
 
+    if (query.isSecured !== undefined) {
+      filter.isSecured = query.isSecured;
+    }
+
     filter.isDistributed = true;
 
     const total =
