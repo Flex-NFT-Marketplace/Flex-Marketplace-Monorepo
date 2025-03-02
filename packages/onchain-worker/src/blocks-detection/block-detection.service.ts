@@ -333,28 +333,28 @@ export class BlockDetectionService extends OnchainWorker {
             !matchTakerAskEv.find(
               e =>
                 e.transaction_hash === ev.transaction_hash &&
-                e.returnValues.collection == ev.returnValues.nftAddress &&
+                e.returnValues.collection == ev.returnValues.contractAddress &&
                 e.returnValues.tokenId == ev.returnValues.tokenId &&
                 e.returnValues.seller == ev.returnValues.from,
             ) &&
             !matchTakerBidEv.find(
               e =>
                 e.transaction_hash === ev.transaction_hash &&
-                e.returnValues.collection == ev.returnValues.nftAddress &&
+                e.returnValues.collection == ev.returnValues.contractAddress &&
                 e.returnValues.tokenId == ev.returnValues.tokenId &&
                 e.returnValues.seller == ev.returnValues.from,
             ) &&
             !itemStakedEv.find(
               e =>
                 e.transaction_hash === ev.transaction_hash &&
-                e.returnValues.collection == ev.returnValues.nftAddress &&
+                e.returnValues.collection == ev.returnValues.contractAddress &&
                 e.returnValues.tokenId == ev.returnValues.tokenId &&
                 e.returnValues.owner == ev.returnValues.from,
             ) &&
             !itemUnstakedEv.find(
               e =>
                 e.transaction_hash === ev.transaction_hash &&
-                e.returnValues.collection == ev.returnValues.nftAddress &&
+                e.returnValues.collection == ev.returnValues.contractAddress &&
                 e.returnValues.tokenId == ev.returnValues.tokenId &&
                 e.returnValues.owner == ev.returnValues.to,
             )
@@ -379,7 +379,7 @@ export class BlockDetectionService extends OnchainWorker {
           if (
             (log.eventType === EventType.MINT_1155 ||
               log.eventType === EventType.MINT_721) &&
-            log.returnValues.nftAddress === ev.returnValues.nftAddress
+            log.returnValues.contractAddress === ev.returnValues.contractAddress
           ) {
             log.returnValues.isFlexDropMinted = true;
             log.returnValues.isWarpcastMinted = ev.returnValues.isWarpcast;
@@ -394,7 +394,7 @@ export class BlockDetectionService extends OnchainWorker {
         eventlogs.map(log => {
           if (
             log.eventType === EventType.MINT_721 &&
-            log.returnValues.nftAddress === ev.returnValues.collectible
+            log.returnValues.contractAddress === ev.returnValues.collectible
           ) {
             log.returnValues.isClaimCollectible = true;
           }
