@@ -643,8 +643,8 @@ export class CollectibleService {
     const chainDocument = await this.chainModel.findOne();
 
     const signer = this.web3Service.getAccountInstance(
-      configuration().flexhaus_validator.privateKey,
       configuration().flexhaus_validator.address,
+      configuration().flexhaus_validator.privateKey,
       chainDocument.rpc,
     );
 
