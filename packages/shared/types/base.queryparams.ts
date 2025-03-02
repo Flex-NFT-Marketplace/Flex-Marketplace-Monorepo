@@ -36,7 +36,7 @@ export class BaseQueryParams {
     const orderBy = this.orderBy ?? 'createdAt';
     const order: any = [{ [orderBy]: this.desc === 'asc' ? 1 : -1 }];
     if (orderBy !== 'createdAt') {
-      order.push({ createdAt: 1 });
+      order.push({ createdAt: -1 });
     }
     return order;
   }

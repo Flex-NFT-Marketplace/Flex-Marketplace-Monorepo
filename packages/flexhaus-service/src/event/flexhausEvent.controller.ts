@@ -250,7 +250,7 @@ export class FlexHausEventController {
     return new BaseResult(result);
   }
 
-  // @JWT()
+  @JWT()
   @Get('get-user-ranking')
   @ApiOperation({
     summary: 'Get user ranking',
@@ -277,7 +277,7 @@ export class FlexHausEventController {
   })
   async getUserRanking(
     @Query('eventId') eventId: string,
-    // @User() user: iInfoToken,
+    @User() user: iInfoToken,
   ): Promise<BaseResult<Number>> {
     if (!isMongoId(eventId)) {
       throw new HttpException('Invalid eventId', HttpStatus.BAD_REQUEST);
@@ -285,7 +285,7 @@ export class FlexHausEventController {
 
     const result = await this.flexHausEventService.getUserRanking(
       eventId,
-      '0x00ed159a749f4de53f63da3ee86e8fc307e4b0d177e4ffafa837a6c9b5eaf3b0',
+      user.sub,
     );
     return new BaseResult(result);
   }
@@ -325,6 +325,43 @@ export class FlexHausEventController {
     @Body() query: QueryLeaderboardDto,
   ): Promise<BaseResultPagination<FlexHausDonates>> {
     return await this.flexHausEventService.getLeaderboard(query);
+  }
+
+  @Post('get-latest-donate')
+  @ApiOperation({
+    summary: 'Get latest donate by user',
+  })
+  @ApiOkResponse({
+    schema: {
+      allOf: [
+        {
+          $ref: getSchemaPath(BaseResultPagination),
+        },
+        {
+          properties: {
+            data: {
+              allOf: [
+                {
+                  properties: {
+                    items: {
+                      type: 'array',
+                      items: {
+                        $ref: getSchemaPath(FlexHausDonates),
+                      },
+                    },
+                  },
+                },
+              ],
+            },
+          },
+        },
+      ],
+    },
+  })
+  async getLatestDonate(
+    @Body() query: QueryLeaderboardDto,
+  ): Promise<BaseResultPagination<FlexHausDonates>> {
+    return await this.flexHausEventService.getLatestDonate(query);
   }
 
   @Get('get-total-points')

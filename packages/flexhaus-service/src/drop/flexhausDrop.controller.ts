@@ -18,7 +18,12 @@ import {
 import { BaseResult, BaseResultPagination } from '@app/shared/types';
 import { CreateSetDto } from './dto/createSet.dto';
 import { FlexDropService } from './flexhausDrop.service';
-import { FlexHausSet, FlexHausSetDocument } from '@app/shared/models';
+import {
+  FlexHausDrop,
+  FlexHausDropDocument,
+  FlexHausSet,
+  FlexHausSetDocument,
+} from '@app/shared/models';
 import { JWT, User, iInfoToken } from '@app/shared/modules';
 import { GetFlexHausSetDto } from './dto/getSet.dto';
 import { isHexadecimal } from 'class-validator';
@@ -178,5 +183,35 @@ export class FlexDropController {
     }
 
     return await this.flexDropService.getSetById(id);
+  }
+
+  @Post('get-highlights-drops')
+  @ApiOperation({
+    summary: 'Get highlights drops',
+  })
+  @ApiOkResponse({
+    schema: {
+      allOf: [
+        {
+          $ref: getSchemaPath(BaseResult),
+        },
+        {
+          type: 'object',
+          properties: {
+            data: {
+              type: 'array',
+              items: {
+                $ref: getSchemaPath(FlexHausDrop),
+              },
+            },
+          } as const,
+        },
+      ],
+    },
+    description: 'Get highlights drops',
+  })
+  async getHighlightsDrops(): Promise<BaseResult<FlexHausDropDocument[]>> {
+    const drops = await this.flexDropService.getHighlightsDrops();
+    return new BaseResult(drops);
   }
 }

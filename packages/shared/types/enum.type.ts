@@ -17,3 +17,9 @@ export enum HttpMessage {
   NOT_FOUND = 'Not Found',
   SERVER_ERROR = 'Server Error',
 }
+
+export enum FilterDrops {
+  UPCOMING = 'upcoming',
+  ONGOING = 'ongoing',
+  DISTRIBUTED = 'distributed',
+}

@@ -507,8 +507,8 @@ export class NftItemService {
     if (isClaimCollectible) {
       await this.flexHausSecureCollectibleModel.findOneAndUpdate(
         {
-          user: toUser,
-          collectible: nftDocument,
+          user: toUser._id,
+          collectible: nftCollection._id,
         },
         { $set: { isClaimed: true } },
         { upsert: true, new: true },

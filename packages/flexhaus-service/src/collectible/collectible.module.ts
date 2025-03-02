@@ -6,6 +6,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import {
   ChainSchema,
   Chains,
+  FlexHausDonates,
   FlexHausDrop,
   FlexHausDropSchema,
   FlexHausLike,
@@ -19,6 +20,7 @@ import {
   NftCollections,
   UserSchema,
   Users,
+  flexHausDonateSchema,
   flexHausSubscriptionSchema,
 } from '@app/shared/models';
 import { Web3Service } from '@app/web3-service/web3.service';
@@ -37,6 +39,7 @@ import { Web3Service } from '@app/web3-service/web3.service';
         name: FlexHausSecureCollectible.name,
         schema: FlexHausSecureCollectibleSchema,
       },
+      { name: FlexHausDonates.name, schema: flexHausDonateSchema },
     ]),
   ],
   controllers: [CollectibleController],
