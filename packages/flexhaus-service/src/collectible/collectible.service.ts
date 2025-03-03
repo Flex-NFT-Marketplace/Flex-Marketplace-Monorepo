@@ -88,7 +88,7 @@ export class CollectibleService {
           break;
         case FilterDrops.ONGOING:
           filterDrop.startTime = { $lte: now };
-          filterDrop.endTime = { $gt: now };
+          filterDrop.expiryTime = { $gt: now };
           break;
         case FilterDrops.DISTRIBUTED:
           filterDrop.isDistributed = true;
