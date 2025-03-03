@@ -224,17 +224,17 @@ export class FlexHausDropTaskService {
       return 0;
     }
 
-    await this.flexHausSecureCollectibleModel.updateMany(
-      {
-        collectible,
-        isSecured: true,
-      },
-      {
-        $set: {
-          isDistributed: true,
-        },
-      },
-    );
+    // await this.flexHausSecureCollectibleModel.updateMany(
+    //   {
+    //     collectible,
+    //     isSecured: true,
+    //   },
+    //   {
+    //     $set: {
+    //       isDistributed: true,
+    //     },
+    //   },
+    // );
 
     return totalSecuredCollectibles;
   }

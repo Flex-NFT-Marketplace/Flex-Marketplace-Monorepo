@@ -453,6 +453,7 @@ export class CollectibleService {
         user: userDocument,
         collectible: collectibleDocument,
         isSecured: true,
+        isDistributed: true,
       });
 
     await newFlexHausSecureCollectible.save();
