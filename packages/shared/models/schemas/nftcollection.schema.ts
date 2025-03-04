@@ -79,7 +79,11 @@ export class NftCollections extends BaseSchema {
   @Prop({ default: false })
   isFlexHausCollectible?: boolean;
 
-  @Prop({ type: SchemaTypes.String, enum: FlexHausRarity })
+  @Prop({
+    type: SchemaTypes.String,
+    enum: FlexHausRarity,
+    default: FlexHausRarity.Null,
+  })
   rarity?: FlexHausRarity;
 
   @Prop()
