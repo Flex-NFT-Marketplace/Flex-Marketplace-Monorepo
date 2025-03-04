@@ -16,7 +16,6 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { HttpStatus, HttpMessage } from '@app/shared/types/enum.type';
 import { ResponseData } from '@app/shared/types/response';
 import { ApiTags, ApiBody, ApiConsumes, getSchemaPath } from '@nestjs/swagger';
-import { FileExtender } from './fileExtender';
 
 @ApiTags('Metadata')
 @Controller('metadata')
