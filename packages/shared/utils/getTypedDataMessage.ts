@@ -1,4 +1,4 @@
-import { shortString } from 'starknet';
+import { shortString, uint256 } from 'starknet';
 
 export function getProofWhiteListMessage(
   nft_address: string,
@@ -16,7 +16,7 @@ export function getProofWhiteListMessage(
       phase_id,
       nft_address,
       minter,
-      mint_price,
+      mint_price: uint256.bnToUint256(mint_price),
     },
     primaryType: 'WhiteListParam',
     types: {
