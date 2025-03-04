@@ -100,7 +100,7 @@ export class FlexDropService {
   async getSets(
     query: GetFlexHausSetDto,
   ): Promise<BaseResultPagination<FlexHausSetDocument>> {
-    const { page, size, skipIndex, sort } = query;
+    const { page, size, skipIndex, sort, isAbleToAddNew } = query;
     const result: BaseResultPagination<FlexHausSetDocument> =
       new BaseResultPagination();
     const filter: any = {};
@@ -123,6 +123,15 @@ export class FlexDropService {
       const formatedAddress = formattedContractAddress(query.creator);
       const user = await this.userService.getOrCreateUser(formatedAddress);
       filter.creator = user._id;
+    }
+
+    if (query.isAbleToAddNew !== undefined) {
+      const now = Date.now();
+      if (query.isAbleToAddNew === true) {
+        filter.expiryTime = { $gt: now };
+      } else {
+        filter.expiryTime = { $lte: now };
+      }
     }
 
     let total = 0;

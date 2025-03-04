@@ -88,7 +88,7 @@ export class CollectibleService {
           break;
         case FilterDrops.ONGOING:
           filterDrop.startTime = { $lte: now };
-          filterDrop.endTime = { $gt: now };
+          filterDrop.expiryTime = { $gt: now };
           break;
         case FilterDrops.DISTRIBUTED:
           filterDrop.isDistributed = true;
@@ -453,6 +453,7 @@ export class CollectibleService {
         user: userDocument,
         collectible: collectibleDocument,
         isSecured: true,
+        isDistributed: true,
       });
 
     await newFlexHausSecureCollectible.save();
@@ -551,6 +552,10 @@ export class CollectibleService {
 
     if (query.isClaimed !== undefined) {
       filter.isClaimed = query.isClaimed;
+    }
+
+    if (query.isSecured !== undefined) {
+      filter.isSecured = query.isSecured;
     }
 
     filter.isDistributed = true;
