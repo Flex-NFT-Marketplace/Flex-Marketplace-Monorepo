@@ -245,6 +245,7 @@ export class DropPhaseService {
       formatedNftAddress,
       phaseId,
       formatedUserAddress,
+      phaseDetail.mintPrice,
     );
     const chainDocument = await this.chainModel.findOne();
 

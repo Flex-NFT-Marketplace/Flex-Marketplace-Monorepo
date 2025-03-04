@@ -4,6 +4,7 @@ export function getProofWhiteListMessage(
   nft_address: string,
   phase_id: number,
   minter: string,
+  mint_price: string,
 ) {
   return {
     domain: {
@@ -15,6 +16,7 @@ export function getProofWhiteListMessage(
       phase_id,
       nft_address,
       minter,
+      mint_price,
     },
     primaryType: 'WhiteListParam',
     types: {
@@ -29,6 +31,20 @@ export function getProofWhiteListMessage(
         },
         {
           name: 'minter',
+          type: 'felt',
+        },
+        {
+          name: 'mint_price',
+          type: 'u256',
+        },
+      ],
+      u256: [
+        {
+          name: 'low',
+          type: 'felt',
+        },
+        {
+          name: 'high',
           type: 'felt',
         },
       ],

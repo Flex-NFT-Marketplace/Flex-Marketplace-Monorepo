@@ -19,6 +19,7 @@ export enum FlexHausRarity {
   Rare = 'rare',
   Legendary = 'legendary',
   Ultimate = 'ultimate',
+  Null = null,
 }
 
 export enum FlexHausDropType {
