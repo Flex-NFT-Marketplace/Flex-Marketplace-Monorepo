@@ -65,7 +65,7 @@ export class DropPhaseService {
         throw new HttpException('Nft Contract not found', HttpStatus.NOT_FOUND);
       }
 
-      filter.nftCollection = nftCollection;
+      filter.nftCollection = nftCollection._id;
     }
 
     if (query.dropPhaseType) {
