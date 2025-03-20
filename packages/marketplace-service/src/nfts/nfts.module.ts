@@ -4,6 +4,8 @@ import { Module } from '@nestjs/common';
 import { NftController } from './nfts.controller';
 import { NftService } from './nfts.service';
 import {
+  CartSchema,
+  Carts,
   ChainSchema,
   Chains,
   Histories,
@@ -60,6 +62,10 @@ import { OnchainQueueService } from '@app/shared/utils/queue';
       {
         name: PaymentTokens.name,
         schema: PaymentTokenSchema,
+      },
+      {
+        name: Carts.name,
+        schema: CartSchema,
       },
     ]),
     UsersModule,

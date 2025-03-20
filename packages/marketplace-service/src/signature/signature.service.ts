@@ -1,7 +1,12 @@
-import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  Logger,
+  HttpException,
+  HttpStatus,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-
 import { RpcProvider } from 'starknet';
 import { SignatureDTO, UpdateSignatureDTO } from './dto/signature.dto';
 import {
@@ -12,6 +17,8 @@ import {
   Nfts,
   PaymentTokenDocument,
   PaymentTokens,
+  Carts,
+  CartDocument,
 } from '@app/shared/models';
 import {
   Signature,
@@ -27,6 +34,8 @@ import {
   formattedContractAddress,
   unformattedContractAddress,
 } from '@app/shared/utils';
+import { AddToCartDTO, AddToCartItemDTO } from './dto/addToCart.dto';
+import { UserService } from '../user/user.service';
 
 @Injectable()
 export class SignatureService {
@@ -42,6 +51,9 @@ export class SignatureService {
     private collectionStatsModel: Model<NftCollectionStats>,
     @InjectModel(PaymentTokens.name)
     private paymentTokenModel: Model<PaymentTokenDocument>,
+    @InjectModel(Carts.name)
+    private cartModel: Model<CartDocument>,
+    private userService: UserService,
     private colelctionService: NftCollectionsService,
   ) {
     this.provider = new RpcProvider({
@@ -657,6 +669,111 @@ export class SignatureService {
     } catch (error) {
       this.logger.error("Can't sync tx status", error);
     }
+  }
+
+  async addToCart(body: AddToCartDTO, user: string) {
+    const { items } = body;
+
+    const userDocument = await this.userService.getOrCreateUser(user);
+    const previousTotal = await this.cartModel.countDocuments({
+      user: userDocument._id,
+    });
+
+    if (previousTotal + items.length > 100) {
+      throw new HttpException('Reach maximum of cart', HttpStatus.BAD_REQUEST);
+    }
+
+    const bulkInsert: any[] = [];
+    for (const item of items) {
+      const { tokenId, nftContract } = item;
+      const formattedNftContract = formattedContractAddress(nftContract);
+      const nftDocument = await this.nftModel.findOne({
+        nftContract: formattedNftContract,
+        tokenId,
+      });
+
+      if (!nftDocument) {
+        throw new HttpException(
+          `Nft ${nftContract}:${tokenId} not found`,
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      const CartDocument = this.cartModel.findOne({
+        user: userDocument._id,
+        nftContract: formattedNftContract,
+        tokenId,
+      });
+
+      if (CartDocument) {
+        throw new HttpException(
+          `Nft ${nftContract}:${tokenId} already added`,
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      bulkInsert.push({
+        user: userDocument._id,
+        nftContract: formattedNftContract,
+        tokenId,
+        nft: nftDocument,
+      });
+    }
+
+    if (bulkInsert.length > 0) {
+      await this.cartModel.insertMany(bulkInsert);
+    }
+    return true;
+  }
+
+  async getCart(user: string) {
+    const userDocument = await this.userService.getOrCreateUser(user);
+    const items = await this.cartModel
+      .find({ user: userDocument._id })
+      .populate([
+        { path: 'nfts', select: ['nftContract', 'tokenId', 'name', 'image'] },
+      ]);
+
+    return items;
+  }
+
+  async deleteItemOnCart(item: AddToCartItemDTO, user: string) {
+    const { nftContract, tokenId } = item;
+    const formattedNftContract = formattedContractAddress(nftContract);
+    const nftDocument = await this.nftModel.findOne({
+      nftContract: formattedNftContract,
+      tokenId,
+    });
+
+    if (!nftDocument) {
+      throw new HttpException('Nft not found', HttpStatus.NOT_FOUND);
+    }
+
+    const userDocument = await this.userService.getOrCreateUser(user);
+    const cart = await this.cartModel.findOne({
+      user: userDocument._id,
+      nftContract: formattedNftContract,
+      tokenId,
+    });
+
+    if (!cart) {
+      throw new HttpException('Item not found', HttpStatus.NOT_FOUND);
+    }
+
+    await this.cartModel.findByIdAndDelete(cart._id);
+    return true;
+  }
+
+  async deleteAllItems(user: string) {
+    const userDocument = await this.userService.getOrCreateUser(user);
+
+    const carts = await this.cartModel.find({ user: userDocument._id });
+    if (carts.length === 0) {
+      throw new HttpException('Cart is empty', HttpStatus.NOT_FOUND);
+    }
+
+    await this.cartModel.deleteMany({ user: userDocument._id });
+    return true;
   }
 
   async cancelSignature(signature_id: string, signer: string) {

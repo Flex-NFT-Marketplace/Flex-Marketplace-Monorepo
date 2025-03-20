@@ -5,6 +5,8 @@ import { SignatureService } from './signature.service';
 
 import { MongooseModule } from '@nestjs/mongoose';
 import {
+  Carts,
+  CartSchema,
   Chains,
   ChainSchema,
   Histories,
@@ -50,6 +52,10 @@ import { CronService } from './task/signatureTask.service';
       {
         name: PaymentTokens.name,
         schema: PaymentTokenSchema,
+      },
+      {
+        name: Carts.name,
+        schema: CartSchema,
       },
     ]),
     NftCollectionsModule,
