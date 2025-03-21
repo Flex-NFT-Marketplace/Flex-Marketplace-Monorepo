@@ -8,6 +8,8 @@ import {
   DropPhases,
   Histories,
   HistorySchema,
+  NftCollectionFavorites,
+  NftCollectionFavoritesSchema,
   NftCollectionSchema,
   NftCollections,
   NftSchema,
@@ -67,6 +69,10 @@ import {
       {
         name: NftCollectionStats.name,
         schema: NftCollectionStatsSchema,
+      },
+      {
+        name: NftCollectionFavorites.name,
+        schema: NftCollectionFavoritesSchema,
       },
     ]),
     BullModule.registerQueue(
