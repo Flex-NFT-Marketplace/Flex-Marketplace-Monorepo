@@ -4,10 +4,14 @@ import { Module } from '@nestjs/common';
 import { NftController } from './nfts.controller';
 import { NftService } from './nfts.service';
 import {
+  CartSchema,
+  Carts,
   ChainSchema,
   Chains,
   Histories,
   HistorySchema,
+  NftCollectionFavorites,
+  NftCollectionFavoritesSchema,
   NftCollectionSchema,
   NftCollectionStats,
   NftCollectionStatsSchema,
@@ -60,6 +64,14 @@ import { OnchainQueueService } from '@app/shared/utils/queue';
       {
         name: PaymentTokens.name,
         schema: PaymentTokenSchema,
+      },
+      {
+        name: Carts.name,
+        schema: CartSchema,
+      },
+      {
+        name: NftCollectionFavorites.name,
+        schema: NftCollectionFavoritesSchema,
       },
     ]),
     UsersModule,

@@ -8,6 +8,7 @@ import {
   Post,
   Put,
   Query,
+  Delete,
 } from '@nestjs/common';
 import { SignatureDTO, UpdateSignatureDTO } from './dto/signature.dto';
 import { SignatureService } from './signature.service';
@@ -17,10 +18,11 @@ import { BaseResult } from '@app/shared/types';
 import { GetSignatureActivityQueryDTO } from './dto/getSignatureQuery';
 import { JWT, User } from '@app/shared/modules';
 import { iInfoToken } from '@app/shared/modules/jwt/jwt.dto';
+import { AddToCartDTO, AddToCartItemDTO } from './dto/addToCart.dto';
 
 @ApiTags('Signatures')
 @Controller('signatures')
-@ApiExtraModels(GetSignatureActivityQueryDTO, SignatureDTO)
+@ApiExtraModels(GetSignatureActivityQueryDTO, SignatureDTO, AddToCartDTO)
 export class SignatureController {
   constructor(private readonly signatureService: SignatureService) {}
 
@@ -95,6 +97,41 @@ export class SignatureController {
       contractAddress,
       tokenId,
     );
+    return new BaseResult(res);
+  }
+
+  @JWT()
+  @Post('add-to-cart')
+  async addSignatureToCart(
+    @Body() addToCard: AddToCartDTO,
+    @User() token: iInfoToken,
+  ) {
+    const res = await this.signatureService.addToCart(addToCard, token.sub);
+    return new BaseResult(res);
+  }
+
+  @JWT()
+  @Get('cart')
+  async getCarts(@User() token: iInfoToken) {
+    const res = await this.signatureService.getCart(token.sub);
+
+    return new BaseResult(res);
+  }
+
+  @JWT()
+  @Delete('cart/delete-item')
+  async deleteItemFromCart(
+    @Body() item: AddToCartItemDTO,
+    @User() token: iInfoToken,
+  ) {
+    const res = await this.signatureService.deleteItemOnCart(item, token.sub);
+    return new BaseResult(res);
+  }
+
+  @JWT()
+  @Delete('cart/delete-all-items')
+  async deleteAllItemsFromCart(@User() token: iInfoToken) {
+    const res = await this.signatureService.deleteAllItems(token.sub);
     return new BaseResult(res);
   }
 

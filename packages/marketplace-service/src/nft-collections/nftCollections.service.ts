@@ -9,6 +9,8 @@ import {
   HistoryType,
   NftCollectionDocument,
   NftCollectionDto,
+  NftCollectionFavorites,
+  NftCollectionFavoritesDocument,
   NftCollections,
   NftCollectionStats,
   Nfts,
@@ -24,6 +26,7 @@ import {
 import { UserService } from '../user/user.service';
 import { NftCollectionQueryParams } from './dto/nftCollectionQuery.dto';
 import {
+  BaseQueryParams,
   BaseResult,
   BaseResultPagination,
   ONCHAIN_JOBS,
@@ -52,6 +55,7 @@ import {
   TrendingNftCollectionsDto,
   TrendingNftCollectionsQueryDto,
 } from './dto/trendingNftCollection.dto';
+import { CollectionAddressDto } from './dto/CollectionAddress.dto';
 
 @Injectable()
 export class NftCollectionsService {
@@ -71,6 +75,8 @@ export class NftCollectionsService {
     private readonly nftCollectionStatsModel: Model<NftCollectionStats>,
     @InjectModel(Signature.name)
     private readonly signatureModel: Model<Signature>,
+    @InjectModel(NftCollectionFavorites.name)
+    private readonly nftCollectionFavoriteModel: Model<NftCollectionFavoritesDocument>,
     private readonly onchainQueueService: OnchainQueueService,
     private readonly userService: UserService,
     private readonly web3Service: Web3Service,
@@ -1401,5 +1407,178 @@ export class NftCollectionsService {
     } catch (error) {
       return undefined;
     }
+  }
+
+  async addFavoriteNFTCollection(
+    body: CollectionAddressDto,
+    user: string,
+  ): Promise<boolean> {
+    const { nftContract } = body;
+
+    const nftCollectionDocument = await this.nftCollectionModel.findOne({
+      nftContract: formattedContractAddress(nftContract),
+    });
+
+    if (!nftCollectionDocument) {
+      throw new HttpException('NFT Collection not found', HttpStatus.NOT_FOUND);
+    }
+
+    const userDocument = await this.userService.getOrCreateUser(user);
+
+    const nftCollectionFavorite = await this.nftCollectionFavoriteModel.findOne(
+      {
+        user: userDocument._id,
+        nftCollection: nftCollectionDocument._id,
+      },
+    );
+
+    if (nftCollectionFavorite && !nftCollectionFavorite.isUnFavorite) {
+      throw new HttpException('Already favorited', HttpStatus.BAD_REQUEST);
+    }
+
+    await this.nftCollectionFavoriteModel.findOneAndUpdate(
+      {
+        user: userDocument._id,
+        nftCollection: nftCollectionDocument._id,
+      },
+      {
+        $set: {
+          isUnFavorite: false,
+        },
+      },
+      { upsert: true },
+    );
+    return true;
+  }
+
+  async unfavoriteNFTCollection(
+    body: CollectionAddressDto,
+    user: string,
+  ): Promise<boolean> {
+    const { nftContract } = body;
+
+    const nftCollectionDocument = await this.nftCollectionModel.findOne({
+      nftContract: formattedContractAddress(nftContract),
+    });
+
+    if (!nftCollectionDocument) {
+      throw new HttpException('NFT Collection not found', HttpStatus.NOT_FOUND);
+    }
+
+    const userDocument = await this.userService.getOrCreateUser(user);
+
+    const nftCollectionFavorite = await this.nftCollectionFavoriteModel.findOne(
+      {
+        user: userDocument._id,
+        nftCollection: nftCollectionDocument._id,
+      },
+    );
+
+    if (!nftCollectionFavorite || nftCollectionFavorite.isUnFavorite) {
+      throw new HttpException('Not favorited', HttpStatus.BAD_REQUEST);
+    }
+
+    await this.nftCollectionFavoriteModel.findOneAndUpdate(
+      {
+        user: userDocument._id,
+        nftCollection: nftCollectionDocument._id,
+      },
+      {
+        $set: {
+          isUnFavorite: true,
+        },
+      },
+      { upsert: true },
+    );
+    return true;
+  }
+
+  async checkFavoriteNFTCollection(
+    body: CollectionAddressDto,
+    user: string,
+  ): Promise<boolean> {
+    const { nftContract } = body;
+
+    const nftCollectionDocument = await this.nftCollectionModel.findOne({
+      nftContract: formattedContractAddress(nftContract),
+    });
+
+    if (!nftCollectionDocument) {
+      throw new HttpException('NFT Collection not found', HttpStatus.NOT_FOUND);
+    }
+
+    const userDocument = await this.userService.getOrCreateUser(user);
+
+    const nftCollectionFavorite = await this.nftCollectionFavoriteModel.findOne(
+      {
+        user: userDocument._id,
+        nftCollection: nftCollectionDocument._id,
+      },
+    );
+
+    if (!nftCollectionFavorite || nftCollectionFavorite.isUnFavorite) {
+      return false;
+    }
+
+    return true;
+  }
+
+  async getFavoriteNFTCollections(query: BaseQueryParams, user: string) {
+    const { page, size, skipIndex } = query;
+
+    const userDocument = await this.userService.getOrCreateUser(user);
+
+    const result = new BaseResultPagination<NftCollectionFavoritesDocument>();
+
+    const filter: any = {
+      user: userDocument._id,
+      isUnFavorite: false,
+    };
+
+    const count = await this.nftCollectionFavoriteModel.countDocuments(filter);
+    if (count === 0 || size === 0) {
+      result.data = new PaginationDto<NftCollectionFavoritesDocument>(
+        [],
+        count,
+        page,
+        size,
+      );
+      return result;
+    }
+
+    const now = Date.now();
+    const sortOperators = {};
+    for (const items of query.sort) {
+      sortOperators[Object.keys(items)[0]] = Object.values(items)[0];
+    }
+    const items = await this.nftCollectionFavoriteModel
+      .find(filter)
+      .sort(sortOperators)
+      .skip(skipIndex)
+      .limit(size)
+      .populate([
+        {
+          path: 'nftCollection',
+          select: [
+            'name',
+            'nftContract',
+            'standard',
+            'owner',
+            'avatar',
+            'cover',
+            'description',
+            'symbol',
+          ],
+        },
+      ]);
+
+    result.data = new PaginationDto<NftCollectionFavoritesDocument>(
+      items,
+      count,
+      page,
+      size,
+    );
+
+    return result;
   }
 }

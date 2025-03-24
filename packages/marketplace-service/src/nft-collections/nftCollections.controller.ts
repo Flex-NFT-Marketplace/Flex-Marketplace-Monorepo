@@ -15,14 +15,18 @@ import {
   Inject,
   HttpException,
   HttpStatus,
+  Delete,
 } from '@nestjs/common';
 import { NftCollectionsService } from './nftCollections.service';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
 import { BaseResult } from '@app/shared/types/base.result';
-import { NftCollectionDto } from '@app/shared/models';
+import {
+  NftCollectionDto,
+  NftCollectionFavoritesDocument,
+} from '@app/shared/models';
 import { NftCollectionQueryParams } from './dto/nftCollectionQuery.dto';
-import { BaseResultPagination } from '@app/shared/types';
+import { BaseQueryParams, BaseResultPagination } from '@app/shared/types';
 import { PaginationDto } from '@app/shared/types/pagination.dto';
 import {
   TopNftCollectionDto,
@@ -43,6 +47,7 @@ import {
   TrendingNftCollectionsDto,
   TrendingNftCollectionsQueryDto,
 } from './dto/trendingNftCollection.dto';
+import { CollectionAddressDto } from './dto/CollectionAddress.dto';
 
 @ApiTags('NFT Collections')
 @Controller('nft-collection')
@@ -56,6 +61,7 @@ import {
   UpdateCollectionDetailDto,
   TrendingNftCollectionsDto,
   TrendingNftCollectionsQueryDto,
+  CollectionAddressDto,
 )
 export class NftCollectionsController {
   constructor(
@@ -296,6 +302,61 @@ export class NftCollectionsController {
     }
     return data;
   }
+
+  @JWT()
+  @Post('favorite-nft-collection')
+  async addFavoriteNFTCollection(
+    @Body() body: CollectionAddressDto,
+    @User() token: iInfoToken,
+  ): Promise<BaseResult<boolean>> {
+    const res = await this.nftCollectionService.addFavoriteNFTCollection(
+      body,
+      token.sub,
+    );
+
+    return new BaseResult(res);
+  }
+
+  @JWT()
+  @Delete('unfavorite-nft-collection')
+  async unfavoriteNFTCollection(
+    @Body() body: CollectionAddressDto,
+    @User() user: iInfoToken,
+  ): Promise<BaseResult<boolean>> {
+    const res = await this.nftCollectionService.unfavoriteNFTCollection(
+      body,
+      user.sub,
+    );
+
+    return new BaseResult(res);
+  }
+
+  @JWT()
+  @Get('check-favorite-nft-collection')
+  async checkFavoriteNFTCollection(
+    @Body() body: CollectionAddressDto,
+    @User() user: iInfoToken,
+  ): Promise<BaseResult<boolean>> {
+    const res = await this.nftCollectionService.checkFavoriteNFTCollection(
+      body,
+      user.sub,
+    );
+
+    return new BaseResult(res);
+  }
+
+  @JWT()
+  @Post('get-favorite-nft-collections')
+  async getFavoriteNFTCollections(
+    @Body() body: BaseQueryParams,
+    @User() user: iInfoToken,
+  ): Promise<BaseResultPagination<NftCollectionFavoritesDocument>> {
+    return await this.nftCollectionService.getFavoriteNFTCollections(
+      body,
+      user.sub,
+    );
+  }
+
   @Get('total-suppply/:nftContract')
   async getTotalOwnerOfCollection(
     @Param('nftContract') param: string,
