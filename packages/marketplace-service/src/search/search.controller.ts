@@ -75,7 +75,6 @@ export class SearchController {
   async search(@Body() query: SearchQueryDto) {
     try {
       if (!query.search) {
-        console.log('Uodate', query.search);
         // const key = `get-search - ${JSON.stringify({ ...query })}`;
         let data = null; //await this.cacheManager.get(key);
         if (!data) {

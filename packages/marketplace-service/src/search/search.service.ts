@@ -8,6 +8,7 @@ import {
   SearchQueryDto,
 } from './dto/searchResponse';
 import { UserResponseDto } from '../user/dto/getUser.dto';
+import { formattedContractAddress } from '@app/shared/utils';
 @Injectable()
 export class SearchService {
   constructor(
@@ -57,8 +58,45 @@ export class SearchService {
         ),
       };
     }
+
+    try {
+      const formattedSerach = formattedContractAddress(search);
+      const users = await this.userModel
+        .find({ address: formattedSerach })
+        .sort(sortOperators)
+        .skip(skipIndex)
+        .limit(size)
+        .exec();
+
+      let nfts = [];
+      let collections = [];
+      if (users.length === 0) {
+        nfts = await this.nftsModel
+          .find({ nftContract: formattedSerach })
+          .sort(sortOperators)
+          .skip(skipIndex)
+          .limit(size)
+          .exec();
+
+        collections = await this.nftCollectionsModel
+          .find({ nftContract: formattedSerach })
+          .sort(sortOperators)
+          .skip(skipIndex)
+          .limit(size)
+          .exec();
+      }
+
+      return {
+        users: users.map(user => UserResponseDto.from(user)),
+        nfts: nfts.map(nft => NftSearchResponseDto.from(nft)),
+        nftCollections: collections.map(collection =>
+          NftCollectionResponseDto.from(collection),
+        ),
+      };
+    } catch (error) {}
+
     const users = await this.userModel
-      .find({ address: { $regex: search, $options: 'i' } })
+      .find({ username: { $regex: search, $options: 'i' } })
       .sort(sortOperators)
       .skip(skipIndex)
       .limit(size)
