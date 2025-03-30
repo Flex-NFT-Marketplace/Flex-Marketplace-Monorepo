@@ -1,4 +1,4 @@
-import { SuccessfulTransactionReceiptResponse } from 'starknet';
+import { ReceiptTx, SuccessfulTransactionReceiptResponse } from 'starknet';
 import contractDeployerABI from '../abis/contract-deployer.abi.json';
 import erc721Abi from '../abis/erc721.abi.json';
 import oldErc721Abi from '../abis/olderc721.abi.json';
@@ -84,7 +84,7 @@ export enum EventType {
   UPDATE_DROP = 'UPDATE_DROP',
   CLAIM_COLLECTIBLE = 'CLAIM_COLLECTIBLE',
 }
-export type LogsReturnValues = SuccessfulTransactionReceiptResponse & {
+export type LogsReturnValues = any & {
   returnValues: any;
   eventType: EventType;
   index?: number;
