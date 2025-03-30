@@ -7,6 +7,7 @@ import {
   BigNumberish,
   uint256,
   Account,
+  ReceiptTx,
 } from 'starknet';
 import { ChainDocument } from '@app/shared/models/schemas';
 import {
@@ -167,7 +168,7 @@ export class Web3Service {
   }
 
   getReturnValuesEvent(
-    txReceipt: GetTransactionReceiptResponse,
+    txReceipt: any,
     chain: ChainDocument,
     timestamp: number,
   ): LogsReturnValues[] {
@@ -176,10 +177,10 @@ export class Web3Service {
 
     if (txReceipt.isSuccess()) {
       for (const event of txReceipt.events) {
-        const txReceiptFilter = {
+        const txReceiptFilter = new ReceiptTx({
           ...txReceipt,
           events: txReceipt.events.filter(ev => ev == event),
-        };
+        });
         if (event.keys.includes(EventTopic.CONTRACT_DEPLOYED)) {
           let returnValues = null;
           try {
