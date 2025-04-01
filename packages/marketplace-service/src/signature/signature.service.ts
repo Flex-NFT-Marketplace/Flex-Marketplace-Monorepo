@@ -731,7 +731,7 @@ export class SignatureService {
     const items = await this.cartModel
       .find({ user: userDocument._id })
       .populate([
-        { path: 'nfts', select: ['nftContract', 'tokenId', 'name', 'image'] },
+        { path: 'nft', select: ['nftContract', 'tokenId', 'name', 'image'] },
       ]);
 
     return items;
