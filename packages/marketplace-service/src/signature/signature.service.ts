@@ -31,6 +31,7 @@ import { BaseResultPagination } from '@app/shared/types';
 import { PaginationDto } from '@app/shared/types/pagination.dto';
 import { NftCollectionsService } from '../nft-collections/nftCollections.service';
 import {
+  arraySliceProcess,
   formattedContractAddress,
   unformattedContractAddress,
 } from '@app/shared/utils';
@@ -731,10 +732,60 @@ export class SignatureService {
     const items = await this.cartModel
       .find({ user: userDocument._id })
       .populate([
-        { path: 'nft', select: ['nftContract', 'tokenId', 'name', 'image'] },
+        {
+          path: 'nft',
+          select: ['nftContract', 'tokenId', 'name', 'image', 'owner'],
+        },
       ]);
 
-    return items;
+    const afterAlterItem = [];
+    await arraySliceProcess(items, async slicedItems => {
+      await Promise.all(
+        slicedItems.map(async item => {
+          let ownerDocument = await this.userService.getUserById(
+            String(item.nft.owner),
+          );
+          let bestAsk: any;
+
+          const currentResult: any = {
+            _id: item._id,
+            user: item.user,
+            nftContract: item.nft.nftContract,
+            tokenId: item.nft.tokenId,
+            nftData: item.nft,
+            orderData: {},
+          };
+          if (ownerDocument.address != '') {
+            bestAsk = await this.getSignatureByOwner(
+              item.nftContract,
+              item.tokenId,
+              ownerDocument.address,
+            );
+          } else {
+            bestAsk = await this.getSignature(item.nftContract, item.tokenId);
+          }
+          const listAsk = await this.getSignatures(
+            item.nftContract,
+            item.tokenId,
+          );
+
+          const listBid = await this.getBidSignatures(
+            item.nftContract,
+            item.tokenId,
+          );
+
+          const orderData = {
+            bestAsk,
+            listAsk,
+            listBid,
+          };
+          currentResult.orderData = orderData;
+          afterAlterItem.push(currentResult);
+        }),
+      );
+    });
+
+    return afterAlterItem;
   }
 
   async deleteItemOnCart(item: AddToCartItemDTO, user: string) {
