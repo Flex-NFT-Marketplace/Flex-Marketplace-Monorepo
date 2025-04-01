@@ -699,7 +699,7 @@ export class SignatureService {
         );
       }
 
-      const CartDocument = this.cartModel.findOne({
+      const CartDocument = await this.cartModel.findOne({
         user: userDocument._id,
         nftContract: formattedNftContract,
         tokenId,
