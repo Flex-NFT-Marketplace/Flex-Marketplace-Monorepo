@@ -28,3 +28,5 @@ export * from './flexhausSecureCollectible.schema';
 export * from './flexhausDonate.schema';
 export * from './cart.schema';
 export * from './nftCollectionFavorite.schema';
+export * from './quests.schema';
+export * from './questProcess.schema';

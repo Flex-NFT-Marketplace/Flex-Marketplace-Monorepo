@@ -23,3 +23,13 @@ export enum FilterDrops {
   ONGOING = 'ongoing',
   DISTRIBUTED = 'distributed',
 }
+
+export enum QuestType {
+  LOG_IN = 'LOG_IN',
+  PROTECT_FLEXHAUS_DROP = 'PROTECT_FLEXHAUS_DROP',
+  THANKS_CREATOR = 'THANKS_CREATOR',
+  CREATE_FLEXHAUS_DROP = 'CREATE_FLEXHAUS_DROP',
+  BID_NFT = 'BID_NFT',
+  LIST_NFT = 'LIST_NFT',
+  BUY_NFT = 'BUY_NFT',
+}
