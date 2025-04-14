@@ -729,21 +729,64 @@ export class SignatureService {
 
   async getCart(user: string) {
     const userDocument = await this.userService.getOrCreateUser(user);
-    const items = await this.cartModel
-      .find({ user: userDocument._id })
-      .populate([
-        {
-          path: 'nft',
-          select: ['nftContract', 'tokenId', 'name', 'image', 'owner'],
+    const items = await this.cartModel.aggregate([
+      {
+        $match: {
+          user: userDocument._id,
         },
-      ]);
+      },
+      {
+        $lookup: {
+          from: 'nfts',
+          localField: 'nft',
+          foreignField: '_id',
+          pipeline: [
+            {
+              $project: {
+                _id: 1,
+                nftContract: 1,
+                tokenId: 1,
+                name: 1,
+                image: 1,
+                owner: 1,
+              },
+            },
+          ],
+          as: 'nft',
+        },
+      },
+      {
+        $unwind: '$nft',
+      },
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'nft.owner',
+          foreignField: '_id',
+          pipeline: [
+            {
+              $project: {
+                _id: 1,
+                address: 1,
+                username: 1,
+                isVerified: 1,
+              },
+            },
+          ],
+          as: 'nft.owner',
+        },
+      },
+      { $unwind: '$nft.owner' },
+    ]);
+
+    console.log(items[0]);
 
     const afterAlterItem = [];
     await arraySliceProcess(items, async slicedItems => {
       await Promise.all(
         slicedItems.map(async item => {
           let ownerDocument = await this.userService.getUserById(
-            String(item.nft.owner),
+            String(item.nft.owner._id),
           );
           let bestAsk: any;
 
