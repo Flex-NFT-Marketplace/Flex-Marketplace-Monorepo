@@ -78,6 +78,9 @@ export class Users extends BaseSchema {
 
   @Prop({ default: 0 })
   points?: number;
+
+  @Prop({ default: 0 })
+  flexPoint?: number;
 }
 
 export const UserSchema = SchemaFactory.createForClass(Users);
