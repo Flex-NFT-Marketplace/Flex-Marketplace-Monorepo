@@ -33,3 +33,11 @@ export enum QuestType {
   LIST_NFT = 'LIST_NFT',
   BUY_NFT = 'BUY_NFT',
 }
+
+export enum SpinRewardType {
+  POINT = 'POINT',
+  TICKET = 'TICKET',
+  ETH = 'ETH',
+  STRK = 'STRK',
+  FLEX_EVO = 'FLEX_EVO',
+}

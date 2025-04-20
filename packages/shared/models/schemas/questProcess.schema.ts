@@ -23,11 +23,15 @@ export class QuestProcess extends BaseSchema {
   @Prop({ default: false })
   isClaimed?: boolean;
 
+  @Prop({ default: false })
+  isConverted?: boolean;
+
   @Prop()
   processTime: number;
 }
 
 export const questProcessSchema = SchemaFactory.createForClass(QuestProcess);
 questProcessSchema.index({ user: 1 });
+questProcessSchema.index({ user: 1, isClaimed: 1, isConverted: 1 });
 questProcessSchema.index({ user: 1, quest: 1 });
 questProcessSchema.index({ user: 1, quest: 1, processTime: 1 });

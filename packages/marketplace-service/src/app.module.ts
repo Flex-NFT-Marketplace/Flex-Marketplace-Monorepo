@@ -20,6 +20,7 @@ import { NftCollectionTaskModule } from './nft-collections/task/nftCollectionTas
 import { UploadModule } from './upload/upload.module';
 import { MetadataModule } from './metadata/metadata.module';
 import { QuestModule } from './quests/quest.module';
+import { SpinModule } from './spin/spin.module';
 
 @Module({
   imports: [
@@ -42,6 +43,7 @@ import { QuestModule } from './quests/quest.module';
     UploadModule,
     MetadataModule,
     QuestModule,
+    SpinModule,
   ],
   controllers: [],
   providers: [],
