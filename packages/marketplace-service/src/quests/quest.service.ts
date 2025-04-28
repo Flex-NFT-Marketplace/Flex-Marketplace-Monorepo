@@ -12,7 +12,6 @@ import {
   SignStatusEnum,
   Signature,
   SignatureDocument,
-  TxStatusEnum,
   UserDocument,
   Users,
 } from '@app/shared/models';
@@ -67,8 +66,6 @@ export class QuestService {
         processTime: { $gte: start.getTime(), $lt: end.getTime() },
       });
 
-      console.log(questProcess);
-
       result.push({
         quest,
         processOfTask: questProcess?.processOfTask | 0,
@@ -102,11 +99,12 @@ export class QuestService {
     end.setUTCHours(23, 59, 59, 999);
 
     const userDocument = await this.userService.getOrCreateUser(user);
-    let questProcess = await this.questProcessModel.findOne({
-      user: userDocument._id,
-      quest: quest._id,
-      processTime: { $gte: start.getTime(), $lt: end.getTime() },
-    });
+    let questProcess: QuestProcessDocument =
+      await this.questProcessModel.findOne({
+        user: userDocument._id,
+        quest: quest._id,
+        processTime: { $gte: start.getTime(), $lt: end.getTime() },
+      });
 
     if (questProcess && questProcess.isVerified) {
       return questProcess;
@@ -114,33 +112,60 @@ export class QuestService {
 
     switch (quest.type) {
       case QuestType.LOG_IN:
-        questProcess = await this.verifyLogIn(quest, userDocument, now);
+        questProcess = await this.verifyLogIn(
+          questProcess,
+          quest,
+          userDocument,
+          now,
+        );
         break;
       case QuestType.PROTECT_FLEXHAUS_DROP:
         questProcess = await this.verifyProtectFlexDrop(
+          questProcess,
           quest,
           userDocument,
           now,
         );
         break;
       case QuestType.THANKS_CREATOR:
-        questProcess = await this.verifyThanksCreator(quest, userDocument, now);
+        questProcess = await this.verifyThanksCreator(
+          questProcess,
+          quest,
+          userDocument,
+          now,
+        );
         break;
       case QuestType.CREATE_FLEXHAUS_DROP:
         questProcess = await this.verifyCreateFlexDrop(
+          questProcess,
           quest,
           userDocument,
           now,
         );
         break;
       case QuestType.BID_NFT:
-        questProcess = await this.verifyBidNFT(quest, userDocument, now);
+        questProcess = await this.verifyBidNFT(
+          questProcess,
+          quest,
+          userDocument,
+          now,
+        );
         break;
       case QuestType.LIST_NFT:
-        questProcess = await this.verifyListNFT(quest, userDocument, now);
+        questProcess = await this.verifyListNFT(
+          questProcess,
+          quest,
+          userDocument,
+          now,
+        );
         break;
       case QuestType.BUY_NFT:
-        questProcess = await this.verifyBuyNFT(quest, userDocument, now);
+        questProcess = await this.verifyBuyNFT(
+          questProcess,
+          quest,
+          userDocument,
+          now,
+        );
         break;
     }
 
@@ -148,27 +173,32 @@ export class QuestService {
   }
 
   async verifyLogIn(
+    questProcess: QuestProcessDocument,
     quest: QuestDocument,
     userDocument: UserDocument,
     time: number,
   ) {
-    return await this.questProcessModel.findOneAndUpdate(
-      {
-        user: userDocument._id,
-        quest: quest._id,
-      },
-      {
-        $set: {
-          processOfTask: 1,
-          isVerified: true,
-          processTime: time,
-        },
-      },
-      { upsert: true, new: true },
-    );
+    if (questProcess) {
+      questProcess.processOfTask = 1;
+      questProcess.isVerified = true;
+      questProcess.processTime = time;
+      await questProcess.save();
+
+      return questProcess;
+    }
+    const newQuestProcess = new this.questProcessModel({
+      user: userDocument._id,
+      quest: quest._id,
+      processOfTask: 1,
+      isVerified: true,
+      processTime: time,
+    });
+
+    return await newQuestProcess.save();
   }
 
   async verifyProtectFlexDrop(
+    questProcess: QuestProcessDocument,
     quest: QuestDocument,
     userDocument: UserDocument,
     time: number,
@@ -185,48 +215,59 @@ export class QuestService {
         createdAt: { $gte: start.getTime(), $lt: end.getTime() },
       });
 
+    let newQuestProcess: QuestProcessDocument = null;
+
     if (flexHausSecured >= quest.amountOfTask) {
-      return await this.questProcessModel.findOneAndUpdate(
-        {
-          user: userDocument._id,
-          quest: quest._id,
-        },
-        {
-          $set: {
-            processOfTask: quest.amountOfTask,
-            isVerified: true,
-            processTime: time,
-          },
-        },
-        { upsert: true, new: true },
-      );
-    } else if (flexHausSecured > 0) {
-      return await this.questProcessModel.findOneAndUpdate(
-        {
-          user: userDocument._id,
-          quest: quest._id,
-        },
-        {
-          $set: {
-            processOfTask: flexHausSecured,
-            isVerified: false,
-            processTime: time,
-          },
-        },
-        { upsert: true, new: true },
-      );
-    } else {
-      return new this.questProcessModel({
+      if (questProcess) {
+        questProcess.processOfTask = quest.amountOfTask;
+        questProcess.isVerified = true;
+        questProcess.processTime = time;
+        return questProcess.save();
+      }
+      newQuestProcess = new this.questProcessModel({
         user: userDocument._id,
         quest: quest._id,
-        processOfTask: 0,
+        processOfTask: quest.amountOfTask,
+        isVerified: true,
+        processTime: time,
+      });
+    } else if (flexHausSecured > 0) {
+      if (questProcess) {
+        questProcess.processOfTask = flexHausSecured;
+        questProcess.isVerified = false;
+        questProcess.processTime = time;
+        return questProcess.save();
+      }
+      newQuestProcess = new this.questProcessModel({
+        user: userDocument._id,
+        quest: quest._id,
+        processOfTask: flexHausSecured,
         isVerified: false,
         processTime: time,
       });
+    } else {
+      if (!questProcess) {
+        newQuestProcess = new this.questProcessModel({
+          user: userDocument._id,
+          quest: quest._id,
+          processOfTask: 0,
+          isVerified: false,
+          processTime: time,
+        });
+      } else {
+        return questProcess;
+      }
     }
+
+    if (newQuestProcess) {
+      return await newQuestProcess.save();
+    }
+
+    return questProcess;
   }
 
   async verifyThanksCreator(
+    questProcess: QuestProcessDocument,
     quest: QuestDocument,
     userDocument: UserDocument,
     time: number,
@@ -251,51 +292,60 @@ export class QuestService {
       },
     ]);
 
+    let newQuestProcess: QuestProcessDocument = null;
     if (
       flexHausDonated.length > 0 &&
       flexHausDonated[0].total >= quest.amountOfTask
     ) {
-      return await this.questProcessModel.findOneAndUpdate(
-        {
-          user: userDocument._id,
-          quest: quest._id,
-        },
-        {
-          $set: {
-            processOfTask: quest.amountOfTask,
-            isVerified: true,
-            processTime: time,
-          },
-        },
-        { upsert: true, new: true },
-      );
-    } else if (flexHausDonated.length > 0) {
-      return await this.questProcessModel.findOneAndUpdate(
-        {
-          user: userDocument._id,
-          quest: quest._id,
-        },
-        {
-          $set: {
-            processOfTask: flexHausDonated[0].total,
-            isVerified: false,
-            processTime: time,
-          },
-        },
-        { upsert: true, new: true },
-      );
-    } else {
-      return new this.questProcessModel({
+      if (questProcess) {
+        questProcess.processOfTask = quest.amountOfTask;
+        questProcess.isVerified = true;
+        questProcess.processTime = time;
+        return questProcess.save();
+      }
+
+      newQuestProcess = new this.questProcessModel({
         user: userDocument._id,
         quest: quest._id,
-        processOfTask: 0,
+        processOfTask: quest.amountOfTask,
+        isVerified: true,
+        processTime: time,
+      });
+    } else if (flexHausDonated.length > 0) {
+      if (questProcess) {
+        questProcess.processOfTask = flexHausDonated[0].total;
+        questProcess.isVerified = false;
+        questProcess.processTime = time;
+        return questProcess.save();
+      }
+      newQuestProcess = new this.questProcessModel({
+        user: userDocument._id,
+        quest: quest._id,
+        processOfTask: flexHausDonated[0].total,
         isVerified: false,
         processTime: time,
       });
+    } else {
+      if (!questProcess) {
+        newQuestProcess = new this.questProcessModel({
+          user: userDocument._id,
+          quest: quest._id,
+          processOfTask: 0,
+          isVerified: false,
+          processTime: time,
+        });
+      } else {
+        return questProcess;
+      }
+    }
+
+    if (newQuestProcess) {
+      return await newQuestProcess.save();
     }
   }
 
   async verifyCreateFlexDrop(
+    questProcess: QuestProcessDocument,
     quest: QuestDocument,
     userDocument: UserDocument,
     time: number,
@@ -310,48 +360,56 @@ export class QuestService {
       createdAt: { $gte: start.getTime(), $lt: end.getTime() },
     });
 
+    let newQuestProcess: QuestProcessDocument = null;
     if (flexHausDrops >= quest.amountOfTask) {
-      return await this.questProcessModel.findOneAndUpdate(
-        {
-          user: userDocument._id,
-          quest: quest._id,
-        },
-        {
-          $set: {
-            processOfTask: quest.amountOfTask,
-            isVerified: true,
-            processTime: time,
-          },
-        },
-        { upsert: true, new: true },
-      );
-    } else if (flexHausDrops > 0) {
-      return await this.questProcessModel.findOneAndUpdate(
-        {
-          user: userDocument._id,
-          quest: quest._id,
-        },
-        {
-          $set: {
-            processOfTask: flexHausDrops,
-            isVerified: false,
-            processTime: time,
-          },
-        },
-        { upsert: true, new: true },
-      );
-    } else {
-      return new this.questProcessModel({
+      if (questProcess) {
+        questProcess.processOfTask = quest.amountOfTask;
+        questProcess.isVerified = true;
+        questProcess.processTime = time;
+        return questProcess.save();
+      }
+      newQuestProcess = new this.questProcessModel({
         user: userDocument._id,
         quest: quest._id,
-        processOfTask: 0,
+        processOfTask: quest.amountOfTask,
+        isVerified: true,
+        processTime: time,
+      });
+    } else if (flexHausDrops > 0) {
+      if (questProcess) {
+        questProcess.processOfTask = flexHausDrops;
+        questProcess.isVerified = false;
+        questProcess.processTime = time;
+        return questProcess.save();
+      }
+      newQuestProcess = new this.questProcessModel({
+        user: userDocument._id,
+        quest: quest._id,
+        processOfTask: flexHausDrops,
         isVerified: false,
         processTime: time,
       });
+    } else {
+      if (!questProcess) {
+        newQuestProcess = new this.questProcessModel({
+          user: userDocument._id,
+          quest: quest._id,
+          processOfTask: 0,
+          isVerified: false,
+          processTime: time,
+        });
+      } else {
+        return questProcess;
+      }
+    }
+
+    if (newQuestProcess) {
+      return await newQuestProcess.save();
     }
   }
 
   async verifyBidNFT(
+    questProcess: QuestProcessDocument,
     quest: QuestDocument,
     userDocument: UserDocument,
     time: number,
@@ -367,48 +425,56 @@ export class QuestService {
       createdAt: { $gte: start.getTime(), $lt: end.getTime() },
     });
 
+    let newQuestProcess: QuestProcessDocument = null;
     if (signatures >= quest.amountOfTask) {
-      return await this.questProcessModel.findOneAndUpdate(
-        {
-          user: userDocument._id,
-          quest: quest._id,
-        },
-        {
-          $set: {
-            processOfTask: quest.amountOfTask,
-            isVerified: true,
-            processTime: time,
-          },
-        },
-        { upsert: true, new: true },
-      );
-    } else if (signatures > 0) {
-      return await this.questProcessModel.findOneAndUpdate(
-        {
-          user: userDocument._id,
-          quest: quest._id,
-        },
-        {
-          $set: {
-            processOfTask: signatures,
-            isVerified: false,
-            processTime: time,
-          },
-        },
-        { upsert: true, new: true },
-      );
-    } else {
-      return new this.questProcessModel({
+      if (questProcess) {
+        questProcess.processOfTask = quest.amountOfTask;
+        questProcess.isVerified = true;
+        questProcess.processTime = time;
+        return questProcess.save();
+      }
+      newQuestProcess = new this.questProcessModel({
         user: userDocument._id,
         quest: quest._id,
-        processOfTask: 0,
+        processOfTask: quest.amountOfTask,
+        isVerified: true,
+        processTime: time,
+      });
+    } else if (signatures > 0) {
+      if (questProcess) {
+        questProcess.processOfTask = signatures;
+        questProcess.isVerified = false;
+        questProcess.processTime = time;
+        return questProcess.save();
+      }
+      newQuestProcess = new this.questProcessModel({
+        user: userDocument._id,
+        quest: quest._id,
+        processOfTask: signatures,
         isVerified: false,
         processTime: time,
       });
+    } else {
+      if (!questProcess) {
+        newQuestProcess = new this.questProcessModel({
+          user: userDocument._id,
+          quest: quest._id,
+          processOfTask: 0,
+          isVerified: false,
+          processTime: time,
+        });
+      } else {
+        return questProcess;
+      }
+    }
+
+    if (newQuestProcess) {
+      return await newQuestProcess.save();
     }
   }
 
   async verifyListNFT(
+    questProcess: QuestProcessDocument,
     quest: QuestDocument,
     userDocument: UserDocument,
     time: number,
@@ -424,48 +490,56 @@ export class QuestService {
       createdAt: { $gte: start.getTime(), $lt: end.getTime() },
     });
 
+    let newQuestProcess: QuestProcessDocument = null;
     if (signatures >= quest.amountOfTask) {
-      return await this.questProcessModel.findOneAndUpdate(
-        {
-          user: userDocument._id,
-          quest: quest._id,
-        },
-        {
-          $set: {
-            processOfTask: quest.amountOfTask,
-            isVerified: true,
-            processTime: time,
-          },
-        },
-        { upsert: true, new: true },
-      );
-    } else if (signatures > 0) {
-      return await this.questProcessModel.findOneAndUpdate(
-        {
-          user: userDocument._id,
-          quest: quest._id,
-        },
-        {
-          $set: {
-            processOfTask: signatures,
-            isVerified: false,
-            processTime: time,
-          },
-        },
-        { upsert: true, new: true },
-      );
-    } else {
-      return new this.questProcessModel({
+      if (questProcess) {
+        questProcess.processOfTask = quest.amountOfTask;
+        questProcess.isVerified = true;
+        questProcess.processTime = time;
+        return questProcess.save();
+      }
+      newQuestProcess = new this.questProcessModel({
         user: userDocument._id,
         quest: quest._id,
-        processOfTask: 0,
+        processOfTask: quest.amountOfTask,
+        isVerified: true,
+        processTime: time,
+      });
+    } else if (signatures > 0) {
+      if (questProcess) {
+        questProcess.processOfTask = signatures;
+        questProcess.isVerified = false;
+        questProcess.processTime = time;
+        return questProcess.save();
+      }
+      newQuestProcess = new this.questProcessModel({
+        user: userDocument._id,
+        quest: quest._id,
+        processOfTask: signatures,
         isVerified: false,
         processTime: time,
       });
+    } else {
+      if (!questProcess) {
+        newQuestProcess = new this.questProcessModel({
+          user: userDocument._id,
+          quest: quest._id,
+          processOfTask: 0,
+          isVerified: false,
+          processTime: time,
+        });
+      } else {
+        return questProcess;
+      }
+    }
+
+    if (newQuestProcess) {
+      return await newQuestProcess.save();
     }
   }
 
   async verifyBuyNFT(
+    questProcess: QuestProcessDocument,
     quest: QuestDocument,
     userDocument: UserDocument,
     time: number,
@@ -482,44 +556,51 @@ export class QuestService {
       createdAt: { $gte: start.getTime(), $lt: end.getTime() },
     });
 
+    let newQuestProcess: QuestProcessDocument = null;
     if (signatures >= quest.amountOfTask) {
-      return await this.questProcessModel.findOneAndUpdate(
-        {
-          user: userDocument._id,
-          quest: quest._id,
-        },
-        {
-          $set: {
-            processOfTask: quest.amountOfTask,
-            isVerified: true,
-            processTime: time,
-          },
-        },
-        { upsert: true, new: true },
-      );
-    } else if (signatures > 0) {
-      return await this.questProcessModel.findOneAndUpdate(
-        {
-          user: userDocument._id,
-          quest: quest._id,
-        },
-        {
-          $set: {
-            processOfTask: signatures,
-            isVerified: false,
-            processTime: time,
-          },
-        },
-        { upsert: true, new: true },
-      );
-    } else {
-      return new this.questProcessModel({
+      if (questProcess) {
+        questProcess.processOfTask = quest.amountOfTask;
+        questProcess.isVerified = true;
+        questProcess.processTime = time;
+        return questProcess.save();
+      }
+      newQuestProcess = new this.questProcessModel({
         user: userDocument._id,
         quest: quest._id,
-        processOfTask: 0,
+        processOfTask: quest.amountOfTask,
+        isVerified: true,
+        processTime: time,
+      });
+    } else if (signatures > 0) {
+      if (questProcess) {
+        questProcess.processOfTask = signatures;
+        questProcess.isVerified = false;
+        questProcess.processTime = time;
+        return questProcess.save();
+      }
+      newQuestProcess = new this.questProcessModel({
+        user: userDocument._id,
+        quest: quest._id,
+        processOfTask: signatures,
         isVerified: false,
         processTime: time,
       });
+    } else {
+      if (!questProcess) {
+        newQuestProcess = new this.questProcessModel({
+          user: userDocument._id,
+          quest: quest._id,
+          processOfTask: 0,
+          isVerified: false,
+          processTime: time,
+        });
+      } else {
+        return questProcess;
+      }
+    }
+
+    if (newQuestProcess) {
+      return await newQuestProcess.save();
     }
   }
 

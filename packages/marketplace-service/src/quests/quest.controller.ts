@@ -1,15 +1,4 @@
-import {
-  Controller,
-  Get,
-  Param,
-  Query,
-  Body,
-  Post,
-  Put,
-  Delete,
-  Req,
-  Res,
-} from '@nestjs/common';
+import { Controller, Get, Body, Post } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { QuestService } from './quest.service';
 import { BaseResult } from '@app/shared/types';
