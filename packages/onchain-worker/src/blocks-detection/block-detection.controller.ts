@@ -6,6 +6,8 @@ import {
   Blocks,
   ChainDocument,
   Chains,
+  NftCollectionDocument,
+  NftCollections,
 } from '@app/shared/models';
 import { Model } from 'mongoose';
 import { Web3Service } from '@app/web3-service/web3.service';
@@ -23,6 +25,8 @@ export class BlockDetectionController {
     private readonly chainModel: Model<ChainDocument>,
     @InjectModel(Blocks.name)
     private readonly blockModel: Model<BlockDocument>,
+    @InjectModel(NftCollections.name)
+    private readonly nftCollectionModel: Model<NftCollectionDocument>,
     @InjectQueue(ONCHAIN_QUEUES.QUEUE_CANCEL_ALL_ORDERS)
     private readonly cancelAllOrdersQueue: Queue<LogsReturnValues>,
     @InjectQueue(ONCHAIN_QUEUES.QUEUE_CANCEL_OFFER)
@@ -98,6 +102,7 @@ export class BlockDetectionController {
             this.blockModel,
             this.web3Service,
             chain,
+            this.nftCollectionModel,
           ),
       );
 

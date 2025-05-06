@@ -5,6 +5,7 @@ import {
   BlockDocument,
   BlockWorkerStatus,
   ChainDocument,
+  NftCollectionDocument,
   TransactionWorkerStatus,
   TransactionWorkerType,
 } from '@app/shared/models/schemas';
@@ -45,6 +46,7 @@ export class BlockDetectionService extends OnchainWorker {
     blockModel: Model<BlockDocument>,
     web3Service: Web3Service,
     chain: ChainDocument,
+    nftCollectionModel: Model<NftCollectionDocument>,
   ) {
     super(1000, 10, `${BlockDetectionService.name}:${chain.name}`);
     this.logger.log('Created');
@@ -72,6 +74,7 @@ export class BlockDetectionService extends OnchainWorker {
     this.chain = chain;
     this.chainId = chain.id;
     this.blockModel = blockModel;
+    this.nftCollectionModel = nftCollectionModel;
   }
   chainId: string;
   web3Service: Web3Service;
@@ -98,6 +101,7 @@ export class BlockDetectionService extends OnchainWorker {
   itemUnstakedQueue: Queue<LogsReturnValues>;
   updateDropQueue: Queue<LogsReturnValues>;
   blockModel: Model<BlockDocument>;
+  nftCollectionModel: Model<NftCollectionDocument>;
 
   fetchLatestBlock: () => Promise<number> = async () => {
     const latestBlock = await this.provider.getBlock('latest');
@@ -261,10 +265,8 @@ export class BlockDetectionService extends OnchainWorker {
           case EventType.UNKNOWN_TRANSFER:
             const { contractAddress } =
               event.returnValues as ERC721OrERC20TransferReturnValue;
-            const contractStandard = await this.web3Service.getContractStandard(
-              contractAddress,
-              this.chain.rpc,
-            );
+            const contractStandard =
+              await this.getCollectionStandard(contractAddress);
 
             if (!contractStandard) {
               break;
@@ -537,5 +539,22 @@ export class BlockDetectionService extends OnchainWorker {
         `get error when detect tx - ${tx.txHash} - error: ${error}`,
       );
     }
+  }
+
+  async getCollectionStandard(nftAddress: string) {
+    const nftCollection = await this.nftCollectionModel.findOne({
+      nftContract: nftAddress,
+    });
+
+    if (nftCollection) {
+      return nftCollection.standard;
+    }
+
+    const contractStandard = await this.web3Service.getContractStandard(
+      nftAddress,
+      this.chain.rpc,
+    );
+
+    return contractStandard;
   }
 }
