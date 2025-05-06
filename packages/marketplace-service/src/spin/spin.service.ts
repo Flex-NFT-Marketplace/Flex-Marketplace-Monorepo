@@ -58,7 +58,7 @@ export class SpinService {
       }
     }
 
-    let updateBatch: any = [];
+    const updateBatch: any = [];
     for (const process of updatedProcess) {
       updateBatch.push({
         updateOne: {
@@ -106,6 +106,8 @@ export class SpinService {
     const rewards = await this.getSpinRewards();
     const rand = Math.random() * 100;
     let cumulative = 0;
+    tickets.amount -= 1;
+    await tickets.save();
     for (const reward of rewards) {
       cumulative += reward.percentage;
       if (rand < cumulative) {
@@ -114,11 +116,6 @@ export class SpinService {
             await this.userModel.findOneAndUpdate(
               { _id: user._id },
               { $inc: { points: reward.amount } },
-            );
-
-            await this.spinTicketModel.findOneAndUpdate(
-              { user: user._id },
-              { $inc: { amount: -1 } },
             );
             break;
           case SpinRewardType.TICKET:
