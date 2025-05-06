@@ -445,10 +445,7 @@ export class BlockDetectionService extends OnchainWorker {
             const { contractAddress: nftAddressBurned } =
               event.returnValues as ERC721OrERC20TransferReturnValue;
             const collectionBurnedInfo =
-              await this.web3Service.getNFTCollectionDetail(
-                nftAddressBurned,
-                this.chain.rpc,
-              );
+              await this.getCollectionDetail(nftAddressBurned);
             if (collectionBurnedInfo) {
               queue = this.erc721BurnQueue;
               jobName = ONCHAIN_JOBS.JOB_BURN_721;
@@ -458,10 +455,7 @@ export class BlockDetectionService extends OnchainWorker {
             const { contractAddress: nftAddressMinted } =
               event.returnValues as ERC721OrERC20TransferReturnValue;
             const collectionMintedInfo =
-              await this.web3Service.getNFTCollectionDetail(
-                nftAddressMinted,
-                this.chain.rpc,
-              );
+              await this.getCollectionDetail(nftAddressMinted);
             if (collectionMintedInfo) {
               queue = this.erc721MintQueue;
               jobName = ONCHAIN_JOBS.JOB_MINT_721;
@@ -470,11 +464,7 @@ export class BlockDetectionService extends OnchainWorker {
           case EventType.TRANSFER_721:
             const { contractAddress: nftAddress } =
               event.returnValues as ERC721OrERC20TransferReturnValue;
-            const collectionInfo =
-              await this.web3Service.getNFTCollectionDetail(
-                nftAddress,
-                this.chain.rpc,
-              );
+            const collectionInfo = await this.getCollectionDetail(nftAddress);
             if (collectionInfo) {
               queue = this.erc721TransferQueue;
               jobName = ONCHAIN_JOBS.JOB_TRANSFER_721;
@@ -556,5 +546,22 @@ export class BlockDetectionService extends OnchainWorker {
     );
 
     return contractStandard;
+  }
+
+  async getCollectionDetail(nftAddress: string) {
+    const nftCollection = await this.nftCollectionModel.findOne({
+      nftContract: nftAddress,
+    });
+
+    if (nftCollection) {
+      return nftCollection;
+    }
+
+    const collectionInfo = await this.web3Service.getNFTCollectionDetail(
+      nftAddress,
+      this.chain.rpc,
+    );
+
+    return collectionInfo;
   }
 }
