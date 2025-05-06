@@ -19,6 +19,8 @@ import { StakingModule } from './staking/staking.module';
 import { NftCollectionTaskModule } from './nft-collections/task/nftCollectionTask.module';
 import { UploadModule } from './upload/upload.module';
 import { MetadataModule } from './metadata/metadata.module';
+import { QuestModule } from './quests/quest.module';
+import { SpinModule } from './spin/spin.module';
 
 @Module({
   imports: [
@@ -40,6 +42,8 @@ import { MetadataModule } from './metadata/metadata.module';
     NftCollectionTaskModule,
     UploadModule,
     MetadataModule,
+    QuestModule,
+    SpinModule,
   ],
   controllers: [],
   providers: [],

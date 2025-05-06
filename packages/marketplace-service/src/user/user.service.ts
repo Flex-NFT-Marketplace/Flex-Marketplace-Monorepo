@@ -65,6 +65,10 @@ export class UserService {
       .populate(['mappingAddress']);
   }
 
+  async getUserById(id: string): Promise<UserDocument> {
+    return await this.userModel.findById(id);
+  }
+
   async getUserInfo(query: GetUserInfoDto): Promise<UserResponseDto> {
     const filter: any = {};
 
@@ -122,6 +126,7 @@ export class UserService {
     if (query.username) {
       const existedUser = await this.userModel.findOne({
         username: query.username,
+        address: { $ne: userAddress },
       });
 
       if (existedUser) {

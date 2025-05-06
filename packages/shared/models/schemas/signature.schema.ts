@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Types } from 'mongoose';
+import { BaseSchema } from './base.schema';
 
 export type SignatureDocument = HydratedDocument<Signature>;
 
@@ -38,7 +39,7 @@ export type TxStatus =
   | TxStatusEnum.REVERTED;
 
 @Schema({ timestamps: true })
-export class Signature {
+export class Signature extends BaseSchema {
   @Prop({ index: true })
   contract_address: string;
 
@@ -96,6 +97,8 @@ export class Signature {
 export const SignatureSchema = SchemaFactory.createForClass(Signature);
 SignatureSchema.index({ contract_address: 1, token_id: 1 });
 SignatureSchema.index({ signer: 1, status: 1 });
+SignatureSchema.index({ signer: 1, status: 1, createdAt: 1 });
+SignatureSchema.index({ signer: 1, status: 1, signature4: 1, createdAt: 1 });
 SignatureSchema.index({ status: 1 });
 SignatureSchema.index({ price: -1, createdAt: -1 });
 SignatureSchema.index({ price: 1, createdAt: -1 });

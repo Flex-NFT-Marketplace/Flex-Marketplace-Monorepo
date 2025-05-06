@@ -1,0 +1,38 @@
+import { Controller, Get, Post } from '@nestjs/common';
+import { SpinService } from './spin.service';
+import { ApiTags } from '@nestjs/swagger';
+import { BaseResult } from '@app/shared/types';
+import { JWT, User, iInfoToken } from '@app/shared/modules';
+
+@Controller('spin')
+@ApiTags('spin')
+export class SpinController {
+  constructor(private readonly spinService: SpinService) {}
+
+  @Get('rewards')
+  async getSpinRewards() {
+    const result = await this.spinService.getSpinRewards();
+    return new BaseResult(result);
+  }
+
+  @Post('claim-ticket')
+  @JWT()
+  async claimTicket(@User() user: iInfoToken) {
+    const result = await this.spinService.claimTicket(user.sub);
+    return new BaseResult(result);
+  }
+
+  @Get('tickets')
+  @JWT()
+  async getTickets(@User() user: iInfoToken) {
+    const result = await this.spinService.getTickets(user.sub);
+    return new BaseResult(result);
+  }
+
+  @Post('settle')
+  @JWT()
+  async settle(@User() user: iInfoToken) {
+    const result = await this.spinService.settle(user.sub);
+    return new BaseResult(result);
+  }
+}

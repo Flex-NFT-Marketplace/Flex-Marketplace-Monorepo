@@ -31,6 +31,7 @@ import { BaseResultPagination } from '@app/shared/types';
 import { PaginationDto } from '@app/shared/types/pagination.dto';
 import { NftCollectionsService } from '../nft-collections/nftCollections.service';
 import {
+  arraySliceProcess,
   formattedContractAddress,
   unformattedContractAddress,
 } from '@app/shared/utils';
@@ -699,7 +700,7 @@ export class SignatureService {
         );
       }
 
-      const CartDocument = this.cartModel.findOne({
+      const CartDocument = await this.cartModel.findOne({
         user: userDocument._id,
         nftContract: formattedNftContract,
         tokenId,
@@ -728,13 +729,106 @@ export class SignatureService {
 
   async getCart(user: string) {
     const userDocument = await this.userService.getOrCreateUser(user);
-    const items = await this.cartModel
-      .find({ user: userDocument._id })
-      .populate([
-        { path: 'nfts', select: ['nftContract', 'tokenId', 'name', 'image'] },
-      ]);
+    const items = await this.cartModel.aggregate([
+      {
+        $match: {
+          user: userDocument._id,
+        },
+      },
+      {
+        $lookup: {
+          from: 'nfts',
+          localField: 'nft',
+          foreignField: '_id',
+          pipeline: [
+            {
+              $project: {
+                _id: 1,
+                nftContract: 1,
+                tokenId: 1,
+                name: 1,
+                image: 1,
+                owner: 1,
+              },
+            },
+          ],
+          as: 'nft',
+        },
+      },
+      {
+        $unwind: '$nft',
+      },
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'nft.owner',
+          foreignField: '_id',
+          pipeline: [
+            {
+              $project: {
+                _id: 1,
+                address: 1,
+                username: 1,
+                isVerified: 1,
+              },
+            },
+          ],
+          as: 'nft.owner',
+        },
+      },
+      { $unwind: '$nft.owner' },
+    ]);
 
-    return items;
+    console.log(items[0]);
+
+    const afterAlterItem = [];
+    await arraySliceProcess(items, async slicedItems => {
+      await Promise.all(
+        slicedItems.map(async item => {
+          let ownerDocument = await this.userService.getUserById(
+            String(item.nft.owner._id),
+          );
+          let bestAsk: any;
+
+          const currentResult: any = {
+            _id: item._id,
+            user: item.user,
+            nftContract: item.nft.nftContract,
+            tokenId: item.nft.tokenId,
+            nftData: item.nft,
+            orderData: {},
+          };
+          if (ownerDocument.address != '') {
+            bestAsk = await this.getSignatureByOwner(
+              item.nftContract,
+              item.tokenId,
+              ownerDocument.address,
+            );
+          } else {
+            bestAsk = await this.getSignature(item.nftContract, item.tokenId);
+          }
+          const listAsk = await this.getSignatures(
+            item.nftContract,
+            item.tokenId,
+          );
+
+          const listBid = await this.getBidSignatures(
+            item.nftContract,
+            item.tokenId,
+          );
+
+          const orderData = {
+            bestAsk,
+            listAsk,
+            listBid,
+          };
+          currentResult.orderData = orderData;
+          afterAlterItem.push(currentResult);
+        }),
+      );
+    });
+
+    return afterAlterItem;
   }
 
   async deleteItemOnCart(item: AddToCartItemDTO, user: string) {
