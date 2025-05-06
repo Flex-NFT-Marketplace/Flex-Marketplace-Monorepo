@@ -116,7 +116,7 @@ export class SpinService {
           case SpinRewardType.POINT:
             await this.userModel.findOneAndUpdate(
               { _id: user._id },
-              { $inc: { points: reward.amount } },
+              { $inc: { flexPoint: reward.amount } },
             );
             break;
           case SpinRewardType.TICKET:
