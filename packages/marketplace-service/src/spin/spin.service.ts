@@ -103,12 +103,13 @@ export class SpinService {
       throw new HttpException('You have no tickets', HttpStatus.NOT_FOUND);
     }
 
-    const rewards = await this.getSpinRewards();
+    const rewards = await this.spinRewardsModel.find().sort({ percentage: -1 });
     const rand = Math.random() * 100;
     let cumulative = 0;
     tickets.amount -= 1;
     await tickets.save();
     for (const reward of rewards) {
+      if (reward.percentage === 0) continue;
       cumulative += reward.percentage;
       if (rand < cumulative) {
         switch (reward.reward) {
