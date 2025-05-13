@@ -1067,10 +1067,9 @@ export class NftCollectionsService {
   }
 
   async updateCollectionDetail(
-    owner: string,
     body: UpdateCollectionDetailDto,
   ): Promise<BaseResult<string>> {
-    const ownerDocument = await this.userService.getOrCreateUser(owner);
+    // const ownerDocument = await this.userService.getOrCreateUser(owner);
 
     const { nftContract, description, externalLink, avatar, cover } = body;
 
@@ -1080,7 +1079,7 @@ export class NftCollectionsService {
       async () => {
         nftCollection = await this.nftCollectionModel.findOne({
           nftContract: formatedAddress,
-          owner: ownerDocument,
+          // owner: ownerDocument,
         });
       },
       nftCollection => nftCollection !== null,

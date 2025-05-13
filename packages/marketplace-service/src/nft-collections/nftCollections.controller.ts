@@ -378,16 +378,16 @@ export class NftCollectionsController {
     }
   }
 
-  @JWT()
+  // @JWT()
   @Post('update-collection-detail')
   @ApiOperation({
     summary: 'update NFT Collection detail',
   })
   async updateCollectionDetail(
     @Body() body: UpdateCollectionDetailDto,
-    @User() user: iInfoToken,
+    // @User() user: iInfoToken,
   ) {
-    await this.nftCollectionService.updateCollectionDetail(user.sub, body);
+    await this.nftCollectionService.updateCollectionDetail(body);
   }
 
   // @UseGuards(JwtAdminAuthGuard)
