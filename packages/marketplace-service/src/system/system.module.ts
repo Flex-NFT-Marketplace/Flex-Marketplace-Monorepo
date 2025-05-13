@@ -4,6 +4,8 @@ import {
   ChainSchema,
   NftCollections,
   NftCollectionSchema,
+  PaymentTokens,
+  PaymentTokenSchema,
   System,
   SystemSchema,
   Users,
@@ -31,6 +33,10 @@ import { SystemService } from './system.service';
       {
         name: System.name,
         schema: SystemSchema,
+      },
+      {
+        name: PaymentTokens.name,
+        schema: PaymentTokenSchema,
       },
     ]),
 

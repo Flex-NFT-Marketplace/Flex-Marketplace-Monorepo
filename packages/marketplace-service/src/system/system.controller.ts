@@ -4,10 +4,13 @@ import {
   Controller,
   Get,
   Post,
+  Param,
+  HttpStatus,
+  HttpException,
 } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { SettingBannerCollectionDto } from './dto/settingSystem.dto';
-
+import { isMongoId } from 'class-validator';
 import { SystemService } from './system.service';
 import { JWTAdmin } from '@app/shared/modules';
 import { BaseResult } from '@app/shared/types';
@@ -41,5 +44,14 @@ export class SystemController {
       console.log(error);
       throw new BadRequestException('Something went wrong in Setting banner');
     }
+  }
+
+  @Get('/paymentToken/:paymentToken')
+  async getPaymentToken(@Param('paymentToken') paymentToken: string) {
+    if (!isMongoId(paymentToken)) {
+      throw new HttpException('Invalid payment token', HttpStatus.BAD_REQUEST);
+    }
+    const data = await this.systemService.getPaymentToken(paymentToken);
+    return new BaseResult(data);
   }
 }

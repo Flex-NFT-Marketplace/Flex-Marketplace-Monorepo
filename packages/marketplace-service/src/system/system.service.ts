@@ -1,18 +1,24 @@
 import {
   NftCollectionDocument,
   NftCollections,
+  PaymentTokenDocument,
+  PaymentTokens,
   System,
   SystemDocument,
 } from '@app/shared/models';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { SettingBannerCollectionDto } from './dto/settingSystem.dto';
+import { HttpException, HttpStatus } from '@nestjs/common';
+
 export class SystemService {
   constructor(
     @InjectModel(System.name)
     private readonly systemModel: Model<SystemDocument>,
     @InjectModel(NftCollections.name)
     private readonly nftCollectionsModel: Model<NftCollectionDocument>,
+    @InjectModel(PaymentTokens.name)
+    private readonly paymentTokensModel: Model<PaymentTokenDocument>,
   ) {}
   async getBannerTop() {
     const system = await this.systemModel
@@ -88,5 +94,17 @@ export class SystemService {
     } else {
       throw new Error('System not found'); // Handle case where system is undefined
     }
+  }
+
+  async getPaymentToken(paymentToken: string) {
+    const paymentTokenDocument = await this.paymentTokensModel.findOne({
+      _id: paymentToken,
+    });
+
+    if (!paymentTokenDocument) {
+      throw new HttpException('Payment Token not found', HttpStatus.NOT_FOUND);
+    }
+
+    return paymentTokenDocument;
   }
 }

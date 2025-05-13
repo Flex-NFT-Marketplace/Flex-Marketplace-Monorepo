@@ -332,7 +332,7 @@ export class NftCollectionsController {
   }
 
   @JWT()
-  @Get('check-favorite-nft-collection')
+  @Post('check-favorite-nft-collection')
   async checkFavoriteNFTCollection(
     @Body() body: CollectionAddressDto,
     @User() user: iInfoToken,
