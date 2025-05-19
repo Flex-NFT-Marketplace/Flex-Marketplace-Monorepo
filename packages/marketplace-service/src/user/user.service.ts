@@ -7,7 +7,11 @@ import { v1 as uuidv1 } from 'uuid';
 import { formattedContractAddress } from '@app/shared/utils';
 import { UpdateUserInfo } from './dto/updateUser.dto';
 import { GetUserInfoDto, UserResponseDto } from './dto/getUser.dto';
-import { BaseResult, BaseResultPagination } from '@app/shared/types';
+import {
+  BaseQueryParams,
+  BaseResult,
+  BaseResultPagination,
+} from '@app/shared/types';
 import { QueryUserActivity } from './dto/userActivity.dto';
 import { SignatureDTO } from '../signature/dto/signature.dto';
 import { PaginationDto } from '@app/shared/types/pagination.dto';
@@ -99,6 +103,7 @@ export class UserService {
       about: user.about,
       socials: user.socials ? user.socials : {},
       points: user.points ? user.points : 0,
+      flexPoint: user.flexPoint ? user.flexPoint : 0,
     };
     return userDto;
   }
@@ -229,4 +234,41 @@ export class UserService {
   //     }
   //   }
   // }
+
+  async getFlexPointLeaderboard(
+    query: BaseQueryParams,
+  ): Promise<BaseResultPagination<UserResponseDto>> {
+    const { page, size, skipIndex, sort } = query;
+    const result = new BaseResultPagination<UserResponseDto>();
+
+    const total = await this.userModel.countDocuments();
+
+    const sortOperators = {};
+    for (const items of sort) {
+      sortOperators[Object.keys(items)[0]] = Object.values(items)[0];
+    }
+
+    const items = await this.userModel.find(
+      {},
+      {
+        address: 1,
+        username: 1,
+        flexPoint: 1,
+        about: 1,
+        avatar: 1,
+        cover: 1,
+        socials: 1,
+        email: 1,
+      },
+      {
+        sort: { flexPoint: -1 },
+        skip: skipIndex,
+        limit: size,
+      },
+    );
+
+    result.data = new PaginationDto(items, total, page, size);
+
+    return result;
+  }
 }

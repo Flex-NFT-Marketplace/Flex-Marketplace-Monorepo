@@ -1,7 +1,7 @@
-import { Controller, Get, Post } from '@nestjs/common';
+import { Body, Controller, Get, Post } from '@nestjs/common';
 import { SpinService } from './spin.service';
 import { ApiTags } from '@nestjs/swagger';
-import { BaseResult } from '@app/shared/types';
+import { BaseQueryParams, BaseResult } from '@app/shared/types';
 import { JWT, User, iInfoToken } from '@app/shared/modules';
 
 @Controller('spin')
@@ -29,10 +29,23 @@ export class SpinController {
     return new BaseResult(result);
   }
 
+  @Post('tickets-can-claim')
+  @JWT()
+  async ticketsCanClaim(@User() user: iInfoToken) {
+    const result = await this.spinService.ticketsCanClaim(user.sub);
+    return new BaseResult(result);
+  }
+
   @Post('settle')
   @JWT()
   async settle(@User() user: iInfoToken) {
     const result = await this.spinService.settle(user.sub);
     return new BaseResult(result);
+  }
+
+  @Post('history')
+  async history(@Body() query: BaseQueryParams) {
+    const result = await this.spinService.getHistory(query);
+    return result;
   }
 }

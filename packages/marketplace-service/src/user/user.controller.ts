@@ -21,7 +21,7 @@ import { iInfoToken } from '@app/shared/modules/jwt/jwt.dto';
 import { GetUserInfoDto, UserResponseDto } from './dto/getUser.dto';
 import { UpdateUserInfo } from './dto/updateUser.dto';
 import { QueryUserActivity } from './dto/userActivity.dto';
-import { BaseResultPagination } from '@app/shared/types';
+import { BaseQueryParams, BaseResultPagination } from '@app/shared/types';
 import { SignatureDTO } from '../signature/dto/signature.dto';
 
 @ApiTags('Users')
@@ -86,5 +86,17 @@ export class UsersController {
     } catch (error) {
       throw new BadRequestException(error.message);
     }
+  }
+
+  @Post('leaderboard-flex-point')
+  @ApiOperation({
+    summary: 'Get Flex Point Leaderboard',
+  })
+  async getFlexPointLeaderboard(
+    @Body() query: BaseQueryParams,
+  ): Promise<BaseResultPagination<UserResponseDto>> {
+    const data = await this.userService.getFlexPointLeaderboard(query);
+
+    return data;
   }
 }
