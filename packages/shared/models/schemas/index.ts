@@ -34,3 +34,4 @@ export * from './spinreward.schema';
 export * from './spinticket.schema';
 export * from './userspinreward.schema';
 export * from './spinHistory.schema';
+export * from './coinprice.schema';

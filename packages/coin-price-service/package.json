@@ -55,7 +55,7 @@
       "json",
       "ts"
     ],
-    "rootDir": "src",
+    "rootDir": ".",
     "testRegex": ".*\\.spec\\.ts$",
     "transform": {
       "^.+\\.(t|j)s$": "ts-jest"
@@ -64,6 +64,10 @@
       "**/*.(t|j)s"
     ],
     "coverageDirectory": "../coverage",
-    "testEnvironment": "node"
+    "testEnvironment": "node",
+    "moduleNameMapper": {
+      "^@app/shared(|/.*)$": "<rootDir>/../../packages/shared/$1",
+      "^@app/web3-service(|/.*)$": "<rootDir>/../../packages/web3-service/$1"
+    }
   }
 }

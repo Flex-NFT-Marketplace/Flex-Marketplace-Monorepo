@@ -4,6 +4,8 @@ import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
 import {
   ChainDocument,
   Chains,
+  CoinPrice,
+  CoinPriceDocument,
   Histories,
   HistoryDocument,
   HistoryType,
@@ -77,6 +79,8 @@ export class NftCollectionsService {
     private readonly signatureModel: Model<Signature>,
     @InjectModel(NftCollectionFavorites.name)
     private readonly nftCollectionFavoriteModel: Model<NftCollectionFavoritesDocument>,
+    @InjectModel(CoinPrice.name)
+    private readonly coinPriceModel: Model<CoinPriceDocument>,
     private readonly onchainQueueService: OnchainQueueService,
     private readonly userService: UserService,
     private readonly web3Service: Web3Service,
@@ -288,7 +292,13 @@ export class NftCollectionsService {
       filter.nftContract = formattedContractAddress(query.nftContract);
     }
 
-    const now = Date.now();
+    const now = new Date();
+    now.setUTCHours(0, 0, 0, 0);
+    const coinPrice = await this.coinPriceModel
+      .find({ timestamp: now })
+      .populate(['token0']);
+    const strkPrice = coinPrice.find(i => i.token0.symbol === 'STRK');
+    const usdcPrice = coinPrice.find(i => i.token0.symbol === 'USDC');
 
     const topNftCollection = await this.historyModel.aggregate([
       {
@@ -303,36 +313,58 @@ export class NftCollectionsService {
         },
       },
       {
-        $group: {
-          _id: '$_id.nftContract',
-          totalVols: {
-            $push: {
-              k: { $toString: '$_id.payment' },
-              v: '$totalVol',
+        $project: {
+          _id: 0,
+          nftContract: '$_id.nftContract',
+          paymentToken: '$_id.payment',
+          totalVolInEth: {
+            $cond: {
+              if: { $eq: ['$_id.payment', strkPrice.token0._id] },
+              then: {
+                $multiply: ['$totalVol', Number(strkPrice.price) / 1e18],
+              },
+              else: {
+                $cond: {
+                  if: { $eq: ['$_id.payment', usdcPrice.token0._id] },
+                  then: {
+                    $multiply: ['$totalVol', Number(usdcPrice.price) / 1e6],
+                  },
+                  else: '$totalVol',
+                },
+              },
             },
           },
         },
       },
       {
-        $project: {
-          _id: 1,
-          totalVols: {
-            $arrayToObject: '$totalVols',
+        $group: {
+          _id: '$nftContract',
+          paymentToken: {
+            $first: '$paymentToken',
+          },
+          totalVolInEth: {
+            $sum: '$totalVolInEth',
           },
         },
       },
-      {
-        $replaceRoot: {
-          newRoot: {
-            $mergeObjects: [{ nftContract: '$_id' }, '$totalVols'],
-          },
-        },
-      },
+      // {
+      //   $project: {
+      //     _id: 1,
+      //     totalVols: {
+      //       $arrayToObject: '$totalVols',
+      //     },
+      //   },
+      // },
+      // {
+      //   $replaceRoot: {
+      //     newRoot: {
+      //       $mergeObjects: [{ nftContract: '$_id' }, '$totalVols'],
+      //     },
+      //   },
+      // },
       {
         $sort: {
-          '6604f1c682c9669beb15ce89': -1,
-          '6604f1c682c9669beb15ce90': -1,
-          '6604f24982c9669beb15ce8b': -1,
+          totalVolInEth: -1,
         },
       },
       {
@@ -344,7 +376,7 @@ export class NftCollectionsService {
       {
         $lookup: {
           from: 'histories',
-          let: { nftContract: '$nftContract' },
+          let: { nftContract: '$_id' },
           pipeline: [
             {
               $match: {
@@ -415,24 +447,126 @@ export class NftCollectionsService {
               $project: {
                 _id: 0,
                 nftContract: '$_id.nftContract',
-                paymentToken: '$_id.payment',
-                vol1D: 1,
-                volPre1D: 1,
-                vol7D: 1,
-                volPre7D: 1,
+                vol1DInEth: {
+                  $cond: {
+                    if: {
+                      $eq: ['$_id.payment', strkPrice.token0._id],
+                    },
+                    then: {
+                      $multiply: ['$vol1D', Number(strkPrice.price) / 1e18],
+                    },
+                    else: {
+                      $cond: {
+                        if: {
+                          $eq: ['$_id.payment', usdcPrice.token0._id],
+                        },
+                        then: {
+                          $multiply: ['$vol1D', Number(usdcPrice.price) / 1e6],
+                        },
+                        else: '$vol1D',
+                      },
+                    },
+                  },
+                },
+                volPre1DInEth: {
+                  $cond: {
+                    if: {
+                      $eq: ['$_id.payment', strkPrice.token0._id],
+                    },
+                    then: {
+                      $multiply: ['$volPre1D', Number(strkPrice.price) / 1e18],
+                    },
+                    else: {
+                      $cond: {
+                        if: {
+                          $eq: ['$_id.payment', usdcPrice.token0._id],
+                        },
+                        then: {
+                          $multiply: [
+                            '$volPre1D',
+                            Number(usdcPrice.price) / 1e6,
+                          ],
+                        },
+                        else: '$volPre1D',
+                      },
+                    },
+                  },
+                },
+                vol7DInEth: {
+                  $cond: {
+                    if: {
+                      $eq: ['$_id.payment', strkPrice.token0._id],
+                    },
+                    then: {
+                      $multiply: ['$vol7D', Number(strkPrice.price) / 1e18],
+                    },
+                    else: {
+                      $cond: {
+                        if: {
+                          $eq: ['$_id.payment', usdcPrice.token0._id],
+                        },
+                        then: {
+                          $multiply: ['$vol7D', Number(usdcPrice.price) / 1e6],
+                        },
+                        else: '$vol7D',
+                      },
+                    },
+                  },
+                },
+                volPre7DInEth: {
+                  $cond: {
+                    if: {
+                      $eq: ['$_id.payment', strkPrice.token0._id],
+                    },
+                    then: {
+                      $multiply: ['$volPre7D', Number(strkPrice.price) / 1e18],
+                    },
+                    else: {
+                      $cond: {
+                        if: {
+                          $eq: ['$_id.payment', usdcPrice.token0._id],
+                        },
+                        then: {
+                          $multiply: [
+                            '$volPre7D',
+                            Number(usdcPrice.price) / 1e6,
+                          ],
+                        },
+                        else: '$volPre7D',
+                      },
+                    },
+                  },
+                },
+              },
+            },
+            {
+              $group: {
+                _id: '$nftContract',
+                vol1DInEth: {
+                  $sum: '$vol1DInEth',
+                },
+                volPre1DInEth: {
+                  $sum: '$volPre1DInEth',
+                },
+                vol7DInEth: {
+                  $sum: '$vol7DInEth',
+                },
+                volPre7DInEth: {
+                  $sum: '$volPre7DInEth',
+                },
               },
             },
           ],
           as: 'statistic',
         },
       },
-      // {
-      //   $unwind: '$statistic',
-      // },
+      {
+        $unwind: '$statistic',
+      },
       {
         $lookup: {
           from: 'nftcollections',
-          localField: 'nftContract',
+          localField: '_id',
           foreignField: 'nftContract',
           as: 'collectionInfo',
         },
@@ -446,7 +580,8 @@ export class NftCollectionsService {
       {
         $project: {
           _id: 0,
-          // nftContract: '$_id',
+          nftContract: '$_id',
+          totalVolInEth: 1,
           // oneDayVol: { $divide: ['$statistic.vol1D', 1e18] },
           // sevenDayVol: { $divide: ['$statistic.vol7D', 1e18] },
           // oneDayChange: {
@@ -513,11 +648,10 @@ export class NftCollectionsService {
           // },
           // totalVol: { $divide: ['$totalVol', 1e18] },
           statistic: 1,
-          '6604f1c682c9669beb15ce89': 1,
-          '6604f1c682c9669beb15ce90': 1,
-          '6604f24982c9669beb15ce8b': 1,
+          // '6604f1c682c9669beb15ce89': 1,
+          // '6604f1c682c9669beb15ce90': 1,
+          // '6604f24982c9669beb15ce8b': 1,
           nftCollection: {
-            nftContract: 1,
             name: `$collectionInfo.name`,
             avatar: `$collectionInfo.avatar`,
             cover: `$collectionInfo.cover`,
@@ -527,8 +661,6 @@ export class NftCollectionsService {
         },
       },
     ]);
-
-    console.log(`${Date.now() - now} ms`);
 
     const total = await this.nftCollectionModel.countDocuments(filter);
     result.data = new PaginationDto<TopNftCollectionDto>(
@@ -551,6 +683,15 @@ export class NftCollectionsService {
 
     const oneDay = Date.now() - 86400000;
     // const sevenDay = Date.now() - 7 * 86400000;
+
+    const now = new Date();
+    now.setUTCHours(0, 0, 0, 0);
+
+    const coinPrice = await this.coinPriceModel
+      .find({ timestamp: now })
+      .populate(['token0']);
+    const strkPrice = coinPrice.find(i => i.token0.symbol === 'STRK');
+    const usdcPrice = coinPrice.find(i => i.token0.symbol === 'USDC');
 
     const filter: any = { type: HistoryType.Sale };
     if (query.nftContract) {
@@ -595,43 +736,101 @@ export class NftCollectionsService {
         },
       },
       {
-        $group: {
-          _id: '$_id.nftContract',
-          totalVols: {
-            $push: {
-              k: { $toString: '$_id.payment' },
-              v: '$totalVol',
-            },
-          },
-          vol1D: {
-            $push: {
-              k: { $toString: '$_id.payment' },
-              v: '$vol1D',
-            },
-          },
-          volPre1D: {
-            $push: {
-              k: { $toString: '$_id.payment' },
-              v: '$volPre1D',
-            },
-          },
-        },
-      },
-      {
         $project: {
           _id: 0,
-          nftContract: '$_id',
-          totalVols: {
-            $arrayToObject: '$totalVols',
+          nftContract: '$_id.nftContract',
+          paymentToken: '$_id.payment',
+          totalVolInEth: {
+            $cond: {
+              if: { $eq: ['$_id.payment', strkPrice.token0._id] },
+              then: {
+                $multiply: ['$totalVol', Number(strkPrice.price) / 1e18],
+              },
+              else: {
+                $cond: {
+                  if: { $eq: ['$_id.payment', usdcPrice.token0._id] },
+                  then: {
+                    $multiply: ['$totalVol', Number(usdcPrice.price) / 1e6],
+                  },
+                  else: '$totalVol',
+                },
+              },
+            },
           },
-          vol1D: {
-            $arrayToObject: '$vol1D',
+          vol1DInEth: {
+            $cond: {
+              if: { $eq: ['$_id.payment', strkPrice.token0._id] },
+              then: {
+                $multiply: ['$vol1D', Number(strkPrice.price) / 1e18],
+              },
+              else: {
+                $cond: {
+                  if: { $eq: ['$_id.payment', usdcPrice.token0._id] },
+                  then: {
+                    $multiply: ['$vol1D', Number(usdcPrice.price) / 1e6],
+                  },
+                  else: '$vol1D',
+                },
+              },
+            },
           },
-          volPre1D: {
-            $arrayToObject: '$volPre1D',
+          volPre1DInEth: {
+            $cond: {
+              if: { $eq: ['$_id.payment', strkPrice.token0._id] },
+              then: {
+                $multiply: ['$volPre1D', Number(strkPrice.price) / 1e18],
+              },
+              else: {
+                $cond: {
+                  if: { $eq: ['$_id.payment', usdcPrice.token0._id] },
+                  then: {
+                    $multiply: ['$volPre1D', Number(usdcPrice.price) / 1e6],
+                  },
+                  else: '$volPre1D',
+                },
+              },
+            },
           },
         },
       },
+      // {
+      //   $group: {
+      //     _id: '$_id.nftContract',
+      //     totalVols: {
+      //       $push: {
+      //         k: { $toString: '$_id.payment' },
+      //         v: '$totalVol',
+      //       },
+      //     },
+      //     vol1D: {
+      //       $push: {
+      //         k: { $toString: '$_id.payment' },
+      //         v: '$vol1D',
+      //       },
+      //     },
+      //     volPre1D: {
+      //       $push: {
+      //         k: { $toString: '$_id.payment' },
+      //         v: '$volPre1D',
+      //       },
+      //     },
+      //   },
+      // },
+      // {
+      //   $project: {
+      //     _id: 0,
+      //     nftContract: '$_id',
+      //     totalVols: {
+      //       $arrayToObject: '$totalVols',
+      //     },
+      //     vol1D: {
+      //       $arrayToObject: '$vol1D',
+      //     },
+      //     volPre1D: {
+      //       $arrayToObject: '$volPre1D',
+      //     },
+      //   },
+      // },
       // {
       //   $replaceRoot: {
       //     newRoot: {
@@ -646,12 +845,8 @@ export class NftCollectionsService {
       // },
       {
         $sort: {
-          'vol1D.6604f1c682c9669beb15ce89': -1,
-          'vol1D.6604f24982c9669beb15ce8b': -1,
-          'vol1D.6604f1c682c9669beb15ce90': -1,
-          'totalVols.6604f1c682c9669beb15ce89': -1,
-          'totalVols.6604f24982c9669beb15ce8b': -1,
-          'totalVols.6604f1c682c9669beb15ce90': -1,
+          vol1DInEth: -1,
+          totalVolInEth: -1,
         },
       },
       {
@@ -722,9 +917,9 @@ export class NftCollectionsService {
       },
       {
         $project: {
-          oneDayVol: '$vol1D',
+          vol1DInEth: '$vol1DInEth',
           // sevenDayVol: '$vol7D',
-          volPre1D: '$volPre1D',
+          volPre1DInEth: '$volPre1DInEth',
           // oneDayChange: {
           //   $cond: {
           //     if: { $gt: ['$volPre1D', 0] },
@@ -787,7 +982,7 @@ export class NftCollectionsService {
           //     },
           //   },
           // },
-          totalVols: '$totalVols',
+          totalVolInEth: '$totalVolInEth',
           nftCollection: {
             nftContract: '$nftContract',
             name: `$collectionInfo.name`,

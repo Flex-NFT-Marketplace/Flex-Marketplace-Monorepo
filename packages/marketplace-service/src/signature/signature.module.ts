@@ -9,6 +9,8 @@ import {
   CartSchema,
   Chains,
   ChainSchema,
+  CoinPrice,
+  CoinPriceSchema,
   Histories,
   HistorySchema,
   NftCollectionFavorites,
@@ -62,6 +64,10 @@ import { CronService } from './task/signatureTask.service';
       {
         name: NftCollectionFavorites.name,
         schema: NftCollectionFavoritesSchema,
+      },
+      {
+        name: CoinPrice.name,
+        schema: CoinPriceSchema,
       },
     ]),
     NftCollectionsModule,
