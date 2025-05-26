@@ -99,4 +99,11 @@ export class UsersController {
 
     return data;
   }
+
+  @JWT()
+  @Get('flex-point-ranked')
+  async getFlexPointRanked(@User() user: iInfoToken) {
+    const data = await this.userService.getFlexPointRanked(user.sub);
+    return data;
+  }
 }

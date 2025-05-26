@@ -271,4 +271,42 @@ export class UserService {
 
     return result;
   }
+
+  async getFlexPointRanked(address: string) {
+    const ranked = await this.userModel.aggregate([
+      {
+        $sort: {
+          flexPoint: -1,
+        },
+      },
+      {
+        $setWindowFields: {
+          sortBy: { point: -1 },
+          output: {
+            rank: { $rank: {} },
+          },
+        },
+      },
+      { $match: { address: address } },
+      {
+        $project: {
+          address: 1,
+          username: 1,
+          flexPoint: 1,
+          about: 1,
+          avatar: 1,
+          cover: 1,
+          socials: 1,
+          email: 1,
+          rank: 1,
+        },
+      },
+    ]);
+
+    if (ranked.length === 0) {
+      throw new HttpException('No user found', HttpStatus.NOT_FOUND);
+    }
+
+    return ranked[0];
+  }
 }
