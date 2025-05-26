@@ -275,13 +275,8 @@ export class UserService {
   async getFlexPointRanked(address: string) {
     const ranked = await this.userModel.aggregate([
       {
-        $sort: {
-          flexPoint: -1,
-        },
-      },
-      {
         $setWindowFields: {
-          sortBy: { point: -1 },
+          sortBy: { flexPoint: -1 },
           output: {
             rank: { $rank: {} },
           },
