@@ -18,6 +18,7 @@ export class UserResponseDto {
   socials?: Socials;
   isVerified?: boolean;
   points?: number;
+  flexPoint?: number;
 
   static from(user: Users): UserResponseDto {
     return {

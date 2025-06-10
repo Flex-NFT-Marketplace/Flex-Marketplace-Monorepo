@@ -4,6 +4,8 @@ import { NftCollectionsService } from './nftCollections.service';
 import {
   ChainSchema,
   Chains,
+  CoinPrice,
+  CoinPriceSchema,
   DropPhaseSchema,
   DropPhases,
   Histories,
@@ -73,6 +75,10 @@ import {
       {
         name: NftCollectionFavorites.name,
         schema: NftCollectionFavoritesSchema,
+      },
+      {
+        name: CoinPrice.name,
+        schema: CoinPriceSchema,
       },
     ]),
     BullModule.registerQueue(

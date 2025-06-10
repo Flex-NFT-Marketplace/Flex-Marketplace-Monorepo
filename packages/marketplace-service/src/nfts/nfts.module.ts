@@ -8,6 +8,8 @@ import {
   Carts,
   ChainSchema,
   Chains,
+  CoinPrice,
+  CoinPriceSchema,
   Histories,
   HistorySchema,
   NftCollectionFavorites,
@@ -72,6 +74,10 @@ import { OnchainQueueService } from '@app/shared/utils/queue';
       {
         name: NftCollectionFavorites.name,
         schema: NftCollectionFavoritesSchema,
+      },
+      {
+        name: CoinPrice.name,
+        schema: CoinPriceSchema,
       },
     ]),
     UsersModule,

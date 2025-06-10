@@ -19,10 +19,10 @@ export class ExternalLinkDto implements ExternalLink {
   @ApiProperty()
   website?: string;
 
-  @IsUrl()
-  @IsOptional()
-  @ApiProperty()
-  warpcastProfile?: string;
+  // @IsUrl()
+  // @IsOptional()
+  // @ApiProperty()
+  // warpcastProfile?: string;
 }
 
 export class UpdateCollectionDetailDto {

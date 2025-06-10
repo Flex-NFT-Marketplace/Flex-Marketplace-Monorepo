@@ -20,15 +20,11 @@ import * as _ from 'lodash';
 
 const getUrl = (url: string) => {
   if (url.startsWith('ipfs://')) {
-    return (
-      url?.replace('ipfs://', configuration().ipfs_gateway)
-    );
+    return url?.replace('ipfs://', configuration().ipfs_gateway);
   }
 
   if (url.startsWith('https://ipfs.io/ipfs/')) {
-    return (
-      url?.replace('https://ipfs.io/ipfs/', configuration().ipfs_gateway)
-    );
+    return url?.replace('https://ipfs.io/ipfs/', configuration().ipfs_gateway);
   }
   return url;
 };
@@ -200,21 +196,23 @@ export class MetadataService {
   parseJSON(dataURI: string): any {
     try {
       // Check for Base64 encoding
-      const base64Prefix = 'data:application/json;base64,';
-      const isBase64 = dataURI.indexOf(base64Prefix) > -1;
+      const base64Prefix = 'base64,';
+      const isBase64 =
+        dataURI.indexOf(base64Prefix) > 0 &&
+        dataURI.indexOf(base64Prefix) <= 33;
       let jsonPart;
 
       if (isBase64) {
         // Extract and decode the Base64 part
         const base64EncodedJson = dataURI.substring(
-          dataURI.indexOf(base64Prefix) + base64Prefix.length,
+          dataURI.indexOf(base64Prefix) + 7,
         );
         const decodedJson = atob(base64EncodedJson); // `atob` is used to decode Base64 content
         jsonPart = decodedJson;
       } else {
         // Simply remove the prefix and decode URI-encoded parts
         jsonPart = dataURI.substring(dataURI.indexOf(',') + 1);
-        jsonPart = decodeURIComponent(jsonPart);
+        // jsonPart = decodeURIComponent(jsonPart);
       }
 
       // Parse the JSON string into an object

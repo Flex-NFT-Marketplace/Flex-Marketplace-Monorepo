@@ -10,6 +10,7 @@ export default () => ({
   offchain_worker_port: Number(process.env.OFFCHAIN_WORKER_PORT) || 3030,
   api_port: Number(process.env.API_PORT) || 5001,
   flexhaus_api_port: Number(process.env.FLEXHAUS_API_PORT) || 5002,
+  coin_price_port: Number(process.env.COIN_PRICE) || 5003,
   begin_block: Number(process.env.BEGIN_BLOCK) || 0,
   jwt_secret: String(process.env.JWT_SECRET),
   jwt_expire: String(process.env.JWT_EXPIRE) || '1d',

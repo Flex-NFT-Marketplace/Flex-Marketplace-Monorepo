@@ -2,6 +2,8 @@ import {
   QuestProcess,
   Signature,
   SignatureSchema,
+  SpinHistory,
+  SpinHistorySchema,
   SpinRewardSchema,
   SpinRewards,
   SpinTicket,
@@ -38,6 +40,10 @@ import { UserService } from '../user/user.service';
       {
         name: Signature.name,
         schema: SignatureSchema,
+      },
+      {
+        name: SpinHistory.name,
+        schema: SpinHistorySchema,
       },
     ]),
   ],
